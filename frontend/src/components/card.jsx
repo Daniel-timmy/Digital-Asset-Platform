@@ -1,32 +1,34 @@
+// components/Card.jsx
 import React from "react";
+import { FaShoppingCart } from "react-icons/fa";
 
-export default function Card({ asset, onAddToCart, onHover, onLeave, onClick }) {
+export default function Card({ product, onAddToCart }) {
   return (
-    <div
-      onMouseEnter={() => onHover(asset)}
-      onMouseLeave={onLeave}
-      onClick={() => onClick(asset)}
-      className={`relative overflow-hidden rounded-2xl shadow-xl transition-transform transform hover:scale-105 h-[380px] ${
-        asset.id <= 3 ? "bg-gray-900" : "bg-teal-100"
-      } flex flex-col justify-end`}
-    >
+    <div className="relative bg-white border border-black rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 group">
+      
+      {/* Add to Cart Icon */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onAddToCart(product);
+        }}
+        className="absolute top-3 right-3 z-10 bg-black text-white p-2 rounded-full hover:bg-gray-800 transition"
+      >
+        <FaShoppingCart className="text-sm" />
+      </button>
+
+      {/* Product Image */}
       <img
-        src="http://localhost:5500/uploads/thumbnail/d569b175-1b18-4c3a-a566-770cd9498daa.webp"
-        alt={asset.name}
-        className="absolute inset-0 w-full h-full object-cover opacity-90"
+        src={product.img || product.thumbnail_url}
+        alt={product.name}
+        className="w-full h-52 object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
       />
-      <div className="relative z-10 bg-black bg-opacity-40 text-white text-center p-4">
-        <h2 className="text-2xl font-bold mb-1">{asset.name}</h2>
-        <p className="text-sm mb-3">{asset.description}</p>
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            onAddToCart(asset);
-          }}
-          className="bg-orange-500 text-white px-4 py-2 rounded-full text-sm hover:bg-orange-600 transition"
-        >
-          Add to Cart – ${asset.price}
-        </button>
+
+      {/* Description */}
+      <div className="p-4 text-center text-black">
+        <h2 className="text-lg font-bold mb-1">{product.name}</h2>
+        <p className="text-sm text-gray-700 mb-2">{product.description || product.desc}</p>
+        <p className="text-base font-semibold">${product.price}</p>
       </div>
     </div>
   );
