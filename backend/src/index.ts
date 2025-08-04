@@ -20,8 +20,7 @@ import cors from "cors"
 import path from "path";
 
 const app = express();
-
-app.use('/uploads/thumbnail', express.static(path.join(__dirname, 'uploads/thumbnail')));
+app.use('/uploads/thumbnail', express.static(path.join(process.cwd(), 'uploads/thumbnail')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -67,7 +66,6 @@ const startServer = async () => {
   try {
     await AppDataSource.initialize();
     console.log(`Database connected`);
-    console.log(path.join(__dirname, 'uploads/thumbnail'))
     app.listen(PORT, async () => {
       console.log(`Server is running on port ${PORT}`);
     });

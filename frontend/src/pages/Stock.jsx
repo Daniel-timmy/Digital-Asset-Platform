@@ -3,102 +3,32 @@ import { Link } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Search from "../components/Search";
-import Card from "../components/Card"; 
+import Card from "../components/Card";
 import api from "../utils/api";
+import {
+  add_to_cart,
+  in_cart,
+  remove_from_cart,
+  clear_cart,
+  get_cart,
+} from "../utils/cart";
 import "../App.css";
 
 export default function StockPage() {
   const [isVisible, setIsVisible] = useState(false);
   const [cart, setCart] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
   const [assets, setAssets] = useState([]);
   const [hoveredProduct, setHoveredProduct] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [activeTab, setActiveTab] = useState("All");
+  const [activeTag, setActiveTag] = useState("All");
   const [loading, setLoading] = useState(false);
+  const [tags, setTags] = useState([]);
+  const [limit, setLimit] = useState(20);
+  const [offset, setOffset] = useState(1);
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
-
-  const products = [
-    {
-      id: 1,
-      name: "AI Art",
-      price: 49.99,
-      category: "AI Tools",
-      img: "https://via.placeholder.com/300x200?text=AI+Art",
-      desc: "Create stunning AI-generated art",
-    },
-    {
-      id: 2,
-      name: "Design Toolkit",
-      price: 29.99,
-      category: "Design",
-      img: "https://via.placeholder.com/300x200?text=Design+Toolkit",
-      desc: "Professional design resources",
-    },
-    {
-      id: 3,
-      name: "Tech Gadget",
-      price: 99.99,
-      category: "Creative Tools",
-      img: "https://via.placeholder.com/300x200?text=Tech+Gadget",
-      desc: "Latest tech innovation",
-    },
-    {
-      id: 4,
-      name: "Creative Suite",
-      price: 79.99,
-      category: "Creative Tools",
-      img: "https://via.placeholder.com/300x200?text=Creative+Suite",
-      desc: "All-in-one creativity tools",
-    },
-    {
-      id: 5,
-      name: "AI Tools",
-      price: 39.99,
-      category: "AI Tools",
-      img: "https://via.placeholder.com/300x200?text=AI+Tools",
-      desc: "Essential AI-powered utilities",
-    },
-    {
-      id: 6,
-      name: "Design Essentials",
-      price: 19.99,
-      category: "Design",
-      img: "https://via.placeholder.com/300x200?text=Design+Essentials",
-      desc: "Basic design resources",
-    },
-    {
-      id: 7,
-      name: "Design Essentials",
-      price: 19.99,
-      category: "Design",
-      img: "https://via.placeholder.com/300x200?text=Design+Essentials",
-      desc: "Basic design resources",
-    },
-    {
-      id: 8,
-      name: "Design Essentials",
-      price: 19.99,
-      category: "Design",
-      img: "https://via.placeholder.com/300x200?text=Design+Essentials",
-      desc: "Basic design resources",
-    },
-  ];
-
-  const filteredProducts = products.filter((product) => {
-    const matchSearch = product.name
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchCategory = activeTab === "All" || product.category === activeTab;
-    return matchSearch && matchCategory;
-  });
-
-  const addToCart = (product) => {
-    setCart([...cart, product]);
-  };
 
   const handleProceed = (product) => {
     setCart([...cart, product]);
@@ -113,8 +43,17 @@ export default function StockPage() {
     const fecthAssets = async () => {
       setLoading(true);
       try {
-        const res = await api.get(`/assets`);
-        setAssets(res.data);
+        const res = await api.get(`/assets?page=${offset}&limit=${limit}`);
+        setAssets(res.data.results);
+        setOffset(res.data.page + 1);
+        const uniqueTags = res.data.results
+          .flatMap((asset) => asset.tags)
+          .filter(
+            (tag, index, self) =>
+              index === self.findIndex((t) => t.id === tag.id)
+          );
+
+        setTags(uniqueTags);
       } catch (error) {
         console.log(error);
       } finally {
@@ -124,9 +63,17 @@ export default function StockPage() {
     fecthAssets();
   }, []);
 
-  const handleCloseTab = () => setSelectedProduct(null);
+  const getByTags = async (id) => {
+    setLoading(true);
+    setActiveTag(id);
 
-  const tabs = ["All", "AI Tools", "Creative Tools", "Design"];
+    try {
+      const res = await api.get(`/assets?tagIds=${id}`);
+      setAssets(res.data.results);
+    } catch (error) {}
+  };
+
+  const handleCloseTab = () => setSelectedProduct(null);
 
   return (
     <div className="relative w-full min-h-screen bg-white overflow-hidden font-sans">
@@ -148,17 +95,17 @@ export default function StockPage() {
 
         {/* Tabs */}
         <div className="flex space-x-4 mb-10 animate-fade-in-up delay-400">
-          {tabs.map((tab) => (
+          {tags.map((tag) => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+              key={tag.id}
+              onClick={() => getByTags(tag.id)}
               className={`px-4 py-2 rounded-full font-medium text-sm transition shadow-md ${
-                activeTab === tab
+                activeTag === tag.id
                   ? "bg-black text-white"
                   : "bg-white text-gray-800 hover:bg-gray-100"
               }`}
             >
-              {tab}
+              {tag.name}
             </button>
           ))}
         </div>
@@ -166,13 +113,35 @@ export default function StockPage() {
         {/* Product Grid using Card.jsx */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10 px-6 w-full max-w-7xl mx-auto mb-20">
           {assets.map((asset) => (
-            <Card
-              key={asset.id}
-              asset={asset}
-              setHoveredProduct={setHoveredProduct}
-              handleProductClick={handleProductClick}
-              addToCart={addToCart}
-            />
+            <Link to={`/product-details/${asset.id}`} key={asset.id}>
+              <div
+                onMouseEnter={() => setHoveredProduct(asset)}
+                onMouseLeave={() => setHoveredProduct(null)}
+                onClick={() => handleProductClick(asset)}
+                className={`relative overflow-hidden rounded-2xl shadow-xl transition-transform transform hover:scale-105 h-[380px] ${
+                  asset.id <= 3 ? "bg-gray-900" : "bg-teal-100"
+                } flex flex-col justify-end`}
+              >
+                <img
+                  src={"http://localhost:5500" + asset.thumbnail_url}
+                  alt={asset.name}
+                  className="absolute inset-0 w-full h-full object-cover opacity-90"
+                />
+                <div className="relative z-10 bg-black bg-opacity-40 text-white text-center p-4">
+                  <h2 className="text-2xl font-bold mb-1">{asset.name}</h2>
+                  <p className="text-sm mb-3">{asset.description}</p>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      add_to_cart(asset);
+                    }}
+                    className="bg-orange-500 text-white px-4 py-2 rounded-full text-sm hover:bg-orange-600 transition"
+                  >
+                    Add to Cart – ${asset.price}
+                  </button>
+                </div>
+              </div>
+            </Link>
           ))}
         </div>
 

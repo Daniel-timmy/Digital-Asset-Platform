@@ -31,4 +31,10 @@ transactionRouter.post('/initialize-payment', authentication, async (req, res, n
 
 });
 
+transactionRouter.get("/verify/:ref", authentication, async (req, res, next) => {
+  await transactionController.verify(req, res, next)
+});
+
+
+
 export default transactionRouter;

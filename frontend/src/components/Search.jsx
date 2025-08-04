@@ -3,14 +3,14 @@ import { Link } from "react-router-dom";
 import { useDebounce } from "react-use";
 import api from "../utils/api";
 
-const SearchItem = ({ product }) => {
+const SearchItem = ({ asset }) => {
   return (
     <>
-      <Link to={"/product-details"}>
+      <Link to={`/product-details/${asset.id}`}>
         <div className="flex flex-col mx-5 my-3 space-y-1">
-          <h1 className="text-sm lg:text-2xl font-medium">{product.name}</h1>
+          <h1 className="text-sm lg:text-2xl font-medium">{asset.name}</h1>
           <h6 className="text-xs lg:text-lg font-normal">
-            {product.description}
+            {asset.description}
           </h6>
         </div>
       </Link>
@@ -60,7 +60,7 @@ const Search = () => {
         return;
       }
       const res = await api.get(`/assets?search=${query}`);
-      setSearchedAsset(res.data);
+      setSearchedAsset(res.data.results);
     } catch (error) {
       console.log(error);
     } finally {
@@ -99,14 +99,18 @@ const Search = () => {
       </button>
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
         <div className="mt-4">
-          {loading ? (
-            <p>Loading...</p>
-          ) : searchedAsset.length > 0 ? (
-            searchedAsset.map((product) => (
-              <SearchItem key={product.id} product={product} />
-            ))
+          {debouncedSearchTerm ? (
+            loading ? (
+              <p>Loading...</p>
+            ) : searchedAsset.length > 0 ? (
+              searchedAsset.map((product) => (
+                <SearchItem key={product.id} asset={product} />
+              ))
+            ) : (
+              <p>No results found.</p>
+            )
           ) : (
-            <p>No results found.</p>
+            ""
           )}
         </div>
       </Modal>

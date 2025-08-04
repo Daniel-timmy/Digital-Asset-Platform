@@ -4,10 +4,11 @@ import Dashboard from "./pages/Dashboard";
 import Landingpage from "./pages/Landingpage";
 import Stock from "./pages/Stock";
 import CartPage from "./pages/CartPage";
-import Productdetails from "./pages/productdetails";
+import Productdetails from "./pages/Productdetails";
 import AuthPage from "./pages/AuthPage";
 import AdminPage from "./pages/admin/AdminPage";
 import ProtectedRoutes from "./components/ProtectedRoutes";
+import VerifyPaymentPage from "./pages/VerifyPaymentPage";
 
 function Logout() {
   localStorage.clear();
@@ -21,8 +22,9 @@ function App() {
         <Route path="/" element={<Landingpage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/login" element={<AuthPage />} />
+        <Route path="/verify-payment" element={<VerifyPaymentPage />} />
         <Route path="/sign-up" element={<AuthPage state={false} />} />
-        <Route path="/product-details" element={<Productdetails />} />
+        <Route path="/product-details/:id" element={<Productdetails />} />
         <Route
           path="/dashboard"
           element={

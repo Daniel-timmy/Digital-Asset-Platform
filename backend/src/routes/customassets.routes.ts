@@ -11,12 +11,15 @@ const customAssetService = new CustomAssetService();
 const customAssetController = new CustomAssetController(customAssetService);
 
 customAssetRouter.post("/", authentication, upload.none(), async (req, res, next) => {
-  console.log("req.body:", req.body);
   await customAssetController.create(req, res, next);
 });
 
 customAssetRouter.get("/",authentication, async (req, res, next) => {
   await customAssetController.findAll(req, res, next);
+});
+
+customAssetRouter.get("/counts", authentication, async (req, res, next) => {
+  await customAssetController.getCountByPaymentStatus(req, res, next);
 });
 
 customAssetRouter.get("/:id", authentication, async (req, res, next) => {

@@ -84,7 +84,19 @@ async create(req: AuthRequest) {
   }
 
   async findOne(id: string): Promise<Asset | null> {
-    return await this.assetRepository.findOne({ where: { id } });
+      try {
+
+    const asset = await this.assetRepository
+      .createQueryBuilder("asset")
+      .leftJoinAndSelect("asset.tags", "tags") 
+      .where("asset.id = :id", { id: id }) 
+      .getOne(); 
+
+    return asset || null; 
+  } catch (error) {
+    console.error("Error fetching asset with tags:", error);
+    throw error; 
+  }
   }
 
   async update(id: string, data: Partial<Asset>): Promise<Asset | null> {

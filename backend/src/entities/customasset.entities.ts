@@ -21,12 +21,17 @@ export class CustomAsset {
     @JoinColumn({ name: "asset_id" })
     asset!: Asset;
 
-    @Column({ type: "enum", enum: ["open", "closed"], default: "open"})
-    status!: "open" | "closed";
+    @Column({ type: "enum", enum: ["open", "closed", "cancelled"], default: "open"})
+    status!: "open" | "closed" | "cancelled";
 
 
-    @Column({ type: "enum", enum: ["paid", "pending"], default: "pending"})
-    payment_status!: "paid" | "pending";
+    @Column({ type: "enum", enum: ["paid", "pending", "processing"], default: "pending"})
+    payment_status!: "paid" | "pending" | "processing";
+
+    // needs a due date
+    // needs an amount
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 2000 })
+    price!: number ;
 
     @CreateDateColumn()
     created_at: Date = new Date();
