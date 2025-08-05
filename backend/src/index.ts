@@ -14,7 +14,7 @@ import ticketRouter from "./routes/ticket.routes";
 import photographyRouter from "./routes/photography.routes";
 import websiteRouter from "./routes/website.routes";
 import brandingRouter from "./routes/branding.routes";
-import { FRONTEND_URL } from "../src/config/env";
+import { FRONTEND_URL } from "./config/env";
 import { AppDataSource } from "./database/db";
 import { errorMiddleware } from "./middlewares/error.middleware";
 import messageRouter from "./routes/message.routes";
