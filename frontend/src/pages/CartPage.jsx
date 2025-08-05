@@ -4,17 +4,13 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { remove_from_cart } from "../utils/cart";
 import "../App.css";
+import LoadingIndicator from "../components/LoadingIndicator";
 
 export default function CartPage() {
   const [isVisible, setIsVisible] = useState(false);
   const [cart, setCart] = useState([]);
   const [customizingProduct, setCustomizingProduct] = useState(null);
   const [customizations, setCustomizations] = useState({});
-
-  // useEffect(() => {
-  //   setIsVisible(true);
-  //   localStorage.setItem('cart', JSON.stringify(cart));
-  // }, [cart]);
 
   const removeFromCart = (asset) => {
     const updatedCart = cart.filter((item) => item.id !== asset.id);
@@ -112,31 +108,33 @@ export default function CartPage() {
           </p>
         ) : (
           <div className="w-full max-w-4xl mx-auto">
-            {cart.map((item) => (
-              <div
-                key={item.id}
-                className={`bg-white p-6 mb-4 rounded-lg shadow-md flex justify-between items-center ${
-                  isVisible ? "animate-fade-in-up" : ""
-                } ${`delay-${item.id * 100}`}`}
-              >
-                <span className="text-lg text-gray-900">
-                  {item.name || `Product ${item.id}`} - ${item.price}
-                </span>
-                <div>
-                  <button
-                    onClick={() => removeFromCart(item)}
-                    className="bg-red-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-red-600 transition-colors duration-300 mr-2"
-                  >
-                    Remove
-                  </button>
-                  <button
-                    onClick={() => handleCustomize(item)}
-                    className="bg-teal-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-teal-600 transition-colors duration-300"
-                  >
-                    Customize
-                  </button>
+            {cart.map((item, key) => (
+              <Link to={`/product-details/${item.id}`} key={key}>
+                <div
+                  key={item.id}
+                  className={`bg-white p-6 mb-4 rounded-lg shadow-md flex justify-between items-center ${
+                    isVisible ? "animate-fade-in-up" : ""
+                  } ${`delay-${item.id * 100}`}`}
+                >
+                  <span className="text-lg text-gray-900">
+                    {item.name || `Product ${item.id}`} - ${item.price}
+                  </span>
+                  <div>
+                    <button
+                      onClick={() => removeFromCart(item)}
+                      className="bg-red-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-red-600 transition-colors duration-300 mr-2"
+                    >
+                      Remove
+                    </button>
+                    <button
+                      onClick={() => handleCustomize(item)}
+                      className="bg-teal-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-teal-600 transition-colors duration-300"
+                    >
+                      Customize
+                    </button>
+                  </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

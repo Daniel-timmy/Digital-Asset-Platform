@@ -4,14 +4,9 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Search from "../components/Search";
 import Card from "../components/Card";
+import LoadingIndicator from "../components/LoadingIndicator";
 import api from "../utils/api";
-import {
-  add_to_cart,
-  in_cart,
-  remove_from_cart,
-  clear_cart,
-  get_cart,
-} from "../utils/cart";
+import { add_to_cart } from "../utils/cart";
 import "../App.css";
 
 export default function StockPage() {
@@ -70,7 +65,11 @@ export default function StockPage() {
     try {
       const res = await api.get(`/assets?tagIds=${id}`);
       setAssets(res.data.results);
-    } catch (error) {}
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCloseTab = () => setSelectedProduct(null);
@@ -112,37 +111,43 @@ export default function StockPage() {
 
         {/* Product Grid using Card.jsx */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10 px-6 w-full max-w-7xl mx-auto mb-20">
-          {assets.map((asset) => (
-            <Link to={`/product-details/${asset.id}`} key={asset.id}>
-              <div
-                onMouseEnter={() => setHoveredProduct(asset)}
-                onMouseLeave={() => setHoveredProduct(null)}
-                onClick={() => handleProductClick(asset)}
-                className={`relative overflow-hidden rounded-2xl shadow-xl transition-transform transform hover:scale-105 h-[380px] ${
-                  asset.id <= 3 ? "bg-gray-900" : "bg-teal-100"
-                } flex flex-col justify-end`}
-              >
-                <img
-                  src={"http://localhost:5500" + asset.thumbnail_url}
-                  alt={asset.name}
-                  className="absolute inset-0 w-full h-full object-cover opacity-90"
-                />
-                <div className="relative z-10 bg-black bg-opacity-40 text-white text-center p-4">
-                  <h2 className="text-2xl font-bold mb-1">{asset.name}</h2>
-                  <p className="text-sm mb-3">{asset.description}</p>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      add_to_cart(asset);
-                    }}
-                    className="bg-orange-500 text-white px-4 py-2 rounded-full text-sm hover:bg-orange-600 transition"
-                  >
-                    Add to Cart – ${asset.price}
-                  </button>
+          {loading ? (
+            <div className="col-span-4 flex justify-center items-center h-64">
+              <LoadingIndicator />
+            </div>
+          ) : (
+            assets.map((asset) => (
+              <Link to={`/product-details/${asset.id}`} key={asset.id}>
+                <div
+                  onMouseEnter={() => setHoveredProduct(asset)}
+                  onMouseLeave={() => setHoveredProduct(null)}
+                  onClick={() => handleProductClick(asset)}
+                  className={`relative overflow-hidden rounded-2xl shadow-xl transition-transform transform hover:scale-105 h-[380px] ${
+                    asset.id <= 3 ? "bg-gray-900" : "bg-teal-100"
+                  } flex flex-col justify-end`}
+                >
+                  <img
+                    src={"http://localhost:5500" + asset.thumbnail_url}
+                    alt={asset.name}
+                    className="absolute inset-0 w-full h-full object-cover opacity-90"
+                  />
+                  <div className="relative z-10 bg-black bg-opacity-40 text-white text-center p-4">
+                    <h2 className="text-2xl font-bold mb-1">{asset.name}</h2>
+                    <p className="text-sm mb-3">{asset.description}</p>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        add_to_cart(asset);
+                      }}
+                      className="bg-orange-500 text-white px-4 py-2 rounded-full text-sm hover:bg-orange-600 transition"
+                    >
+                      Add to Cart – ${asset.price}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            ))
+          )}
         </div>
 
         {/* Product Preview */}

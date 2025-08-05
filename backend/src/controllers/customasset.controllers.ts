@@ -1,7 +1,9 @@
 import { NextFunction, Request, Response } from "express";
-import { AuthRequest } from "interfaces/auth.interface";
-
+import { AuthRequest } from "../interfaces/auth.interface";
+import { AppDataSource } from "../database/db";
+import { CustomAsset } from "../entities/customasset.entities";
 import { CustomAssetService } from "../services/customasset.service";
+import { applyCustomAssetFilters } from "../filters/customassets.filter";
 
 export class CustomAssetController {
     constructor(private customAssetService: CustomAssetService) {}
@@ -17,12 +19,29 @@ export class CustomAssetController {
 
     async findAll(req: AuthRequest, res: Response, next: NextFunction) {
         try {
-            const customAssets = await this.customAssetService.findAll(req);
-            res.status(200).json(customAssets);
+            if (!req.user) {
+                return res.status(401).json({ error: "Unauthorized" });
+            }
+            const filters = req.query;
+            const userId = req.user?.id;
+            const userRole = req.user?.role;
+            // Only filter by user if not admin
+            if (userId && userRole !== 'admin') {
+                filters.user = { id: userId }; // Add user filter if user is not admin
+            }
+            const query = AppDataSource.getRepository(CustomAsset)
+                .createQueryBuilder("customAsset")
+                .leftJoinAndSelect("customAsset.user", "user")
+                .leftJoinAndSelect("customAsset.asset", "asset");
+            
+            const filteredAssets = await applyCustomAssetFilters(query, filters);
+            
+            res.status(200).json(filteredAssets);
         } catch (error) {
             next(error);
         }
     }
+
 
     async getCountByPaymentStatus(req: AuthRequest, res: Response, next: NextFunction){
         try {

@@ -26,6 +26,11 @@ const Dashboard = () => {
       alert("Failed to initialize payment. Please try again.");
     }
   };
+  const statusColors = {
+    Processing: "text-yellow-600",
+    Completed: "text-green-600",
+    Cancelled: "text-red-600",
+  };
   useEffect(() => {
     const getCounts = async () => {
       try {
@@ -148,8 +153,13 @@ const Dashboard = () => {
                       <td className="px-4 py-3">{row.id.slice(0, 6)}...</td>
                       <td className="px-4 py-3">{row.name}</td>
                       <td className="px-4 py-3">{row.date}</td>
-                      <td className={`px-4 py-3 font-semibold ${row.color}`}>
-                        {row.payment_status}
+
+                      <td
+                        className={`px-6 py-4 font-semibold ${
+                          statusColors[row.payment_status]
+                        }`}
+                      >
+                        {row.status}
                       </td>
                       <td className="px-4 py-3">{row.price}</td>
 

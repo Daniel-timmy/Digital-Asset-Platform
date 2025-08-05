@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useDebounce } from "react-use";
 import api from "../utils/api";
+import LoadingIndicator from "./LoadingIndicator";
 
 const SearchItem = ({ asset }) => {
   return (
@@ -53,7 +54,6 @@ const Search = () => {
   useDebounce(() => setDebouncedSearchTerm(searchTerm), 500, [searchTerm]);
 
   const fecthAssets = async (query = "") => {
-    setLoading(true);
     try {
       if (query === "") {
         setSearchedAsset([]);
@@ -69,6 +69,8 @@ const Search = () => {
   };
 
   useEffect(() => {
+    setLoading(true);
+
     fecthAssets(debouncedSearchTerm);
   }, [debouncedSearchTerm]);
 
@@ -99,15 +101,17 @@ const Search = () => {
       </button>
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
         <div className="mt-4">
-          {debouncedSearchTerm ? (
-            loading ? (
-              <p>Loading...</p>
-            ) : searchedAsset.length > 0 ? (
+          {loading ? (
+            <div className="col-span-4 flex justify-center items-center h-64">
+              <LoadingIndicator />
+            </div>
+          ) : debouncedSearchTerm ? (
+            searchedAsset.length > 0 ? (
               searchedAsset.map((product) => (
                 <SearchItem key={product.id} asset={product} />
               ))
             ) : (
-              <p>No results found.</p>
+              searchedAsset.length === 0 && <p>No results found.</p>
             )
           ) : (
             ""

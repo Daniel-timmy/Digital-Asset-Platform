@@ -1,60 +1,88 @@
-import React from 'react';
-
-const mockOrders = [
-  {
-    id: 'ORD-98231',
-    items: ['Logo Pack', '3D Mockup'],
-    date: 'July 10, 2025',
-    status: 'Processing',
-    amount: '₦25,000.00',
-  },
-  {
-    id: 'ORD-98210',
-    items: ['T-shirt Design', 'Promo Banner'],
-    date: 'July 6, 2025',
-    status: 'Completed',
-    amount: '₦42,500.00',
-  },
-  {
-    id: 'ORD-98122',
-    items: ['Branding Kit'],
-    date: 'June 30, 2025',
-    status: 'Cancelled',
-    amount: '₦15,000.00',
-  },
-];
-
-const statusColors = {
-  Processing: 'text-yellow-600',
-  Completed: 'text-green-600',
-  Cancelled: 'text-red-600',
-};
+import React, { useEffect, useState } from "react";
+import api from "../../utils/api";
 
 const Orders = () => {
+  const [orders, setOrders] = useState([]);
+  const [offset, setOffset] = useState(1);
+  const [limit, setLimit] = useState(10);
+
+  const statusColors = {
+    Processing: "text-yellow-600",
+    Completed: "text-green-600",
+    Cancelled: "text-red-600",
+  };
+
+  const initialize_payment = async (id) => {
+    try {
+      const res = await api.post("/transactions/initialize-payment", { id });
+      const authorizationUrl = res.data.authorization_url;
+      if (authorizationUrl) {
+        window.location.href = authorizationUrl;
+      } else {
+        console.error("No authorization URL returned from API");
+        alert("Failed to initialize payment: No authorization URL provided.");
+      }
+    } catch (error) {
+      console.error("Error initializing payment:", error);
+      alert("Failed to initialize payment. Please try again.");
+    }
+  };
+
+  useEffect(() => {
+    const getOrders = async () => {
+      try {
+        const res = await api.get(`/custom?page=${offset}&limit=${limit}`);
+        setOrders(res.data.results);
+        console.log(res.data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    getOrders();
+  }, []);
   return (
     <div className="animate-fade-in-up space-y-6">
       <h2 className="text-3xl font-bold text-black">Your Orders</h2>
-      <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <table className="w-full text-sm text-gray-700">
-          <thead className="bg-gray-100 border-b">
+      <div className="overflow-x-auto rounded-lg shadow-md bg-white">
+        <table className="min-w-full text-sm">
+          <thead className="text-left bg-gray-50 border-b">
             <tr>
-              <th className="px-6 py-4 text-left">Order ID</th>
-              <th className="px-6 py-4 text-left">Items</th>
-              <th className="px-6 py-4 text-left">Date</th>
-              <th className="px-6 py-4 text-left">Status</th>
-              <th className="px-6 py-4 text-left">Amount</th>
+              <th className="px-4 py-3">ID</th>
+              <th className="px-4 py-3">Name</th>
+              <th className="px-4 py-3">Due Date</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Total</th>
             </tr>
           </thead>
           <tbody>
-            {mockOrders.map((order, idx) => (
-              <tr key={idx} className="border-b hover:bg-gray-50 transition">
-                <td className="px-6 py-4 font-medium">{order.id}</td>
-                <td className="px-6 py-4">{order.items.join(', ')}</td>
-                <td className="px-6 py-4">{order.date}</td>
-                <td className={`px-6 py-4 font-semibold ${statusColors[order.status]}`}>
-                  {order.status}
+            {orders.map((row, i) => (
+              <tr className="border-t hover:bg-gray-50 transition" key={i}>
+                <td className="px-4 py-3">{row.id.slice(0, 6)}...</td>
+                <td className="px-4 py-3">{row.name}</td>
+                <td className="px-4 py-3">{row.date}</td>
+
+                <td
+                  className={`px-6 py-4 font-semibold ${
+                    statusColors[row.payment_status]
+                  }`}
+                >
+                  {row.status}
                 </td>
-                <td className="px-6 py-4">{order.amount}</td>
+                <td className="px-4 py-3">{row.price}</td>
+
+                <td className="px-4 py-3 ">
+                  {row.payment_status === "pending" ? (
+                    <button
+                      className="rounded-2xl bg-blue-300 h-10 w-25"
+                      onClick={() => initialize_payment(row.id)}
+                    >
+                      Make Payment
+                    </button>
+                  ) : (
+                    ""
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

@@ -26,7 +26,7 @@ function App() {
         <Route path="/ai-images" element={<AIImages />} />
         <Route path="/banners" element={<Banners />} />
         <Route path="/fliers" element={<Fliers />} />
-        <Route path="/client" element={<ClientsPage />} />
+        {/* <Route path="/client" element={<ClientsPage />} /> */}
         <Route path="/" element={<Landingpage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/login" element={<AuthPage />} />
@@ -37,7 +37,7 @@ function App() {
           path="/dashboard"
           element={
             <ProtectedRoutes>
-              <Dashboard />
+              <ClientsPage />
             </ProtectedRoutes>
           }
         />

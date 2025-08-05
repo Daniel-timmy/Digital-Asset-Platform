@@ -7,12 +7,16 @@ import "../App.css";
 import api from "../utils/api";
 import { ACCESS_TOKEN } from "../utils/constants";
 import { jwtDecode } from "jwt-decode";
+import LoadingIndicator from "../components/LoadingIndicator";
 
 function Productdetails() {
   const [isVisible, setIsVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState({});
   const [product, setProduct] = useState({});
   const [relatedProduct, setRelatedProduct] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [customLoading, setCustomLoading] = useState(false);
+  const [relatedLoading, setRelatedLoading] = useState(false);
   const { id } = useParams();
   const [errors, setErrors] = useState({});
 
@@ -35,12 +39,15 @@ function Productdetails() {
 
   useEffect(() => {
     const fetchAsset = async () => {
+      setLoading(true);
       try {
         const res = await api.get(`/assets/${id}`);
         setProduct(res.data);
         return await res.data;
       } catch (error) {
         console.error(error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchAsset();
@@ -48,13 +55,18 @@ function Productdetails() {
 
   useEffect(() => {
     const getRelatedAssets = async (id) => {
+      setRelatedLoading(true);
       try {
         console.log(product.tags);
         const res = await api.get(
           `/assets?tagIds=${product.tags[0].id}&page=1&limit=5`
         );
         setRelatedProduct(res.data.results);
-      } catch (error) {}
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setRelatedLoading(false);
+      }
     };
     getRelatedAssets(id);
   }, [product]);
@@ -74,6 +86,7 @@ function Productdetails() {
   };
 
   const handleSubmit = async (e) => {
+    setCustomLoading(true);
     e.preventDefault();
 
     if (!validateForm()) {
@@ -106,6 +119,9 @@ function Productdetails() {
     } catch (error) {
       console.error("Error submitting form:", error);
       setErrors({ name: "Failed to submit. Please try again." });
+      setCustomLoading(false);
+    } finally {
+      setCustomLoading(false);
     }
   };
 
@@ -182,12 +198,18 @@ function Productdetails() {
                     </p>
                   )}
                 </div>
-                <button
-                  type="submit"
-                  className="w-full bg-black hover:bg-gray-800 text-white py-3 rounded-md font-semibold shadow-md transition duration-300"
-                >
-                  Submit Customization
-                </button>
+                {customLoading ? (
+                  <div className="col-span-4 flex justify-center items-center h-64">
+                    <LoadingIndicator />
+                  </div>
+                ) : (
+                  <button
+                    type="submit"
+                    className="w-full bg-black hover:bg-gray-800 text-white py-3 rounded-md font-semibold shadow-md transition duration-300"
+                  >
+                    Submit Customization
+                  </button>
+                )}
               </form>
             </div>
           </div>
@@ -200,25 +222,31 @@ function Productdetails() {
               Related Assets
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {relatedProduct.map((related) => (
-                <Link to={`/product-details/${related.id}`} key={related.id}>
-                  <div
-                    key={related.id}
-                    onClick={() => setProduct(related)}
-                    className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition duration-300"
-                  >
-                    <img
-                      src={"http://localhost:5500" + product.thumbnail_url}
-                      alt={related.name}
-                      className="w-full h-40 object-cover rounded-md mb-3"
-                    />
-                    <p className="text-lg font-semibold text-black">
-                      {related.name}
-                    </p>
-                    <p className="text-black">${related.price}</p>
-                  </div>
-                </Link>
-              ))}
+              {relatedLoading ? (
+                <div className="col-span-4 flex justify-center items-center h-64">
+                  <LoadingIndicator />
+                </div>
+              ) : (
+                relatedProduct.map((related) => (
+                  <Link to={`/product-details/${related.id}`} key={related.id}>
+                    <div
+                      key={related.id}
+                      onClick={() => setProduct(related)}
+                      className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition duration-300"
+                    >
+                      <img
+                        src={"http://localhost:5500" + product.thumbnail_url}
+                        alt={related.name}
+                        className="w-full h-40 object-cover rounded-md mb-3"
+                      />
+                      <p className="text-lg font-semibold text-black">
+                        {related.name}
+                      </p>
+                      <p className="text-black">${related.price}</p>
+                    </div>
+                  </Link>
+                ))
+              )}
             </div>
           </div>
         )}
