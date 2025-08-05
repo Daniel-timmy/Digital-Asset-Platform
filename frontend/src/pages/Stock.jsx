@@ -8,6 +8,7 @@ import LoadingIndicator from "../components/LoadingIndicator";
 import api from "../utils/api";
 import { add_to_cart } from "../utils/cart";
 import "../App.css";
+import { IMAGE_URL } from "../utils/constants";
 
 export default function StockPage() {
   const [isVisible, setIsVisible] = useState(false);
@@ -127,7 +128,7 @@ export default function StockPage() {
                   } flex flex-col justify-end`}
                 >
                   <img
-                    src={"http://localhost:5500" + asset.thumbnail_url}
+                    src={IMAGE_URL + asset.thumbnail_url}
                     alt={asset.name}
                     className="absolute inset-0 w-full h-full object-cover opacity-90"
                   />

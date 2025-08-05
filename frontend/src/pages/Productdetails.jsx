@@ -5,7 +5,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import "../App.css";
 import api from "../utils/api";
-import { ACCESS_TOKEN } from "../utils/constants";
+import { ACCESS_TOKEN, IMAGE_URL } from "../utils/constants";
 import { jwtDecode } from "jwt-decode";
 import LoadingIndicator from "../components/LoadingIndicator";
 import { initialize_payment } from "../utils/payment";
@@ -145,7 +145,7 @@ function Productdetails() {
             {/* Product Preview */}
             <div className="flex flex-col items-center">
               <img
-                src={"http://localhost:5500" + product.thumbnail_url}
+                src={IMAGE_URL + product.thumbnail_url}
                 alt={product.name}
                 className="w-full max-w-md rounded-xl shadow-md mb-4"
               />
@@ -237,7 +237,7 @@ function Productdetails() {
                       className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition duration-300"
                     >
                       <img
-                        src={"http://localhost:5500" + product.thumbnail_url}
+                        src={IMAGE_URL + product.thumbnail_url}
                         alt={related.name}
                         className="w-full h-40 object-cover rounded-md mb-3"
                       />
