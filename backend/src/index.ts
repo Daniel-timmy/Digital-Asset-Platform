@@ -21,6 +21,7 @@ import messageRouter from "./routes/message.routes";
 import rateLimit from 'express-rate-limit';
 import cors from "cors"
 import path from "path";
+import { PORT } from "../src/config/env";
 
 const app = express();
 app.use('/uploads/thumbnail', express.static(path.join(process.cwd(), 'uploads/thumbnail')));
@@ -38,7 +39,7 @@ app.use(
 );
 
 
-const PORT = 3000;
+// const PORT = 3000;
 
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -73,6 +74,7 @@ const startServer = async () => {
   try {
     await AppDataSource.initialize();
     console.log(`Database connected`);
+    // if (!process.env.PORT) throw new Error("PORT is not defined in environment variables");
     app.listen(PORT , "0.0.0.0", async () => {
       console.log(`Server is running on port ${PORT}`);
     });
