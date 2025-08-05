@@ -8,6 +8,7 @@ import api from "../utils/api";
 import { ACCESS_TOKEN } from "../utils/constants";
 import { jwtDecode } from "jwt-decode";
 import LoadingIndicator from "../components/LoadingIndicator";
+import { initialize_payment } from "../utils/payment";
 
 function Productdetails() {
   const [isVisible, setIsVisible] = useState(false);
@@ -108,14 +109,15 @@ function Productdetails() {
     }
     try {
       const response = await api.post("/custom", { ...formData, asset: id });
-      console.log(response.status);
+      console.log(response);
       if (response.status !== 201) {
         throw new Error("Failed to submit customization");
       }
 
       setFormData({ name: "", description: "" });
       setErrors({});
-      alert("Customization order succesfull");
+      initialize_payment(response.data.id);
+      alert("Customization order succesfull. Initializing payment...");
     } catch (error) {
       console.error("Error submitting form:", error);
       setErrors({ name: "Failed to submit. Please try again." });

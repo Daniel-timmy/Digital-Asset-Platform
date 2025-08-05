@@ -50,7 +50,7 @@ const Transactions = () => {
                 <td className={`px-4 py-3 font-semibold ${row.color}`}>
                   {row.payment_status}
                 </td>
-                <td className="px-4 py-3">{row.price}</td>
+                <td className="px-4 py-3">{row.amount}</td>
 
                 <td className="px-4 py-3 ">
                   {row.payment_status === "pending" ? (

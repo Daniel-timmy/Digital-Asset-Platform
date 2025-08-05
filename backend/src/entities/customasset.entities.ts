@@ -25,7 +25,7 @@ export class CustomAsset {
     status!: "open" | "closed" | "cancelled";
 
 
-    @Column({ type: "enum", enum: ["paid", "pending", "processing"], default: "pending"})
+    @Column({ type: "enum", enum: ["paid", "pending", "cancelled", "processing"], default: "pending"})
     payment_status!: "paid" | "pending" | "processing";
 
     // needs a due date

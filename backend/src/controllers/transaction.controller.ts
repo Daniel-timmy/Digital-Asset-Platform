@@ -119,7 +119,6 @@ export class TransactionController {
       );
       console.log(response.data)
       if (response.status){
-        console.log("QWERTYUIOPPOIUYTREWQWERTYUIOPOIUYTREWQWERTYUIOPOIUYTREWQWERTYUIOOOOOPOKJHGFDSASDFGHJK")
         custom_asset.payment_status = "processing"
         await this.customAssetRepository.save(custom_asset)
       }
@@ -184,6 +183,9 @@ export class TransactionController {
     console.log(response)
     const transaction = await this.transactionService.findOne(ref)
     if (!transaction) throw new Error("Transaction not found")
+    
+    const customasset = await this.customAssetRepository.findOne({ where: { id: transaction.custom_asset.id } })
+    if (!customasset) throw new Error("Custom asset not found")
 
 
     let message;
@@ -192,6 +194,7 @@ export class TransactionController {
       const data = response.data.data;
       if (data.status === "success"){
         transaction.payment_status ="completed"
+        customasset.payment_status = "paid"
         message = "Payment processed successfully"
         status = "success"
 
@@ -199,8 +202,17 @@ export class TransactionController {
         transaction.payment_status = "failed"
         message = "Payment failed"
         status ="failed"
+      } else if (data.status === "processing") {
+        transaction.payment_status = "pending"
+        status ="processing"
+        message = "Payment is still processing"
+      } else if (data.status === "abandoned") {
+        transaction.payment_status = "failed"
+        customasset.payment_status = "pending"
+        message = "Payment was abandoned"
       } else {
         transaction.payment_status = "pending"
+        customasset.payment_status = "pending"
         message = "Payment still pending"
         status = "failed"
       }

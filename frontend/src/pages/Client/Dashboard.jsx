@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import React, { useEffect, useState } from "react";
 import api from "../../utils/api";
 import { Link } from "react-router-dom";
+import { initialize_payment } from "../../utils/payment";
+import LoadingIndicator from "../../components/LoadingIndicator";
 
 function StatCards({ orderCounts }) {
   return (
@@ -35,6 +37,19 @@ const statusColors = {
 };
 
 function RecentOrders({ orders }) {
+  const [paymentLoading, setPaymentLoading] = useState({});
+
+  const handlePayment = async (orderId) => {
+    try {
+      setPaymentLoading((prev) => ({ ...prev, [orderId]: true }));
+      console.log("Initializing payment for order:", orderId);
+      await initialize_payment(orderId); // Ensure initialize_payment is async
+      // setPaymentLoading((prev) => ({ ...prev, [orderId]: false }));
+    } catch (error) {
+      setPaymentLoading((prev) => ({ ...prev, [orderId]: false }));
+      console.error("Error initializing payment:", error);
+    }
+  };
   return (
     <section className="animate-fade-in-up delay-400">
       <h3 className="text-lg font-semibold mb-4">Your Recent Orders</h3>
@@ -46,6 +61,8 @@ function RecentOrders({ orders }) {
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Due Date</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Payment status</th>
+
               <th className="px-4 py-3">Total</th>
             </tr>
           </thead>
@@ -63,15 +80,24 @@ function RecentOrders({ orders }) {
                 >
                   {row.status}
                 </td>
+                <td>{row.payment_status}</td>
                 <td className="px-4 py-3">{row.price}</td>
-
-                <td className="px-4 py-3 ">
-                  {row.payment_status === "pending" ? (
+                <td className="px-4 py-3">
+                  {paymentLoading[row.id] ? (
+                    <LoadingIndicator key={row.id} />
+                  ) : row.payment_status === "pending" ? (
                     <button
-                      className="rounded-2xl bg-blue-300 h-10 w-25"
-                      onClick={() => initialize_payment(row.id)}
+                      className="rounded-2xl bg-blue-300 h-10 w-25 cursor-pointer hover:bg-blue-400 transition-all duration-300"
+                      onClick={() => handlePayment(row.id)}
                     >
                       Make Payment
+                    </button>
+                  ) : row.payment_status === "processing" ? (
+                    <button
+                      className="rounded-2xl bg-green-300 h-10 w-25 cursor-pointer hover:bg-green-400 transition-all duration-300"
+                      // onClick={() => handlePayment(row.id)}
+                    >
+                      Verify payment
                     </button>
                   ) : (
                     ""

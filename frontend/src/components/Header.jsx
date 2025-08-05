@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { refreshToken } from "./ProtectedRoutes";
 import { ACCESS_TOKEN } from "../../src/utils/constants";
 import { jwtDecode } from "jwt-decode";
+import logo from "/src/assets/OIP.webp";
 import {
   Disclosure,
   DisclosureButton,
@@ -82,11 +83,7 @@ export default function Example() {
           {/* Logo & Navigation */}
           <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
             <div className="flex shrink-0 items-center">
-              <img
-                alt="BASELINKS"
-                src="/src/assets/OIP.webp"
-                className="h-8 w-auto"
-              />
+              <img alt="BASELINKS" src={logo} className="h-8 w-auto" />
             </div>
 
             <div className="hidden sm:ml-6 sm:flex sm:space-x-4">
@@ -141,7 +138,10 @@ export default function Example() {
           </div>
 
           {/* Right: Notifications & User */}
-          <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0" ref={dropdownRef}>
+          <div
+            className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0"
+            ref={dropdownRef}
+          >
             <button
               type="button"
               className="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:ring-2 focus:ring-white focus:ring-offset-2 focus:outline-hidden focus:ring-offset-gray-800"
@@ -211,36 +211,35 @@ export default function Example() {
             </DisclosureButton>
           ))}
 
-        <DisclosureButton
-  as="div"
-  onClick={toggleServices}
-  className="block rounded-md px-3 py-2 text-base text-gray-300 hover:bg-gray-700 hover:text-white cursor-pointer"
->
-  Services
-  {servicesOpen && (
-    <div className="mt-1 space-y-1 pl-4">
-      <Link
-        to="/ai-images"
-        className="block px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
-      >
-        AI Images
-      </Link>
-      <Link
-        to="/banners"
-        className="block px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
-      >
-        Banners
-      </Link>
-      <Link
-        to="/fliers"
-        className="block px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
-      >
-        Fliers
-      </Link>
-    </div>
-  )}
-</DisclosureButton>
-
+          <DisclosureButton
+            as="div"
+            onClick={toggleServices}
+            className="block rounded-md px-3 py-2 text-base text-gray-300 hover:bg-gray-700 hover:text-white cursor-pointer"
+          >
+            Services
+            {servicesOpen && (
+              <div className="mt-1 space-y-1 pl-4">
+                <Link
+                  to="/ai-images"
+                  className="block px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                >
+                  AI Images
+                </Link>
+                <Link
+                  to="/banners"
+                  className="block px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                >
+                  Banners
+                </Link>
+                <Link
+                  to="/fliers"
+                  className="block px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                >
+                  Fliers
+                </Link>
+              </div>
+            )}
+          </DisclosureButton>
         </div>
       </DisclosurePanel>
     </Disclosure>

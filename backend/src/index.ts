@@ -11,6 +11,9 @@ import tagRouter from "./routes/tag.routes";
 import categoryRouter from "./routes/category.routes";
 import customAssetRouter from "./routes/customassets.routes";
 import ticketRouter from "./routes/ticket.routes";
+import photographyRouter from "./routes/photography.routes";
+import websiteRouter from "./routes/website.routes";
+import brandingRouter from "./routes/branding.routes";
 import { PORT, FRONTEND_URL } from "../src/config/env";
 import { AppDataSource } from "./database/db";
 import { errorMiddleware } from "./middlewares/error.middleware";
@@ -57,6 +60,9 @@ app.use("/api/users", userRouter);
 app.use("/api/licenses", licenseRouter);
 app.use("/api/tags", tagRouter);
 app.use("/api/custom", customAssetRouter)
+app.use("/api/photography", photographyRouter)
+app.use("/api/website", websiteRouter)
+app.use("/api/branding", brandingRouter)
 app.use("/api/ticket", ticketRouter)
 app.use("/api/messages", messageRouter)
 app.use(errorMiddleware)

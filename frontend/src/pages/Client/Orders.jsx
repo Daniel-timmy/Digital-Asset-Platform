@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
 import api from "../../utils/api";
+import { initialize_payment } from "../../utils/payment";
+import LoadingIndicator from "../../components/LoadingIndicator";
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [offset, setOffset] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [paymentLoading, setPaymentLoading] = useState({}); // Changed to object
 
   const statusColors = {
     Processing: "text-yellow-600",
@@ -12,19 +15,15 @@ const Orders = () => {
     Cancelled: "text-red-600",
   };
 
-  const initialize_payment = async (id) => {
+  const handlePayment = async (orderId) => {
     try {
-      const res = await api.post("/transactions/initialize-payment", { id });
-      const authorizationUrl = res.data.authorization_url;
-      if (authorizationUrl) {
-        window.location.href = authorizationUrl;
-      } else {
-        console.error("No authorization URL returned from API");
-        alert("Failed to initialize payment: No authorization URL provided.");
-      }
+      setPaymentLoading((prev) => ({ ...prev, [orderId]: true }));
+      console.log("Initializing payment for order:", orderId);
+      await initialize_payment(orderId); // Ensure initialize_payment is async
+      // setPaymentLoading((prev) => ({ ...prev, [orderId]: false }));
     } catch (error) {
+      setPaymentLoading((prev) => ({ ...prev, [orderId]: false }));
       console.error("Error initializing payment:", error);
-      alert("Failed to initialize payment. Please try again.");
     }
   };
 
@@ -41,6 +40,7 @@ const Orders = () => {
 
     getOrders();
   }, []);
+
   return (
     <div className="animate-fade-in-up space-y-6">
       <h2 className="text-3xl font-bold text-black">Your Orders</h2>
@@ -52,6 +52,7 @@ const Orders = () => {
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Due Date</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Payment status</th>
               <th className="px-4 py-3">Total</th>
             </tr>
           </thead>
@@ -61,7 +62,6 @@ const Orders = () => {
                 <td className="px-4 py-3">{row.id.slice(0, 6)}...</td>
                 <td className="px-4 py-3">{row.name}</td>
                 <td className="px-4 py-3">{row.date}</td>
-
                 <td
                   className={`px-6 py-4 font-semibold ${
                     statusColors[row.payment_status]
@@ -69,15 +69,24 @@ const Orders = () => {
                 >
                   {row.status}
                 </td>
+                <td>{row.payment_status}</td>
                 <td className="px-4 py-3">{row.price}</td>
-
-                <td className="px-4 py-3 ">
-                  {row.payment_status === "pending" ? (
+                <td className="px-4 py-3">
+                  {paymentLoading[row.id] ? (
+                    <LoadingIndicator key={row.id} />
+                  ) : row.payment_status === "pending" ? (
                     <button
-                      className="rounded-2xl bg-blue-300 h-10 w-25"
-                      onClick={() => initialize_payment(row.id)}
+                      className="rounded-2xl bg-blue-300 h-10 w-25 cursor-pointer hover:bg-blue-400 transition-all duration-300"
+                      onClick={() => handlePayment(row.id)}
                     >
                       Make Payment
+                    </button>
+                  ) : row.payment_status === "processing" ? (
+                    <button
+                      className="rounded-2xl bg-green-300 h-10 w-25 cursor-pointer hover:bg-green-400 transition-all duration-300"
+                      // onClick={() => handlePayment(row.id)}
+                    >
+                      Verify payment
                     </button>
                   ) : (
                     ""

@@ -5,6 +5,7 @@ import Footer from "../components/Footer";
 import { remove_from_cart } from "../utils/cart";
 import "../App.css";
 import LoadingIndicator from "../components/LoadingIndicator";
+import bg_img from "../assets/wallhaven-6d7ow6.png";
 
 export default function CartPage() {
   const [isVisible, setIsVisible] = useState(false);
@@ -69,7 +70,7 @@ export default function CartPage() {
     <div
       className="relative w-full min-h-screen bg-white overflow-hidden font-sans"
       style={{
-        backgroundImage: `url('src/assets/wallhaven-6d7ow6.png')`,
+        backgroundImage: `url(${bg_img})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
