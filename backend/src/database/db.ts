@@ -1,5 +1,5 @@
 import { DataSource } from "typeorm";
-import { DB_HOST, DB_NAME, DB_PASSWORD, DB_USERNAME, DB_TYPE } from "../config/env";
+import { DB_HOST, DB_NAME, DB_PASSWORD, DB_USERNAME, DB_TYPE, NODE_ENV } from "../config/env";
 
 export const AppDataSource = new DataSource({
   type: DB_TYPE || "postgres" as any, // Default to postgres if not set
@@ -8,6 +8,9 @@ export const AppDataSource = new DataSource({
   username: DB_USERNAME,
   password: DB_PASSWORD,
   database: DB_NAME,
+   ssl: {
+    rejectUnauthorized:   false, 
+  },
   synchronize: true, // Set to false in production
   logging: false,
   entities: ["src/entities/**/*.ts"],
