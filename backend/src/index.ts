@@ -72,7 +72,7 @@ const startServer = async () => {
   try {
     await AppDataSource.initialize();
     console.log(`Database connected`);
-    app.listen(PORT, async () => {
+    app.listen(5500 , "0.0.0.0", async () => {
       console.log(`Server is running on port ${PORT}`);
     });
   } catch(error) {
