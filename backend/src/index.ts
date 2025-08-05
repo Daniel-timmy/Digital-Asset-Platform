@@ -21,7 +21,7 @@ import messageRouter from "./routes/message.routes";
 import rateLimit from 'express-rate-limit';
 import cors from "cors"
 import path from "path";
-import { PORT } from "../src/config/env";
+// import { PORT } from "../src/config/env";
 
 const app = express();
 app.use('/uploads/thumbnail', express.static(path.join(process.cwd(), 'uploads/thumbnail')));
@@ -69,9 +69,18 @@ app.use("/api/ticket", ticketRouter)
 app.use("/api/messages", messageRouter)
 app.use(errorMiddleware)
 
+if (process.env.PORT === undefined) {
+  console.error("PORT is not defined in environment variables");
+  process.exit(1); // Exit the process with an error code
+}
+
+const PORT = parseInt(process.env.PORT) || 3000;
 
 const startServer = async () => {
   try {
+    console.log("Node environment variables:", process.env);
+    console.log("PORT from config/env:", PORT);
+
     await AppDataSource.initialize();
     console.log(`Database connected`);
     // if (!process.env.PORT) throw new Error("PORT is not defined in environment variables");
