@@ -14,7 +14,7 @@ import ticketRouter from "./routes/ticket.routes";
 import photographyRouter from "./routes/photography.routes";
 import websiteRouter from "./routes/website.routes";
 import brandingRouter from "./routes/branding.routes";
-import { PORT, FRONTEND_URL } from "../src/config/env";
+import { FRONTEND_URL } from "../src/config/env";
 import { AppDataSource } from "./database/db";
 import { errorMiddleware } from "./middlewares/error.middleware";
 import messageRouter from "./routes/message.routes";
@@ -38,6 +38,7 @@ app.use(
 );
 
 
+const PORT = 3000;
 
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -72,12 +73,13 @@ const startServer = async () => {
   try {
     await AppDataSource.initialize();
     console.log(`Database connected`);
-    app.listen(5500 , "0.0.0.0", async () => {
+    app.listen(PORT , "0.0.0.0", async () => {
       console.log(`Server is running on port ${PORT}`);
     });
   } catch(error) {
     
   console.error("Error during Data Source initialization:", error);
+  process.exit(1); 
   }
 }
 
