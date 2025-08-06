@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(30px); }
   to { opacity: 1; transform: translateY(0); }
@@ -252,3 +253,4 @@ body {
 .delay-800 {
   animation-delay: 0.8s;
 }
+

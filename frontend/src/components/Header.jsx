@@ -115,24 +115,30 @@ export default function Example() {
                   Services
                 </button>
                 {servicesOpen && (
-                  <div className="absolute mt-2 w-40 bg-gray-800 rounded-md shadow-lg z-50">
+                  <div className="absolute mt-2 w-56 bg-gray-800 rounded-md shadow-lg z-50">
                     <Link
-                      to="/ai-images"
-                      className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition"
+                      to="/photography"
+                      className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white"
                     >
-                      AI Images
+                      Photography and video editing
                     </Link>
                     <Link
-                      to="/banners"
-                      className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition"
+                      to="/branding"
+                      className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white"
                     >
-                      Banners
+                      Design and branding
                     </Link>
                     <Link
-                      to="/fliers"
-                      className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition"
+                      to="/webdev"
+                      className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white"
                     >
-                      Fliers
+                      Website and development
+                    </Link>
+                    <Link
+                      to="/socialmedia"
+                      className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white"
+                    >
+                      Social media
                     </Link>
                   </div>
                 )}
@@ -141,7 +147,10 @@ export default function Example() {
           </div>
 
           {/* Right: Notifications & User */}
-          <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0" ref={dropdownRef}>
+          <div
+            className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0"
+            ref={dropdownRef}
+          >
             <button
               type="button"
               className="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:ring-2 focus:ring-white focus:ring-offset-2 focus:outline-hidden focus:ring-offset-gray-800"
@@ -211,36 +220,41 @@ export default function Example() {
             </DisclosureButton>
           ))}
 
-        <DisclosureButton
-  as="div"
-  onClick={toggleServices}
-  className="block rounded-md px-3 py-2 text-base text-gray-300 hover:bg-gray-700 hover:text-white cursor-pointer"
->
-  Services
-  {servicesOpen && (
-    <div className="mt-1 space-y-1 pl-4">
-      <Link
-        to="/ai-images"
-        className="block px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
-      >
-        AI Images
-      </Link>
-      <Link
-        to="/banners"
-        className="block px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
-      >
-        Banners
-      </Link>
-      <Link
-        to="/fliers"
-        className="block px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
-      >
-        Fliers
-      </Link>
-    </div>
-  )}
-</DisclosureButton>
-
+          <DisclosureButton
+            as="div"
+            onClick={toggleServices}
+            className="block rounded-md px-3 py-2 text-base text-gray-300 hover:bg-gray-700 hover:text-white cursor-pointer"
+          >
+            Services
+            {servicesOpen && (
+              <div className="mt-1 space-y-1 pl-4">
+                <Link
+                  to="/photography"
+                  className="block px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                >
+                  Photography and video editing
+                </Link>
+                <Link
+                  to="/branding"
+                  className="block px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                >
+                  Design and branding
+                </Link>
+                <Link
+                  to="/webdev"
+                  className="block px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                >
+                  Website and development
+                </Link>
+                <Link
+                  to="/socialmedia"
+                  className="block px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                >
+                  Social media
+                </Link>
+              </div>
+            )}
+          </DisclosureButton>
         </div>
       </DisclosurePanel>
     </Disclosure>

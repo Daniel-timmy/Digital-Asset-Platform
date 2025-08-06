@@ -9,9 +9,10 @@ import AuthPage from "./pages/AuthPage";
 import AdminPage from "./pages/admin/AdminPage";
 import ProtectedRoutes from "./components/ProtectedRoutes";
 import ClientsPage from "./pages/Client/ClientsPage";
-import AIImages from './pages/services/AIImages';
-import Banners from './pages/services/Banners';
-import Fliers from './pages/services/Fliers';
+import Photography from './pages/services/Photography';
+import Branding from './pages/services/Branding';
+import Socialmedia from './pages/services/Socialmedia';
+import Webdev from "./pages/services/Webdev";
 
 function Logout() {
   localStorage.clear();
@@ -22,9 +23,10 @@ function App() {
   return (
     <Router>
       <Routes>
-          <Route path="/ai-images" element={<AIImages />} />
-  <Route path="/banners" element={<Banners />} />
-  <Route path="/fliers" element={<Fliers />} />
+        <Route path="/socialmedia" element={<Socialmedia />} />
+          <Route path="/photography" element={<Photography />} />
+  <Route path="/branding" element={<Branding />} />
+  <Route path="/webdev" element={<Webdev />} />
         <Route path="/client" element={<ClientsPage />} />
         <Route path="/" element={<Landingpage />} />
         <Route path="/admin" element={<AdminPage />} />
