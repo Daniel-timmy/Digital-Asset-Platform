@@ -112,24 +112,30 @@ export default function Example() {
                   SERVICES
                 </button>
                 {servicesOpen && (
-                  <div className="absolute mt-2 w-40 bg-gray-800 rounded-md shadow-lg z-50">
+                  <div className="absolute mt-2 w-56 bg-gray-800 rounded-md shadow-lg z-50">
                     <Link
-                      to="/ai-images"
-                      className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition"
+                      to="/photography"
+                      className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white"
                     >
-                      AI Images
+                      Photography and video editing
                     </Link>
                     <Link
-                      to="/banners"
-                      className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition"
+                      to="/branding"
+                      className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white"
                     >
-                      Banners
+                      Design and branding
                     </Link>
                     <Link
-                      to="/fliers"
-                      className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition"
+                      to="/webdev"
+                      className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white"
                     >
-                      Fliers
+                      Website and development
+                    </Link>
+                    <Link
+                      to="/socialmedia"
+                      className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white"
+                    >
+                      Social media
                     </Link>
                   </div>
                 )}
@@ -220,22 +226,28 @@ export default function Example() {
             {servicesOpen && (
               <div className="mt-1 space-y-1 pl-4">
                 <Link
-                  to="/ai-images"
+                  to="/photography"
                   className="block px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
                 >
-                  AI Images
+                  Photography and video editing
                 </Link>
                 <Link
-                  to="/banners"
+                  to="/branding"
                   className="block px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
                 >
-                  Banners
+                  Design and branding
                 </Link>
                 <Link
-                  to="/fliers"
+                  to="/webdev"
                   className="block px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
                 >
-                  Fliers
+                  Website and development
+                </Link>
+                <Link
+                  to="/socialmedia"
+                  className="block px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                >
+                  Social media
                 </Link>
               </div>
             )}
