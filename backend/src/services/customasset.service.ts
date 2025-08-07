@@ -50,18 +50,33 @@ export class CustomAssetService {
         .where("customAsset.user_id = :userId", { userId: user.id })
         .groupBy("customAsset.payment_status")
         .getRawMany();
+      
+      const completedCount = await this.customAssetRepository
+        .createQueryBuilder("customAsset")
+        .select("customAsset.status, COUNT(*) as count")
+        .where("customAsset.user_id = :userId", { userId: user.id })
+        .groupBy("customAsset.status")
+        .getRawMany();
 
       const result = {
         paid: 0,
         pending: 0,
         processing: 0
       };
+      const completedResult = {
+        open: 0,
+        closed: 0,
+        cancelled: 0
+      };
+      completedCount.forEach((item: { status: string; count: string }) => {
+        completedResult[item.status as keyof typeof completedResult] = parseInt(item.count);})
     
       counts.forEach((item: { payment_status: string; count: string }) => {
         result[item.payment_status as keyof typeof result] = parseInt(item.count);
       });
-    
-      return result;
+
+      const countresult = { ...result, ...completedResult }
+      return countresult;
     }
 
     async findAll(req: AuthRequest): Promise<CustomAsset[]> {

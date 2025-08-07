@@ -180,9 +180,17 @@ export class TransactionController {
         'Content-Type': 'application/json',
       },
     });
-    console.log(response)
+    console.log(response.data)
     const transaction = await this.transactionService.findOne(ref)
     if (!transaction) throw new Error("Transaction not found")
+    
+    if (transaction.payment_status === "completed") {
+      return res.status(200).json({
+        message: "Payment already verified",
+        transaction,
+      });
+    }
+    console.log("Transaction", transaction)
     
     const customasset = await this.customAssetRepository.findOne({ where: { id: transaction.custom_asset.id } })
     if (!customasset) throw new Error("Custom asset not found")
@@ -190,8 +198,9 @@ export class TransactionController {
 
     let message;
     let status;
-    if (response.status === 200){
+    if (response.data.status === true){
       const data = response.data.data;
+
       if (data.status === "success"){
         transaction.payment_status ="completed"
         customasset.payment_status = "paid"
@@ -217,6 +226,7 @@ export class TransactionController {
         status = "failed"
       }
       const savedTransaction = await this.transactionRepository.save(transaction)
+      const savedCustomAsset = await this.customAssetRepository.save(customasset)
       res.status(200).json({
         message,
         savedTransaction,

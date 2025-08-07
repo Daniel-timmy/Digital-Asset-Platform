@@ -21,3 +21,5 @@ export const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY
 export const EMAIL_SERVICE_ID = process.env.EMAIL_SERVICE_ID;
 export const EMAIL_TEMPLATE_ID = process.env.EMAIL_TEMPLATE_ID;
 export const PUBLIC_KEY = process.env.PUBLIC_KEY;
+export const GOOGLE_MAIL_PASSWORD = process.env.GOOGLE_MAIL_PASSWORD;
+export const GOOGLE_MAIL_USER = process.env.GOOGLE_MAIL_USER 

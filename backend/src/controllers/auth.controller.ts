@@ -123,22 +123,23 @@ export class AuthController {
     async login(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
             const { email, password } = req.body;
-            console.log(req.body)
+            const isValidEmail = /\S+@\S+\.\S+/.test(email);
+            if (!email || isValidEmail) {
+                throw new Error("Invalid email format");
+            }
             const user = await this.userService.findByEmail(email);
             if(!user) {
-              console.log(user)
-          return res.status(404).json({
-            success: false,
-            message: 'User with email not found',
-            data: null,
-            details: 
-              {
-                "field": "email",
-                "error": "Invalid Email Address"
-              },
-          });
+              return res.status(404).json({
+                success: false,
+                message: 'User with email not found',
+                data: null,
+                details: 
+                  {
+                    "field": "email",
+                    "error": "Invalid Email Address"
+                  },
+              });
         }
-        console.log(email)
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if(!isPasswordValid) {
           return res.status(401).json({

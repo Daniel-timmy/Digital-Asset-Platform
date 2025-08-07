@@ -1,10 +1,14 @@
 // components/Card.jsx
 import React from "react";
 import { FaShoppingCart } from "react-icons/fa";
+import { IMAGE_URL } from "../utils/constants";
 
-export default function Card({ product, onAddToCart }) {
+export default function Card({ product, onAddToCart, handleProductClick }) {
   return (
-    <div className="relative bg-white border border-black rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 group">
+    <div
+      onClick={() => handleProductClick(product)}
+      className="relative bg-white border border-black rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 group"
+    >
       {/* Add to Cart Icon */}
       <button
         onClick={(e) => {
@@ -18,17 +22,15 @@ export default function Card({ product, onAddToCart }) {
 
       {/* Product Image */}
       <img
-        src={product.img || product.thumbnail_url}
+        src={IMAGE_URL + product.thumbnail_url}
         alt={product.name}
-        className="w-full h-52 object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+        className="w-full h-52 object-cover"
       />
 
       {/* Description */}
       <div className="p-4 text-center text-black">
         <h2 className="text-lg font-bold mb-1">{product.name}</h2>
-        <p className="text-sm text-gray-700 mb-2">
-          {product.description || product.desc}
-        </p>
+        <p className="text-sm text-gray-700 mb-2">{product.description}</p>
         <p className="text-base font-semibold">${product.price}</p>
       </div>
     </div>

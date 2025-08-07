@@ -20,6 +20,8 @@ function Productdetails() {
   const [relatedLoading, setRelatedLoading] = useState(false);
   const { id } = useParams();
   const [errors, setErrors] = useState({});
+  const [loadAssetError, setLoadAssetError] = useState({});
+  const [isAuthorized, setIsAuthorized] = useState(true);
 
   useEffect(() => {
     setIsVisible(true);
@@ -47,6 +49,10 @@ function Productdetails() {
         return await res.data;
       } catch (error) {
         console.error(error);
+        setLoadAssetError({
+          error:
+            error.data.message || "Failed to load related assets. Try again.",
+        });
       } finally {
         setLoading(false);
       }
@@ -62,8 +68,13 @@ function Productdetails() {
         const res = await api.get(
           `/assets?tagIds=${product.tags[0].id}&page=1&limit=5`
         );
+        console.log("Related assets response:", res);
         setRelatedProduct(res.data.results);
       } catch (error) {
+        console.log("Error fetching related assets:", error);
+        setLoadAssetError({
+          error: "Failed to load related assets. Try again.",
+        });
         console.log(error);
       } finally {
         setRelatedLoading(false);
@@ -87,16 +98,15 @@ function Productdetails() {
   };
 
   const handleSubmit = async (e) => {
-    setCustomLoading(true);
     e.preventDefault();
 
     if (!validateForm()) {
-      console.log("Validation failed:", errors);
       return;
     }
     const token = localStorage.getItem(ACCESS_TOKEN);
     if (!token) {
       setIsAuthorized(false);
+      setErrors({ user: "You can't customize unless you Sign up or log in" });
       return;
     }
     const decoded = jwtDecode(token);
@@ -104,9 +114,11 @@ function Productdetails() {
     const now = Date.now() / 1000;
 
     if (tokenExpiration < now) {
-      setErrors({ user: "You can't customize unless you are authenticated" });
+      setErrors({ user: "You can't customize unless you Sign up or log in" });
       return;
     }
+    setCustomLoading(true);
+
     try {
       const response = await api.post("/custom", { ...formData, asset: id });
       console.log(response);
@@ -165,6 +177,9 @@ function Productdetails() {
               <h3 className="text-2xl font-bold text-black mb-4">
                 Customize Your Product
               </h3>
+              {errors.user && (
+                <p className="text-red-500 text-sm mb-4">{errors.user}</p>
+              )}
               <form className="space-y-4" onSubmit={handleSubmit}>
                 <div>
                   <label className="block text-sm font-medium text-black">

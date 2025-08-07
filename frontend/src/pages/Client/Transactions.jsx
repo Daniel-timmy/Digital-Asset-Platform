@@ -16,6 +16,10 @@ const getColor = (status) => {
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
+  const [status, setStatus] = useState("Verifying payment...");
+  const [error, setError] = useState(null);
+  const [paymentLoading, setPaymentLoading] = useState({});
+
   useEffect(() => {
     const getTransactions = async () => {
       try {
@@ -28,6 +32,38 @@ const Transactions = () => {
     };
     getTransactions();
   }, []);
+
+  const verify_payment = async (id) => {
+    console.log("verifying");
+    setPaymentLoading((prev) => ({ ...prev, [id]: true }));
+
+    try {
+      const response = await api.get(`/transactions/verify/${id}`);
+      console.log("Response from verification:", response);
+      const { status, message } = response.data;
+
+      if (status === "success") {
+        setStatus("Payment verified successfully!");
+      } else {
+        setStatus("Payment verification failed.");
+        setError(message || "Unknown error.");
+      }
+    } catch (err) {
+      console.error("Error verifying payment:", err);
+      setStatus("Error verifying payment.");
+      setError("Failed to verify payment. Please try again.");
+    } finally {
+      setPaymentLoading((prev) => ({ ...prev, [id]: false }));
+      // Optionally, you can refresh the transactions after verification
+      const updatedTransactions = transactions.map((transaction) =>
+        transaction.id === id
+          ? { ...transaction, payment_status: status }
+          : transaction
+      );
+      setTransactions(updatedTransactions);
+      console.log("Updated transactions:", updatedTransactions);
+    }
+  };
 
   return (
     <div className="animate-fade-in-up space-y-6">
@@ -54,7 +90,10 @@ const Transactions = () => {
 
                 <td className="px-4 py-3 ">
                   {row.payment_status === "pending" ? (
-                    <button className="rounded-2xl bg-emerald-300 h-10 w-25">
+                    <button
+                      onClick={verify_payment(row.id)}
+                      className="rounded-2xl bg-emerald-300 h-10 w-25"
+                    >
                       Verify
                     </button>
                   ) : (

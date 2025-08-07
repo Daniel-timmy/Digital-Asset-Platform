@@ -39,7 +39,6 @@ app.use(
 );
 
 
-// const PORT = 3000;
 
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -70,7 +69,6 @@ app.use("/api/messages", messageRouter)
 app.use(errorMiddleware)
 
 if (process.env.PORT === undefined) {
-  console.error("PORT is not defined in environment variables");
   process.exit(1); // Exit the process with an error code
 }
 
@@ -78,12 +76,11 @@ const PORT = parseInt(process.env.PORT) || 3000;
 
 const startServer = async () => {
   try {
-    console.log("Node environment variables:", process.env);
+    // console.log("Node environment variables:", process.env);
     console.log("PORT from config/env:", PORT);
 
     await AppDataSource.initialize();
     console.log(`Database connected`);
-    // if (!process.env.PORT) throw new Error("PORT is not defined in environment variables");
     app.listen(PORT , "0.0.0.0", async () => {
       console.log(`Server is running on port ${PORT}`);
     });

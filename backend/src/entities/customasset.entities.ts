@@ -29,7 +29,10 @@ export class CustomAsset {
     payment_status!: "paid" | "pending" | "processing";
 
     // needs a due date
-    // needs an amount
+
+    @Column({ type: "date", nullable: true })
+    due_date: Date = new Date(new Date().setDate(new Date().getDate() + 2));
+
     @Column({ type: "decimal", precision: 10, scale: 2, default: 2000 })
     price!: number ;
 

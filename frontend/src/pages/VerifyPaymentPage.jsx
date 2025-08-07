@@ -23,6 +23,7 @@ const VerifyPaymentPage = () => {
       console.log("verifying");
       try {
         const response = await api.get(`/transactions/verify/${ref}`);
+        console.log("Response from verification:", response);
         const { status, message } = response.data;
 
         if (status === "success") {

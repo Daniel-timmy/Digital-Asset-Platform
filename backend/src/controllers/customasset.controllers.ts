@@ -25,7 +25,6 @@ export class CustomAssetController {
             const filters = req.query;
             const userId = req.user?.id;
             const userRole = req.user?.role;
-            // Only filter by user if not admin
             if (userId && userRole !== 'admin') {
                 filters.user = { id: userId }; // Add user filter if user is not admin
             }

@@ -8,7 +8,6 @@ import LoadingIndicator from "../components/LoadingIndicator";
 import api from "../utils/api";
 import { add_to_cart } from "../utils/cart";
 import "../App.css";
-import { IMAGE_URL } from "../utils/constants";
 
 export default function StockPage() {
   const [isVisible, setIsVisible] = useState(false);
@@ -119,7 +118,7 @@ export default function StockPage() {
           ) : (
             assets.map((asset) => (
               <Link to={`/product-details/${asset.id}`} key={asset.id}>
-                <div
+                {/* <div
                   onMouseEnter={() => setHoveredProduct(asset)}
                   onMouseLeave={() => setHoveredProduct(null)}
                   onClick={() => handleProductClick(asset)}
@@ -145,7 +144,12 @@ export default function StockPage() {
                       Add to Cart – ${asset.price}
                     </button>
                   </div>
-                </div>
+                </div> */}
+                <Card
+                  product={asset}
+                  onAddToCart={add_to_cart}
+                  handleProductClick={handleProductClick}
+                />
               </Link>
             ))
           )}

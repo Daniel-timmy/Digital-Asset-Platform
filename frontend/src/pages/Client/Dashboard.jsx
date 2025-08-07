@@ -2,30 +2,33 @@ import { Suspense } from "react";
 import React, { useEffect, useState } from "react";
 import api from "../../utils/api";
 import { Link } from "react-router-dom";
-import { initialize_payment } from "../../utils/payment";
+import { initialize_payment, verify_payment } from "../../utils/payment";
 import LoadingIndicator from "../../components/LoadingIndicator";
 
 function StatCards({ orderCounts }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
       <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-all duration-300">
-        <p className="text-gray-500 text-sm">Processed Order</p>
-        <h3 className={`text-2xl font-bold mt-2 `}>{orderCounts.processing}</h3>
+        <p className="text-gray-500 text-sm">Open Orders</p>
+        <h3 className={`text-2xl font-bold mt-2 `}>{orderCounts.open}</h3>
         <p className="text-gray-400 text-xs mt-1">Orders under processing</p>
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-all duration-300">
         <p className="text-gray-500 text-sm">Completed Order</p>
-        <h3 className={`text-2xl font-bold mt-2 `}>{orderCounts.paid}</h3>
-        <p className="text-gray-400 text-xs mt-1">
-          Orders shipped or delivered
-        </p>
+        <h3 className={`text-2xl font-bold mt-2 `}>{orderCounts.closed}</h3>
+        <p className="text-gray-400 text-xs mt-1">Orders delivered</p>
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-all duration-300">
         <p className="text-gray-500 text-sm">Pending Orders</p>
         <h3 className={`text-2xl font-bold mt-2`}>{orderCounts.pending}</h3>
         <p className="text-gray-400 text-xs mt-1">Unpaid orders</p>
+      </div>
+      <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-all duration-300">
+        <p className="text-gray-500 text-sm">Paid Orders</p>
+        <h3 className={`text-2xl font-bold mt-2`}>{orderCounts.paid}</h3>
+        <p className="text-gray-400 text-xs mt-1">Paid orders</p>
       </div>
     </div>
   );
@@ -36,7 +39,7 @@ const statusColors = {
   Cancelled: "text-red-600",
 };
 
-function RecentOrders({ orders }) {
+function RecentOrders({ orders, setOrders }) {
   const [paymentLoading, setPaymentLoading] = useState({});
 
   const handlePayment = async (orderId) => {
@@ -48,7 +51,16 @@ function RecentOrders({ orders }) {
     } catch (error) {
       setPaymentLoading((prev) => ({ ...prev, [orderId]: false }));
       console.error("Error initializing payment:", error);
+    } finally {
+      setPaymentLoading((prev) => ({ ...prev, [orderId]: false }));
+      const updatedOrders = orders.map((order) =>
+        order.id === orderId
+          ? { ...order, payment_status: "processing" }
+          : order
+      );
     }
+    setOrders(updatedOrders);
+    console.log("Updated orders:", updatedOrders);
   };
   return (
     <section className="animate-fade-in-up delay-400">
@@ -58,6 +70,7 @@ function RecentOrders({ orders }) {
           <thead className="text-left bg-gray-50 border-b">
             <tr>
               <th className="px-4 py-3">ID</th>
+              <th className="px-4 py-3">Created at</th>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Due Date</th>
               <th className="px-4 py-3">Status</th>
@@ -70,8 +83,9 @@ function RecentOrders({ orders }) {
             {orders.map((row, i) => (
               <tr className="border-t hover:bg-gray-50 transition" key={i}>
                 <td className="px-4 py-3">{row.id.slice(0, 6)}...</td>
+                <td className="px-4 py-3">{row.created_at.slice(0, 10)}</td>
                 <td className="px-4 py-3">{row.name}</td>
-                <td className="px-4 py-3">{row.date}</td>
+                <td className="px-4 py-3">{row.due_date}</td>
 
                 <td
                   className={`px-6 py-4 font-semibold ${
@@ -122,6 +136,7 @@ function RecentOrders({ orders }) {
 const Dashboard = () => {
   const [orderCounts, setOrderCounts] = useState({});
   const [orders, setOrders] = useState([]);
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
 
   useEffect(() => {
     const getCounts = async () => {
@@ -151,14 +166,14 @@ const Dashboard = () => {
     <>
       <div className="bg-gradient-to-tr from-black to-gray-800 text-white p-6 rounded-xl shadow-lg flex justify-between items-center mb-8 animate-fade-in-up">
         <div>
-          <h2 className="text-3xl font-bold">Hello, Client</h2>
+          <h2 className="text-3xl font-bold">Hello, {user.name}</h2>
           <p className="text-sm mt-1">Welcome to your dashboard</p>
         </div>
         <div className="w-14 h-14 bg-white rounded-full shadow-md" />
       </div>
       <Suspense fallback={<div>Loading stats...</div>}>
         <StatCards orderCounts={orderCounts} />
-        <RecentOrders orders={orders} />
+        <RecentOrders orders={orders} setOrders={setOrders} />
       </Suspense>
     </>
   );

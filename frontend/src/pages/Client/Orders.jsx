@@ -49,6 +49,7 @@ const Orders = () => {
           <thead className="text-left bg-gray-50 border-b">
             <tr>
               <th className="px-4 py-3">ID</th>
+              <th className="px-4 py-3">Created at</th>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Due Date</th>
               <th className="px-4 py-3">Status</th>
@@ -60,6 +61,7 @@ const Orders = () => {
             {orders.map((row, i) => (
               <tr className="border-t hover:bg-gray-50 transition" key={i}>
                 <td className="px-4 py-3">{row.id.slice(0, 6)}...</td>
+                <td className="px-4 py-3">{row.created_at.slice(0, 10)}</td>
                 <td className="px-4 py-3">{row.name}</td>
                 <td className="px-4 py-3">{row.date}</td>
                 <td
