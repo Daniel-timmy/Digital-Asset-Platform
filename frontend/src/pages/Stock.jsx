@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Search from "../components/Search";
@@ -117,40 +116,11 @@ export default function StockPage() {
             </div>
           ) : (
             assets.map((asset) => (
-              <Link to={`/product-details/${asset.id}`} key={asset.id}>
-                {/* <div
-                  onMouseEnter={() => setHoveredProduct(asset)}
-                  onMouseLeave={() => setHoveredProduct(null)}
-                  onClick={() => handleProductClick(asset)}
-                  className={`relative overflow-hidden rounded-2xl shadow-xl transition-transform transform hover:scale-105 h-[380px] ${
-                    asset.id <= 3 ? "bg-gray-900" : "bg-teal-100"
-                  } flex flex-col justify-end`}
-                >
-                  <img
-                    src={IMAGE_URL + asset.thumbnail_url}
-                    alt={asset.name}
-                    className="absolute inset-0 w-full h-full object-cover opacity-90"
-                  />
-                  <div className="relative z-10 bg-black bg-opacity-40 text-white text-center p-4">
-                    <h2 className="text-2xl font-bold mb-1">{asset.name}</h2>
-                    <p className="text-sm mb-3">{asset.description}</p>
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        add_to_cart(asset);
-                      }}
-                      className="bg-orange-500 text-white px-4 py-2 rounded-full text-sm hover:bg-orange-600 transition"
-                    >
-                      Add to Cart – ${asset.price}
-                    </button>
-                  </div>
-                </div> */}
-                <Card
-                  product={asset}
-                  onAddToCart={add_to_cart}
-                  handleProductClick={handleProductClick}
-                />
-              </Link>
+              <Card
+                product={asset}
+                onAddToCart={add_to_cart}
+                handleProductClick={handleProductClick}
+              />
             ))
           )}
         </div>
