@@ -124,7 +124,7 @@ export class AuthController {
         try {
             const { email, password } = req.body;
             const isValidEmail = /\S+@\S+\.\S+/.test(email);
-            if (!email || isValidEmail) {
+            if (!email || !isValidEmail) {
                 throw new Error("Invalid email format");
             }
             const user = await this.userService.findByEmail(email);

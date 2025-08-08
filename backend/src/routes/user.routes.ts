@@ -6,10 +6,10 @@ import { UserController } from "../controllers/user.controller";
 const userRouter = Router();
 const userController = new UserController(new UserService());
 
-userRouter.get("/", async (req, res, next) => {
+userRouter.get("/", authentication, isAdmin, async (req, res, next) => {
          await userController.findAll(req, res, next)});
 
-userRouter.get("/:id", async (req, res, next) => {
+userRouter.get("/:id", authentication, async (req, res, next) => {
          await userController.findOne(req, res, next)});
 
 userRouter.post("/", authentication, async (req, res, next) => {

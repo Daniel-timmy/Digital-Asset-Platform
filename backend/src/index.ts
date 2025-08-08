@@ -50,6 +50,7 @@ const apiLimiter = rateLimit({
 });
 
 app.use(apiLimiter);
+app.set('trust proxy', 1); 
 
 
 app.use("/api/auth", authRouter);

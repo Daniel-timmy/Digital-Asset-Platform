@@ -110,32 +110,33 @@ export default function CartPage() {
         ) : (
           <div className="w-full max-w-4xl mx-auto">
             {cart.map((item, key) => (
-              <Link to={`/product-details/${item.id}`} key={key}>
-                <div
-                  key={item.id}
-                  className={`bg-white p-6 mb-4 rounded-lg shadow-md flex justify-between items-center ${
-                    isVisible ? "animate-fade-in-up" : ""
-                  } ${`delay-${item.id * 100}`}`}
-                >
-                  <span className="text-lg text-gray-900">
-                    {item.name || `Product ${item.id}`} - ${item.price}
-                  </span>
-                  <div>
-                    <button
-                      onClick={() => removeFromCart(item)}
-                      className="bg-red-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-red-600 transition-colors duration-300 mr-2"
-                    >
-                      Remove
-                    </button>
+              <div
+                key={item.id}
+                className={`bg-white p-6 mb-4 rounded-lg shadow-md flex justify-between items-center ${
+                  isVisible ? "animate-fade-in-up" : ""
+                } ${`delay-${item.id * 100}`}`}
+              >
+                <span className="text-lg text-gray-900">
+                  {item.name || `Product ${item.id}`} - ${item.price}
+                </span>
+                <div>
+                  <button
+                    onClick={() => removeFromCart(item)}
+                    className="bg-red-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-red-600 transition-colors duration-300 mr-2"
+                  >
+                    Remove
+                  </button>
+                  <Link to={`/product-details/${item.id}`} key={key}>
                     <button
                       onClick={() => handleCustomize(item)}
+                      to={`/product-details/${item.id}`}
                       className="bg-teal-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-teal-600 transition-colors duration-300"
                     >
                       Customize
                     </button>
-                  </div>
+                  </Link>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         )}

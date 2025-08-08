@@ -7,7 +7,7 @@ import {IUser} from "../interfaces/user.interface";
 export class UserController {
   constructor(private userService: UserService) {}
 
-  async create(req: Request, res: Response, next: NextFunction) {
+  async create(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const {email, name, password} = req.body
       const isValidEmail = /\S+@\S+\.\S+/.test(email);
@@ -40,8 +40,14 @@ export class UserController {
     }
   }
 
-  async findOne(req: Request, res: Response, next: NextFunction) {
+  async findOne(req: AuthRequest, res: Response, next: NextFunction) {
     try {
+       if (req.user && req.user.role === "admin"){
+        const user = await this.userService.findOne(req.params.id);
+        if (!user) return res.status(404).json({ error: "User not found" });
+        res.json(user);
+      } else if (req.user && req.user.id !== req.params.id) throw new Error("Unauthorized activity")
+
       const user = await this.userService.findOne(req.params.id);
       if (!user) return res.status(404).json({ error: "User not found" });
       res.json(user);
