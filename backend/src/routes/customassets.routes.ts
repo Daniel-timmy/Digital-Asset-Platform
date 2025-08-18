@@ -30,15 +30,13 @@ customAssetRouter.post("/", authentication, upload.none(), async (req, res, next
   await customAssetController.create(req, res, next);
 });
 
-customAssetRouter.put("/:id", authentication, isAdmin, async (req, res, next) => {
+customAssetRouter.put("/:id", authentication, async (req, res, next) => {
   await customAssetController.update(req, res, next);
 });
 
-customAssetRouter.delete("/:id", authentication, isAdmin, async (req, res, next) => {
+customAssetRouter.delete("/:id", authentication,  async (req, res, next) => {
   await customAssetController.delete(req, res, next);
 });
 
-// Mount download router for asset-related downloads (authenticated)
-// customAssetRouter.use("/download", authentication, downloadRouter);
 
 export default customAssetRouter;

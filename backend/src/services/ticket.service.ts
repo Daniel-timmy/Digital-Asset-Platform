@@ -34,7 +34,6 @@ export class TicketService {
 
     const ticket = new Ticket();
     ticket.opened_by = req.user;
-    ticket.status = "open";
     ticket.name = req.body.name
 
     if (customAssetId) {
@@ -51,32 +50,45 @@ export class TicketService {
   }
 
   // Get a ticket by ID
-  async getTicketById(id: string, req: AuthRequest): Promise<Ticket> {
-    const ticket = await this.ticketRepository.findOne({
+async getTicketById(id: string, req: AuthRequest): Promise<Ticket> {
+  if (!req.user) throw new Error("User not found");
+  let ticket: Ticket | null
+
+  if (req.user && req.user.role === 'admin'){
+    ticket = await this.ticketRepository.findOne({
       where: { id },
       relations: ["opened_by", "custom_asset"],
     });
     if (!ticket) {
-      throw new HttpError( "Ticket not found", 404);
+      throw new HttpError("Ticket not found or unauthorized", 404);
     }
-    if (!req.user) throw new Error("User not found");
-
-    if (req.user.id !== ticket.opened_by.id) throw new Error("Can't access ticket")
-
     return ticket;
   }
 
-  // Get all tickets for a user
-  async getUserTickets(userId: string): Promise<Ticket[]> {
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-    });
-    if (!user) {
-      throw new HttpError( "User not found", 404);
-    }
+  ticket = await this.ticketRepository.findOne({
+    where: { id, opened_by: { id: req.user.id } },
+    relations: ["opened_by", "custom_asset"],
+  });
 
+  if (!ticket) {
+    throw new HttpError("Ticket not found or unauthorized", 404);
+  }
+  return ticket;
+}
+
+  // Get all tickets for a user
+  async getUserTickets(req: AuthRequest): Promise<Ticket[]> {
+    if (!req.user){
+        throw new Error("User not found")
+    }
+    if (req.user && req.user.role === "admin"){
+      return await this.ticketRepository.find({
+        where: { opened_by: { id: req.body.userId } },
+        relations: ["opened_by", "custom_asset"],
+      });
+    }
     return await this.ticketRepository.find({
-      where: { opened_by: { id: userId } },
+      where: { opened_by: { id: req.user.id } },
       relations: ["opened_by", "custom_asset"],
     });
   }

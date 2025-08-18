@@ -16,7 +16,7 @@ export class PhotographyService {
     
     async create(req: AuthRequest): Promise<Photography> {
         const user = req.user ? await this.userRepository.findOne({ where: { id: req.user.id } }) : null;
-        if (!user) throw new HttpError("User not found", 404);
+        // if (!user) throw new HttpError("User not found", 404);
     
         const data = req.body;
     
@@ -26,7 +26,8 @@ export class PhotographyService {
         description: data.description,
         contact: data.contact,
         event_date: data.event_date,
-        user,
+        name: data.name,
+        user: user ? user : undefined,
         };
     
         const photography = this.photographyRepository.create(photographyData);

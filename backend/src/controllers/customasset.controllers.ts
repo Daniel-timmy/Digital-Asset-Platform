@@ -4,15 +4,45 @@ import { AppDataSource } from "../database/db";
 import { CustomAsset } from "../entities/customasset.entities";
 import { CustomAssetService } from "../services/customasset.service";
 import { applyCustomAssetFilters } from "../filters/customassets.filter";
+import logger from "../logger/app.logger";
+import CustomAssetError from "../error/CustomAssetError";
 
 export class CustomAssetController {
     constructor(private customAssetService: CustomAssetService) {}
 
+
     async create(req: AuthRequest, res: Response, next: NextFunction) {
         try {
+            if (!req.user) {
+                logger.warn('Unauthorized attempt to create custom asset');
+                throw new CustomAssetError(401, 'Unauthorized');
+            }
+
+            logger.info(`Creating new custom asset for user: ${req.user.id}`);
+            const { name, description, asset } = req.body;
+
+            if (!name) {
+                logger.warn(`Create asset failed: Missing name for user ${req.user.id}`);
+                throw new CustomAssetError(400, 'Name is required');
+            }
+            if (!description) {
+                logger.warn(`Create asset failed: Missing description for user ${req.user.id}`);
+                throw new CustomAssetError(400, 'Description is required');
+            }
+            if (!asset) {
+                logger.warn(`Create asset failed: No asset template chosen for user ${req.user.id}`);
+                throw new CustomAssetError(400, 'Asset template is required');
+            }
+
             const customAsset = await this.customAssetService.create(req);
-            res.status(201).json(customAsset);
+            logger.info(`Successfully created custom asset with ID: ${customAsset.id} for user: ${req.user.id}`);
+            return res.status(201).json({
+                success: true,
+                data: customAsset,
+                message: 'Custom asset created successfully'
+            });
         } catch (error) {
+            logger.error(`Error creating custom asset for user ${req.user?.id || 'unknown'}: ${error}`);
             next(error);
         }
     }
@@ -20,70 +50,131 @@ export class CustomAssetController {
     async findAll(req: AuthRequest, res: Response, next: NextFunction) {
         try {
             if (!req.user) {
-                return res.status(401).json({ error: "Unauthorized" });
+                logger.warn('Unauthorized access attempt to fetch all custom assets');
+                throw new CustomAssetError(401, 'Unauthorized');
             }
+
+            logger.info(`Fetching custom assets for user: ${req.user.id}, role: ${req.user.role}`);
             const filters = req.query;
-            const userId = req.user?.id;
-            const userRole = req.user?.role;
-            if (userId && userRole !== 'admin') {
-                filters.user = { id: userId }; // Add user filter if user is not admin
+
+            if (req.user && req.user.role !== 'admin') {
+                filters.user = { id: req.user.id };
+                logger.debug(`Applying user filter for non-admin user: ${req.user.id}`);
             }
+
             const query = AppDataSource.getRepository(CustomAsset)
                 .createQueryBuilder("customAsset")
                 .leftJoinAndSelect("customAsset.user", "user")
                 .leftJoinAndSelect("customAsset.asset", "asset");
-            
+
             const filteredAssets = await applyCustomAssetFilters(query, filters);
-            
-            res.status(200).json(filteredAssets);
+            logger.info(`Successfully retrieved ${filteredAssets.results.length} custom assets for user: ${req.user.id}`);
+
+            return res.status(200).json({
+                success: true,
+                data: filteredAssets,
+                message: 'Custom assets retrieved successfully'
+            });
         } catch (error) {
+            logger.error(`Error fetching custom assets for user ${req.user?.id || 'unknown'}: ${error}`);
             next(error);
         }
     }
 
-
-    async getCountByPaymentStatus(req: AuthRequest, res: Response, next: NextFunction){
+    async getCountByPaymentStatus(req: AuthRequest, res: Response, next: NextFunction) {
         try {
+            if (!req.user) {
+                logger.warn('Unauthorized attempt to fetch payment status counts');
+                throw new CustomAssetError(401, 'Unauthorized');
+            }
+
+            logger.info(`Fetching custom asset payment status counts for user: ${req.user.id}`);
             const customAssetsCounts = await this.customAssetService.getCustomAssetPaymentStatusCounts(req);
-            res.status(200).json(customAssetsCounts)
-        } catch(error){
+            logger.info(`Successfully retrieved payment status counts for user: ${req.user.id}`);
+
+            return res.status(200).json({
+                success: true,
+                data: customAssetsCounts,
+                message: 'Payment status counts retrieved successfully'
+            });
+        } catch (error) {
+            logger.error(`Error fetching payment status counts for user ${req.user?.id || 'unknown'}: ${error}`);
             next(error);
         }
     }
 
     async findById(req: AuthRequest, res: Response, next: NextFunction) {
         try {
+            if (!req.user) {
+                logger.warn('Unauthorized attempt to fetch custom asset');
+                throw new CustomAssetError(401, 'Unauthorized');
+            }
             const id = req.params.id;
+
+            logger.info(`Fetching custom asset with ID: ${id} for user: ${req.user.id}`);
             const customAsset = await this.customAssetService.findOne(req, id);
             if (!customAsset) {
-                return res.status(404).json({ error: "Custom asset not found" });
+                logger.warn(`Custom asset not found with ID: ${id} for user: ${req.user.id}`);
+                throw new CustomAssetError(404, 'Custom asset not found');
             }
-            res.status(200).json(customAsset);
+
+            logger.info(`Successfully retrieved custom asset with ID: ${id}`);
+            return res.status(200).json({
+                success: true,
+                data: customAsset,
+                message: 'Custom asset retrieved successfully'
+            });
         } catch (error) {
+            logger.error(`Error fetching custom asset with ID: ${req.params.id} for user ${req.user?.id || 'unknown'}: ${error}`);
             next(error);
         }
     }
 
     async update(req: AuthRequest, res: Response, next: NextFunction) {
         try {
+            if (!req.user) {
+                logger.warn('Unauthorized attempt to update custom asset');
+                throw new CustomAssetError(401, 'Unauthorized');
+            }
             const id = req.params.id;
+            logger.info(`Updating custom asset with ID: ${id} for user: ${req.user.id}`);
             const customAsset = await this.customAssetService.update(id, req);
             if (!customAsset) {
-                return res.status(404).json({ error: "Custom asset not found" });
+                logger.warn(`Custom asset not found for update with ID: ${id} for user: ${req.user.id}`);
+                throw new CustomAssetError(404, 'Custom asset not found');
             }
-            res.status(200).json(customAsset);
+
+            logger.info(`Successfully updated custom asset with ID: ${id}`);
+            return res.status(200).json({
+                success: true,
+                data: customAsset,
+                message: 'Custom asset updated successfully'
+            });
         } catch (error) {
+            logger.error(`Error updating custom asset with ID: ${req.params.id} for user ${req.user?.id || 'unknown'}: ${error}`);
             next(error);
         }
     }
 
     async delete(req: AuthRequest, res: Response, next: NextFunction) {
         try {
+            if (!req.user) {
+                logger.warn('Unauthorized attempt to delete custom asset');
+                throw new CustomAssetError(401, 'Unauthorized');
+            }
+
             const id = req.params.id;
+
+            logger.info(`Deleting custom asset with ID: ${id} for user: ${req.user.id}`);
             const result = await this.customAssetService.remove(id, req);
-          
-            res.status(204).send(); // No content for successful deletion
+
+            logger.info(`Successfully deleted custom asset with ID: ${id}`);
+            return res.status(204).json({
+                success: true,
+                message: 'Custom asset deleted successfully'
+            });
         } catch (error) {
+            logger.error(`Error deleting custom asset with ID: ${req.params.id} for user ${req.user?.id || 'unknown'}: ${error}`);
             next(error);
         }
     }

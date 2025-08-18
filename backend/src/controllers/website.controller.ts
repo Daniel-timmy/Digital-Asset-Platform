@@ -1,8 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { WebsiteService } from "../services/website.service";
 import { AuthRequest } from "../interfaces/auth.interface";
-import { AppDataSource } from "../database/db";
-import { Website } from "../entities/website.entities";
 import { HttpError } from "../error/HttpError";
 
 

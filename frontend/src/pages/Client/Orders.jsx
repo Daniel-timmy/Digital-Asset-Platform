@@ -31,8 +31,8 @@ const Orders = () => {
     const getOrders = async () => {
       try {
         const res = await api.get(`/custom?page=${offset}&limit=${limit}`);
-        setOrders(res.data.results);
-        console.log(res.data);
+        setOrders(res.data.data.results);
+        // console.log(res.data.);
       } catch (error) {
         console.log(error);
       }

@@ -1,3 +1,5 @@
+import { CustomAsset } from "../entities/customasset.entities";
+
 export interface IAsset {
     title? : string;
     description? : string;
@@ -9,5 +11,12 @@ export interface IAsset {
     price?: number;
     status?: string;
     file: any
+}
 
+export interface IFitltered {
+    results: CustomAsset[]
+    total: Number,
+    page: Number,
+    limit: Number,
+    totalPages: Number
 }

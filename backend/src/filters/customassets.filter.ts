@@ -1,3 +1,6 @@
+import { CustomAsset } from "../entities/customasset.entities";
+import { IFitltered } from "../interfaces/asset.interface";
+
 interface ICustomAsset {
   name?: string;
     description?: string;
@@ -9,7 +12,9 @@ interface ICustomAsset {
     orderDirection?: 'ASC' | 'DESC'; 
 }
 
-export async function applyCustomAssetFilters(query: any, filter: ICustomAsset) {
+
+
+export async function applyCustomAssetFilters(query: any, filter: ICustomAsset): Promise<IFitltered> {
     // Apply existing filters
     if (filter.name) {
         query = query.andWhere("customAsset.name ILIKE :name", { name: `%${filter.name}%` });

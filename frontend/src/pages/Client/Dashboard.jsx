@@ -142,8 +142,8 @@ const Dashboard = () => {
     const getCounts = async () => {
       try {
         const res = await api.get("/custom/counts");
-        setOrderCounts(res.data);
-        console.log(res);
+        setOrderCounts(res.data.data);
+        console.log(res.data.data);
       } catch (error) {
         console.log(error);
       }
@@ -152,8 +152,8 @@ const Dashboard = () => {
     const getOrders = async () => {
       try {
         const res = await api.get("/custom?page=1&limit=5");
-        setOrders(res.data.results);
-        console.log(res.data);
+        setOrders(res.data.data.results);
+        console.log(res.data.data);
       } catch (error) {
         console.log(error);
       }

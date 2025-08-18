@@ -24,12 +24,13 @@ export class CustomAssetService {
       }
 
     async create(req: AuthRequest){
-      const user = req.user ? await this.userRepository.findOne({ where: { id: req.user.id } }) : null;
-      if (!user) throw new Error("Login to customize your assets");
+      const user = req.user
+      // const user = req.user ? await this.userRepository.findOne({ where: { id: req.user.id } }) : null;
+      // if (!user) throw new Error("Login to customize your assets");
 
       const asset = req.body ? await this.assetRepository.findOne({where: {id : req.body.asset }}) : null;
       if (!asset) throw new Error("Asset not found")
-        
+              
       const customAssetData : ICustomAsset = {
         name: req.body.name,
         description: req.body.description,
@@ -92,45 +93,40 @@ export class CustomAssetService {
     async findOne(req: AuthRequest, id: string): Promise<CustomAsset | null>{
         const user = req.user;
         if (!user) throw new Error("User not unauthenticated")
+        if (user.role === "admin"){
+          
+          return await this.customAssetRepository.findOne({where: { id }});
+        }
         return await this.customAssetRepository.findOneBy({ id, user: { id: user.id } });
     }
 
     async update(id: string, req: AuthRequest): Promise<CustomAsset | null>{
         const user = req.user
+        if (user && user?.role === "admin"){
+          await this.customAssetRepository.update(id, req.body)
+          return await this.customAssetRepository.findOne({where: { id }})
+        }
+        const customAsset = await this.customAssetRepository.findOneBy({ id, user: { id: user?.id } });
+
+        if (!customAsset) throw new Error("You can not access this custom asset.")
         await this.customAssetRepository.update(id, req.body)
         return await this.customAssetRepository.findOne({where: { id }})
     }
 
     async remove(id: string, req: AuthRequest): Promise<void>{
         const user = req.user
+        if (!user) throw new Error("Unauthorized")
+        const asset = await this.customAssetRepository.findOne({ where: { id } });
+        if (!asset) {
+          throw new Error("Asset not found");
+        }
+        const isOwner = asset.user.id === user.id;
+        const isAdmin = user.role === "admin";
 
-      await this.customAssetRepository.delete(id)
+        if (!isOwner && !isAdmin) {
+          throw new Error("You are not authorized to delete this asset");
+        }
+      
+        await this.customAssetRepository.delete(id);
     }
-
-  //   async update(id: string, req: AuthRequest): Promise<CustomAsset | null> {
-  //     const user = req.user;
-
-  //       if (!user) throw new Error("User not unauthenticated")
-
-  //     const asset = await this.customAssetRepository.findOneBy({ id, user: { id: user.id } });
-  //     if (!asset) {
-  //       throw new Error("CustomAsset not found or you are not authorized to update it");
-  //     }
-    
-  //     await this.customAssetRepository.update(id, req.body);
-
-  //     return await this.customAssetRepository.findOneBy({ id });
-  //   }
-    
-  //   async remove(id: string, req: AuthRequest): Promise<void> {
-  //     const user = req.user;
-  //     if (!user) throw new Error("User not unauthenticated")
-
-  //     const asset = await this.customAssetRepository.findOneBy({ id, user: { id: user.id } });
-  //     if (!asset) {
-  //       throw new Error("CustomAsset not found or you are not authorized to delete it");
-  //     }
-    
-  //     await this.customAssetRepository.delete(id);
-  // }  
 }

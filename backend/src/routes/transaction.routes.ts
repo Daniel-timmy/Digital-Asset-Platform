@@ -6,11 +6,11 @@ import { TransactionController } from "../controllers/transaction.controller";
 const transactionRouter = Router();
 const transactionController = new TransactionController(new TransactionService());
 
-transactionRouter.get("/", async (req, res, next) => {
+transactionRouter.get("/", authentication, async (req, res, next) => {
   await transactionController.findAll(req, res, next);
 });
 
-transactionRouter.get("/:id", async (req, res, next) => {
+transactionRouter.get("/:id", authentication, async (req, res, next) => {
   await transactionController.findOne(req, res, next);
 });
 

@@ -5,9 +5,6 @@ import { User } from "./user.entities";
 export class Branding {
     @PrimaryGeneratedColumn("uuid")
     id!: string;
-    
-    @Column({ type: "varchar", length: 255 })
-    logo!: string;
 
     @Column({ type: "varchar", length: 255 })
     brand_name!: string;
@@ -30,7 +27,7 @@ export class Branding {
     @CreateDateColumn()
     created_at: Date = new Date();
     
-    @ManyToOne(() => User, { nullable: false })
+    @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: "user_id" })
-    user!: User;
+    user?: User;
 }

@@ -6,6 +6,9 @@ export class Photography {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
+  @Column({type: "varchar"})
+  name!: string
+
   @Column({ type: "enum", enum: ["portrait", "landscape", "wildlife", "macro", "street"], default: "portrait" })
   picture_type!: string;
 
@@ -24,8 +27,8 @@ export class Photography {
   @CreateDateColumn()
   created_at: Date = new Date();
 
-  @ManyToOne(() => User, { nullable: false })
+  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: "user_id" })
-  user!: User;
+  user?: User;
 
 }

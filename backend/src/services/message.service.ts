@@ -3,7 +3,7 @@ import { Repository } from "typeorm";
 import { Message } from "../entities/message.entities";
 import { User } from "../entities/user.entities";
 import { Ticket } from "../entities/ticket.entities";
-import { AuthRequest } from "interfaces/auth.interface";
+import { AuthRequest } from "../interfaces/auth.interface";
 import { HttpError } from "../error/HttpError";
 
 export class MessageService {
@@ -51,7 +51,6 @@ export class MessageService {
     });
     if (!message) throw new Error("Can't access message");
 
-    // if (req.user.id !== message.user.id) throw new Error("Can't access message")
     return message;
   }
 

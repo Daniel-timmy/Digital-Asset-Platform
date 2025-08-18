@@ -1,15 +1,18 @@
-import { AppDataSource } from "../database/db";
 import { Repository, In } from "typeorm";
+import fs from "fs"
+import path from "path"
+import { v4 as uuidv4} from 'uuid'
+import { AppDataSource } from "../database/db";
 import { Asset } from "../entities/asset.entities";
 import { User } from "../entities/user.entities";
 import { Category } from "../entities/category.entities";
 import { Tag } from "../entities/tag.entities";
-import { v4 as uuidv4} from 'uuid'
 import { AuthRequest } from "interfaces/auth.interface";
 import convertToWebP from "../utils/convertToWebP.utils";
-import fs from "fs"
-import path from "path"
+import uploadImage from "../utils/upload_image";
 import { HttpError } from "../error/HttpError";
+import logger from "../logger/app.logger";
+
 
 export class AssetService {
   private assetRepository: Repository<Asset>;
@@ -53,24 +56,26 @@ async create(req: AuthRequest) {
   const asset = this.assetRepository.create(assetData);
 
   // Handle thumbnail generation and storage
-  const thumbnailDir = path.join(__dirname, '../../uploads/thumbnail');
-  if (!fs.existsSync(thumbnailDir)) {
-    fs.mkdirSync(thumbnailDir, { recursive: true });
-  }
+  // const thumbnailDir = path.join(__dirname, '../../uploads/thumbnail');
+  // if (!fs.existsSync(thumbnailDir)) {
+  //   fs.mkdirSync(thumbnailDir, { recursive: true });
+  // }
 
   const assetName = uuidv4();
   const thumbnailName = `${assetName}.webp`;
-  const thumbnailPath = path.join(thumbnailDir, thumbnailName);
-  const thumbnailUrl = `/uploads/thumbnail/${thumbnailName}`; // Relative URL for client access
+  // const thumbnailPath = path.join(thumbnailDir, thumbnailName);
+  // const thumbnailUrl = `/uploads/thumbnail/${thumbnailName}`; // Relative URL for client access
 
   try {
     const thumbnail = await convertToWebP(file);
     if (!thumbnail || !Buffer.isBuffer(thumbnail.buffer)) {
       throw new Error("Invalid thumbnail format");
     }
-
-    fs.writeFileSync(thumbnailPath, thumbnail.buffer);
-    asset.thumbnail_url = thumbnailUrl; // Store relative URL
+    console.log(thumbnail)
+    
+    // fs.writeFileSync(thumbnailPath, thumbnail.buffer);
+    // asset.thumbnail_url = thumbnailUrl; // Store relative URL
+    asset.thumbnail_url = await uploadImage(assetName, file, "asset"); // Store relative URL
   } catch (error) {
     throw new Error(`Failed to process thumbnail: ${error}`);
   }
