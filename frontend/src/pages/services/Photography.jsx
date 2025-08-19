@@ -3,19 +3,20 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { useNavigate } from "react-router-dom";
 
+
 const Photography = () => {
   const navigate = useNavigate();
 
   return (
     <>
       <Header />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-[Inter,sans-serif]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-['Inter',sans-serif]">
         <h1 className="text-3xl sm:text-4xl font-bold mb-6">
           Book Photography Session
         </h1>
 
         {/* Card Section */}
-        <div className="bg-[#f8f1e6] rounded-xl p-6 md:p-10 shadow-md flex flex-col md:flex-row gap-8">
+        <div className="bg-[var(--card-bg)] rounded-xl p-6 md:p-10 shadow-md flex flex-col md:flex-row gap-8">
           {/* Left Text */}
           <div className="flex-1">
             <h2 className="text-5xl font-extrabold leading-tight mb-4">
@@ -48,7 +49,7 @@ const Photography = () => {
             <div>
               <label className="text-base font-semibold">Event Type</label>
               <select className="w-full px-4 py-2 rounded border bg-white focus:outline-none focus:ring-2 focus:ring-yellow-300 transition">
-                <option>Select Picture type</option>
+                <option>Select Event type</option>
               </select>
             </div>
             <div>

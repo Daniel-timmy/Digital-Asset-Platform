@@ -32,10 +32,10 @@ const statusColors = {
 
 const Orders = () => {
   return (
-    <div className="animate-fade-in-up space-y-6">
+    <div className="animate-fade-in-up space-y-6 px-4 sm:px-6 md:px-8">
       <h2 className="text-3xl font-bold text-black">Your Orders</h2>
       <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <table className="w-full text-sm text-gray-700">
+        <table className="min-w-[600px] w-full text-sm text-gray-700">
           <thead className="bg-gray-100 border-b">
             <tr>
               <th className="px-6 py-4 text-left">Order ID</th>

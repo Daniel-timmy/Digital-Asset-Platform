@@ -40,28 +40,34 @@ const getColor = (status) => {
 const Transactions = () => {
   return (
     <div className="animate-fade-in-up space-y-6">
-      <h2 className="text-3xl font-bold text-black">Transaction History</h2>
+      <h2 className="text-2xl sm:text-3xl font-bold text-black">Transaction History</h2>
       <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <table className="w-full text-sm text-gray-700">
+        <table className="min-w-full text-sm text-gray-700">
           <thead className="bg-gray-100 border-b">
             <tr>
-              <th className="px-6 py-4 text-left">Transaction ID</th>
-              <th className="px-6 py-4 text-left">Type</th>
-              <th className="px-6 py-4 text-left">Date</th>
-              <th className="px-6 py-4 text-left">Amount</th>
-              <th className="px-6 py-4 text-left">Status</th>
+              <th className="px-4 sm:px-6 py-4 text-left whitespace-nowrap">Transaction ID</th>
+              <th className="px-4 sm:px-6 py-4 text-left whitespace-nowrap">Type</th>
+              <th className="px-4 sm:px-6 py-4 text-left whitespace-nowrap">Date</th>
+              <th className="px-4 sm:px-6 py-4 text-left whitespace-nowrap">Amount</th>
+              <th className="px-4 sm:px-6 py-4 text-left whitespace-nowrap">Status</th>
             </tr>
           </thead>
           <tbody>
             {mockTransactions.map((txn, idx) => (
               <tr key={idx} className="border-b hover:bg-gray-50 transition">
-                <td className="px-6 py-4 font-medium">{txn.id}</td>
-                <td className="px-6 py-4">{txn.type}</td>
-                <td className="px-6 py-4">{txn.date}</td>
-                <td className={`px-6 py-4 font-semibold ${txn.amount.startsWith('+') ? 'text-green-700' : 'text-red-700'}`}>
+                <td className="px-4 sm:px-6 py-4 font-medium whitespace-nowrap">{txn.id}</td>
+                <td className="px-4 sm:px-6 py-4 whitespace-nowrap">{txn.type}</td>
+                <td className="px-4 sm:px-6 py-4 whitespace-nowrap">{txn.date}</td>
+                <td
+                  className={`px-4 sm:px-6 py-4 font-semibold whitespace-nowrap ${
+                    txn.amount.startsWith('+') ? 'text-green-700' : 'text-red-700'
+                  }`}
+                >
                   {txn.amount}
                 </td>
-                <td className={`px-6 py-4 font-semibold ${getColor(txn.status)}`}>
+                <td
+                  className={`px-4 sm:px-6 py-4 font-semibold whitespace-nowrap ${getColor(txn.status)}`}
+                >
                   {txn.status}
                 </td>
               </tr>
