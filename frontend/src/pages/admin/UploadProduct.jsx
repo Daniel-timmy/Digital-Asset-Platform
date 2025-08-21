@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from "react";
 import Select from "react-select";
 import api from "../../utils/api";
+import LoadingIndicator from "../../components/LoadingIndicator";
 
 const UploadProduct = () => {
+  const [loading, setLoading] = useState(false);
+  const [tagLoading, setTagLoading] = useState(false);
+  const [catLoading, setCatLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -58,7 +62,7 @@ const UploadProduct = () => {
         // Fetch tags if not cached
         if (!cachedTags) {
           const tagRes = await api.get("/tags");
-          const tags = (tagRes.data.data || tagRes.data || []).map((tag) => ({
+          const tags = (tagRes.data || []).map((tag) => ({
             value: tag.id,
             label: tag.name,
           }));
@@ -69,12 +73,10 @@ const UploadProduct = () => {
         // Fetch categories if not cached
         if (!cachedCategories) {
           const catRes = await api.get("/category");
-          const categories = (catRes.data.data || catRes.data || []).map(
-            (category) => ({
-              value: category.id,
-              label: category.name,
-            })
-          );
+          const categories = (catRes.data || []).map((category) => ({
+            value: category.id,
+            label: category.name,
+          }));
           setCategoryOptions(categories);
           localStorage.setItem("categories", JSON.stringify(categories));
         }
@@ -136,6 +138,7 @@ const UploadProduct = () => {
 
   // Validate and submit product form
   const handleSubmit = async (e) => {
+    setLoading(true);
     e.preventDefault();
     const newErrors = {};
 
@@ -153,6 +156,7 @@ const UploadProduct = () => {
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       setApiError("");
+      setLoading(false);
       return;
     }
 
@@ -196,12 +200,15 @@ const UploadProduct = () => {
           "Failed to upload product. Please try again."
       );
       setSuccessMessage("");
+    } finally {
+      setLoading(false);
     }
   };
 
   // Validate and submit new tag/category form
   const handleNewItemSubmit = async (e) => {
     e.preventDefault();
+    setTagLoading(true);
     const newErrors = {};
 
     if (!newItemForm.name.trim()) newErrors.name = "Name is required";
@@ -210,6 +217,7 @@ const UploadProduct = () => {
     if (Object.keys(newErrors).length > 0) {
       setNewItemErrors(newErrors);
       setApiError("");
+      setTagLoading(false);
       return;
     }
 
@@ -248,6 +256,8 @@ const UploadProduct = () => {
           `Failed to create ${newItemForm.type}. Please try again.`
       );
       setNewItemSuccessMessage("");
+    } finally {
+      setTagLoading(false);
     }
   };
 
@@ -468,12 +478,16 @@ const UploadProduct = () => {
         </div>
 
         {/* Submit Button */}
-        <button
-          type="submit"
-          className="px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition"
-        >
-          Upload
-        </button>
+        {loading ? (
+          <LoadingIndicator />
+        ) : (
+          <button
+            type="submit"
+            className="px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition"
+          >
+            Upload
+          </button>
+        )}
       </form>
 
       {/* New Tag/Category Form */}
@@ -537,12 +551,16 @@ const UploadProduct = () => {
         </div>
 
         {/* Submit Button */}
-        <button
-          type="submit"
-          className="px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition"
-        >
-          Create
-        </button>
+        {tagLoading ? (
+          <LoadingIndicator />
+        ) : (
+          <button
+            type="submit"
+            className="px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition"
+          >
+            Create
+          </button>
+        )}
       </form>
     </div>
   );

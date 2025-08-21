@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { UserService } from "../services/user.service";
 import { AuthRequest } from "interfaces/auth.interface";
 import bcrypt from "bcryptjs";
-import { IUser } from "../interfaces/user.interface";
+import { IUserAdmin, IUser } from "../interfaces/user.interface";
 import logger from "../logger/app.logger";
 
 export class UserController {
@@ -88,7 +88,7 @@ export class UserController {
       logger.info(`Updating user with ID: ${id} by user: ${req.user?.id || 'unknown'}, role: ${req.user?.role || 'unknown'}`);
 
       const { email, password, name, role } = req.body;
-      const updateData: IUser = {};
+      const updateData: IUserAdmin = {};
 
       if (req.user && req.user.role !== "admin" && req.user.id !== id) {
         logger.warn(`Unauthorized attempt to update user ID: ${id} by user: ${req.user.id}`);

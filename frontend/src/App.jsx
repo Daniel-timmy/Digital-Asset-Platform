@@ -21,6 +21,8 @@ import Users from "./pages/admin/Users";
 import UploadProduct from "./pages/admin/UploadProduct";
 import Bookings from "./pages/admin/Bookings";
 import Transactions from "./pages/admin/Transactions";
+import VerifyCode from "./pages/VerifyCode";
+import ProtectedAdminRoutes from "./components/ProtectedAdminRoutes";
 
 function Logout() {
   localStorage.clear();
@@ -36,7 +38,15 @@ function App() {
         <Route path="/branding" element={<Branding />} />
         <Route path="/webdev" element={<Webdev />} />
         <Route path="/" element={<Landingpage />} />
-        <Route path="/admin" element={<Layout />}>
+        <Route path="/verify" element={<VerifyCode />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedAdminRoutes>
+              <Layout />
+            </ProtectedAdminRoutes>
+          }
+        >
           <Route index element={<AdminDashboard />} />
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="customizations" element={<CustomRequest />} />

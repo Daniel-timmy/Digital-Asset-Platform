@@ -12,38 +12,61 @@ import api from "../../utils/api";
 import LoadingIndicator from "../../components/LoadingIndicator";
 
 const AssetCard = ({ asset, onDelete, onUpdate }) => {
+  const [isLoading, setIsLoading] = useState(false);
   const tagNames = asset.tags.map((tag) => tag.name).join(", ");
+
+  const handleDeleteClick = async () => {
+    setIsLoading(true);
+    try {
+      await onDelete(asset.id, setIsLoading);
+    } catch (error) {
+      setIsLoading(false); // Ensure loading stops on error
+    }
+  };
+
   return (
-    <div className="bg-white p-4 rounded-lg shadow-md flex flex-col gap-4">
-      {asset.file_type === "image" && asset.thumbnail_url && (
-        <img
-          // src={asset.file_url}
-          alt={asset.name}
-          className="w-full h-40 object-cover rounded-md"
-        />
+    <div className="bg-white p-4 rounded-lg shadow-md flex flex-col gap-4 relative">
+      {isLoading ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80">
+          <LoadingIndicator />
+        </div>
+      ) : (
+        <>
+          {asset.file_type === "image" && asset.thumbnail_url && (
+            <img
+              src={asset.thumbnail_url}
+              alt={asset.name}
+              className="w-full h-40 object-cover rounded-md"
+            />
+          )}
+          <div>
+            <h3 className="text-lg font-bold">{asset.name}</h3>
+            <p className="text-sm text-gray-500">{asset.description}</p>
+            <p className="text-sm">Type: {asset.file_type}</p>
+            <p className="text-sm">Category: {asset.category.name}</p>
+            <p className="text-sm">
+              Price: ₦{asset.price.toLocaleString("en-NG")}
+            </p>
+            <p className="text-sm">Tags: {tagNames || "None"}</p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleDeleteClick}
+              className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-400"
+              disabled={isLoading}
+            >
+              <FaTrash />
+            </button>
+            <button
+              onClick={() => onUpdate(asset)}
+              className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+              disabled={isLoading}
+            >
+              <FaEdit />
+            </button>
+          </div>
+        </>
       )}
-      <div>
-        <h3 className="text-lg font-bold">{asset.name}</h3>
-        <p className="text-sm text-gray-500">{asset.description}</p>
-        <p className="text-sm">Type: {asset.file_type}</p>
-        <p className="text-sm">Category: {asset.category.name}</p>
-        <p className="text-sm">Price: ₦{asset.price.toLocaleString("en-NG")}</p>
-        <p className="text-sm">Tags: {tagNames || "None"}</p>
-      </div>
-      <div className="flex gap-2">
-        <button
-          onClick={() => onDelete(asset.id)}
-          className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700"
-        >
-          <FaTrash />
-        </button>
-        <button
-          onClick={() => onUpdate(asset)}
-          className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
-          <FaEdit />
-        </button>
-      </div>
     </div>
   );
 };
@@ -61,10 +84,10 @@ const UpdateAssetModal = ({
     description: asset.description || "",
     file_url: asset.file_url || "",
     file_type: asset.file_type || "",
-    category: asset.category || "",
+    category: asset.category?.id || "", // Use category ID
     price: asset.price || "",
     file: null,
-    tags: asset.tags || [],
+    tags: asset.tags.map((tag) => tag.id) || [], // Use tag IDs
   });
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
@@ -159,8 +182,8 @@ const UpdateAssetModal = ({
         {successMessage && (
           <p className="text-green-500 text-sm mb-4">{successMessage}</p>
         )}
+        {isLoading && <LoadingIndicator />}
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Product Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Product Name
@@ -183,8 +206,6 @@ const UpdateAssetModal = ({
               </p>
             )}
           </div>
-
-          {/* Description */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Description
@@ -209,8 +230,6 @@ const UpdateAssetModal = ({
               </p>
             )}
           </div>
-
-          {/* File URL */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               File URL
@@ -233,8 +252,6 @@ const UpdateAssetModal = ({
               </p>
             )}
           </div>
-
-          {/* File Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               File Type
@@ -258,8 +275,6 @@ const UpdateAssetModal = ({
               </p>
             )}
           </div>
-
-          {/* Category */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Category
@@ -281,8 +296,6 @@ const UpdateAssetModal = ({
               </p>
             )}
           </div>
-
-          {/* Price */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Price (₦)
@@ -307,8 +320,6 @@ const UpdateAssetModal = ({
               </p>
             )}
           </div>
-
-          {/* File Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               File Upload
@@ -340,8 +351,6 @@ const UpdateAssetModal = ({
               </p>
             )}
           </div>
-
-          {/* Tags */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Tags
@@ -364,12 +373,10 @@ const UpdateAssetModal = ({
               </p>
             )}
           </div>
-
-          {/* Submit and Cancel Buttons */}
           <div className="flex gap-2">
             <button
               type="submit"
-              className="px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition"
+              className="px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition disabled:bg-gray-400"
               disabled={isLoading}
             >
               {isLoading ? "Updating..." : "Update"}
@@ -377,7 +384,7 @@ const UpdateAssetModal = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition"
+              className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition disabled:bg-gray-400"
               disabled={isLoading}
             >
               Cancel
@@ -502,8 +509,7 @@ const AdminDashboard = () => {
     fetchData();
   };
 
-  const handleDelete = async (id) => {
-    setIsLoading(true);
+  const handleDelete = async (id, setCardLoading) => {
     try {
       await api.delete(`/assets/${id}`);
       const updatedAssets = assets.filter((asset) => asset.id !== id);
@@ -521,8 +527,7 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error("Error deleting asset:", error);
       setApiError("Failed to delete asset. Please try again.");
-    } finally {
-      setIsLoading(false);
+      throw error; // Re-throw to let AssetCard handle loading state
     }
   };
 

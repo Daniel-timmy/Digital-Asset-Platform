@@ -117,13 +117,22 @@ export class CustomAssetService {
 
     async remove(id: string, req: AuthRequest): Promise<void>{
         const user = req.user
+        console.log(`11111111111111111111111========================asdfgdfgkmjnhbvbjkl;,mn${id}`)
         if (!user) throw new Error("Unauthorized")
-        const asset = await this.customAssetRepository.findOne({ where: { id } });
+          
+        const asset = await this.customAssetRepository.findOne({
+          where: { id },
+          relations: ["user"],
+        });
+  
         if (!asset) {
-          throw new Error("Asset not found");
-        }
+          logger.warn(`Custom asset not found for ID: ${id}`);
+        throw new HttpError("Asset not found", 404);
+      }
+        console.log(`22222222   ${asset.name} ${user.id} ${asset} ${id}`)
         const isOwner = asset.user.id === user.id;
         const isAdmin = user.role === "admin";
+
 
         if (!isOwner && !isAdmin) {
           throw new Error("You are not authorized to delete this asset");

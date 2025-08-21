@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { FaEdit } from "react-icons/fa";
 import api from "../../utils/api";
+import LoadingIndicator from "../../components/LoadingIndicator";
 
 const Users = () => {
   const [users, setUsers] = useState([]);
   const [initialUsers, setInitialUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingUser, setEditingUser] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -18,14 +20,18 @@ const Users = () => {
   // Fetch users on component mount
   useEffect(() => {
     const getUsers = async () => {
+      setLoading(true);
+
       try {
         const res = await api.get("/users/");
         console.log(res.data);
-        setUsers(res.data.data || res.data || []);
-        setInitialUsers(res.data.data || res.data || []);
+        setUsers(res.data || []);
+        setInitialUsers(res.data || []);
       } catch (error) {
         console.error("Error fetching users:", error);
         setError("Failed to fetch users. Please try again.");
+      } finally {
+        setLoading(false);
       }
     };
     getUsers();
@@ -144,60 +150,67 @@ const Users = () => {
               <th className="px-4 py-3 font-semibold">Actions</th>
             </tr>
           </thead>
-          <tbody>
-            {users.length === 0 ? (
-              <tr>
-                <td colSpan="6" className="px-4 py-3 text-center text-gray-600">
-                  No users found.
-                </td>
-              </tr>
-            ) : (
-              users.map((user) => (
-                <tr
-                  key={user.id}
-                  className="border-t hover:bg-gray-50 transition"
-                >
-                  <td className="px-4 py-3">{user.name}</td>
-                  <td className="px-4 py-3">{user.email}</td>
-                  <td className="px-4 py-3">{user.role}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`px-2 py-1 text-xs rounded-full ${
-                        user.status === "active"
-                          ? "bg-green-100 text-green-700"
-                          : user.status === "pending"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {user.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    {user.created_at
-                      ? new Date(user.created_at).toLocaleString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: true,
-                        })
-                      : "N/A"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => openEditModal(user)}
-                      className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                      aria-label={`Edit user ${user.name}`}
-                    >
-                      <FaEdit /> Edit
-                    </button>
+          {loading ? (
+            <LoadingIndicator />
+          ) : (
+            <tbody>
+              {users.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan="6"
+                    className="px-4 py-3 text-center text-gray-600"
+                  >
+                    No users found.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
+              ) : (
+                users.map((user) => (
+                  <tr
+                    key={user.id}
+                    className="border-t hover:bg-gray-50 transition"
+                  >
+                    <td className="px-4 py-3">{user.name}</td>
+                    <td className="px-4 py-3">{user.email}</td>
+                    <td className="px-4 py-3">{user.role}</td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full ${
+                          user.status === "active"
+                            ? "bg-green-100 text-green-700"
+                            : user.status === "pending"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {user.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {user.created_at
+                        ? new Date(user.created_at).toLocaleString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                          })
+                        : "N/A"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => openEditModal(user)}
+                        className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                        aria-label={`Edit user ${user.name}`}
+                      >
+                        <FaEdit /> Edit
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          )}
         </table>
       </div>
 

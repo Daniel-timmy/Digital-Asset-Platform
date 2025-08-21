@@ -130,7 +130,7 @@ function Productdetails() {
       setErrors({});
       console.log(response.data.data.id);
       initialize_payment(response.data.data.id);
-      alert("Customization order succesfull. Initializing payment...");
+      alert("Customization order succesful. Initializing payment...");
     } catch (error) {
       console.error("Error submitting form:", error);
       setErrors({ name: "Failed to submit. Please try again." });
@@ -158,7 +158,7 @@ function Productdetails() {
             {/* Product Preview */}
             <div className="flex flex-col items-center">
               <img
-                src={IMAGE_URL + product.thumbnail_url}
+                src={product.thumbnail_url}
                 alt={product.name}
                 className="w-full max-w-md rounded-xl shadow-md mb-4"
               />
@@ -253,7 +253,7 @@ function Productdetails() {
                       className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition duration-300"
                     >
                       <img
-                        src={IMAGE_URL + product.thumbnail_url}
+                        src={product.thumbnail_url}
                         alt={related.name}
                         className="w-full h-40 object-cover rounded-md mb-3"
                       />

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { UserService } from "../services/user.service";
-import { IUser } from "../interfaces/user.interface";
+import { IUser, IUserAdmin } from "../interfaces/user.interface";
 import * as jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { JWT_SECRET, JWT_REFRESH_SECRET, FRONTEND_URL } from '../config/env';
@@ -9,15 +9,33 @@ import { redisClient } from "../database/redis_cache";
 import { sendVerificationEmail } from "../utils/sendEmail";
 import logger from "../logger/app.logger";
 
+
+function generateVerificationCode(): string {
+  try {
+    logger.info(`Generating 6-character verification code`);
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      code += characters[randomIndex];
+    }
+    logger.info(`Successfully generated verification code: ${code}`);
+    return code;
+  } catch (error) {
+    logger.error(`Error generating verification code: ${error}`);
+    throw new Error("Failed to generate verification code");
+  }
+}
+
 export class AuthController {
   constructor(private userService: UserService) {}
 
-  async register(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+  async registerAdmin(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       logger.info(`Registering new user with email: ${req.body.email}`);
-      const userData: IUser = req.body;
+      const userData: IUserAdmin = req.body;
 
-      if (!userData.name || !userData.email || !userData.password) {
+      if (!userData.name || !userData.email || !userData.password || !userData.role) {
         logger.warn(`Registration failed: Missing required parameters for email ${req.body.email}`);
         throw new HttpError("Missing required parameter", 400);
       }
@@ -30,7 +48,7 @@ export class AuthController {
 
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(userData.password, salt);
-      const userDataWithHashedPassword: IUser = {
+      const userDataWithHashedPassword: IUserAdmin = {
         ...userData,
         password: hashedPassword,
       };
@@ -68,10 +86,11 @@ export class AuthController {
     }
   }
 
-  async register_new(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+  async register(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       logger.info(`Initiating email verification for user with email: ${req.body.email}`);
-      const userData: IUser = req.body;
+      const {name, email, password} = req.body;
+      const userData: IUser = {name, email, password}
 
       if (!userData.name || !userData.email || !userData.password) {
         logger.warn(`Email verification failed: Missing required parameters for email ${req.body.email}`);
@@ -84,7 +103,7 @@ export class AuthController {
         throw new HttpError("User with email already exists", 409);
       }
 
-      const code: string = Math.random().toString(36).substring(2);
+      const code: string = generateVerificationCode()
       await (await redisClient).set(
         code,
         JSON.stringify({ user: userData }),
