@@ -1,73 +1,161 @@
-import React from 'react';
-import { FaComments } from 'react-icons/fa';
+// src/pages/Tickets.jsx
+import React, { useState, useEffect, useRef } from "react";
+import { FaComments } from "react-icons/fa";
+import api from "../../utils/api";
 
-const Tickets = ({
-  ticketChats,
-  selectedTicket,
-  setSelectedTicket,
-  chatInput,
-  setChatInput,
-  handleSendMessage
-}) => {
-  const renderChat = () => {
-    if (!selectedTicket) {
-      return <p className="text-gray-600 italic mt-4">Select a ticket to view conversation.</p>;
+// Define Chat component outside of Tickets
+const Chat = ({ selectedTicketId, tickets, chatInput, setChatInput }) => {
+  const [messages, setMessages] = useState([]);
+
+  const selectedTicket = tickets.find(
+    (ticket) => ticket.id === selectedTicketId
+  );
+
+  useEffect(() => {
+    if (!selectedTicketId) return;
+
+    const getMessages = async () => {
+      try {
+        const res = await api.get(`/messages/ticket/${selectedTicketId}`);
+        console.log(res.data);
+        setMessages(res.data.data || []);
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+      }
+    };
+    getMessages();
+  }, [selectedTicketId]);
+
+  const inputRef = useRef(null);
+
+  const handleSendMessage = async () => {
+    if (!selectedTicketId || !chatInput.trim()) return;
+    try {
+      const res = await api.post(`/messages/`, {
+        ticketId: selectedTicketId,
+        message: chatInput,
+      });
+      setMessages((prevMessages) => [...prevMessages, res.data.data]);
+      setChatInput("");
+      inputRef.current.focus(); // Restore focus after sending
+    } catch (error) {
+      console.error("Error sending message:", error);
     }
-
-    const chats = ticketChats[selectedTicket] || [];
-
-    return (
-      <div className="mt-6">
-        <div className="h-64 overflow-y-auto bg-white p-4 rounded-md shadow-inner space-y-2 border border-gray-200">
-          {chats.map((chat, i) => (
-            <div
-              key={i}
-              className={`max-w-xs p-2 rounded-md text-sm ${
-                chat.sender === 'Admin'
-                  ? 'bg-black text-white self-end ml-auto'
-                  : 'bg-gray-200 text-gray-800'
-              }`}
-            >
-              <strong>{chat.sender}:</strong> {chat.message}
-            </div>
-          ))}
-        </div>
-        <div className="flex mt-4 gap-2">
-          <input
-            type="text"
-            className="flex-1 px-4 py-2 border rounded-md"
-            value={chatInput}
-            onChange={e => setChatInput(e.target.value)}
-            placeholder="Type your response..."
-          />
-          <button className="px-4 py-2 bg-black text-white rounded-md" onClick={handleSendMessage}>
-            Send
-          </button>
-        </div>
-      </div>
-    );
   };
 
+  if (!selectedTicketId) {
+    return (
+      <p className="text-gray-600 italic mt-4">
+        Select a ticket to view the conversation.
+      </p>
+    );
+  }
+
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+    <div className="mt-6 flex flex-col h-full">
+      <h3 className="text-lg font-semibold text-gray-800 mb-4">
+        {selectedTicket?.name} ({selectedTicket?.status})
+      </h3>
+      <div className="flex-1 h-96 overflow-y-auto bg-white p-4 rounded-md shadow-inner space-y-3 border border-gray-200">
+        {messages.map((chat) => (
+          <div
+            key={chat.id}
+            className={`flex max-w-xs p-3 rounded-lg text-sm ${
+              chat?.user?.role === "admin"
+                ? "bg-black text-white ml-auto"
+                : "bg-gray-200 text-gray-800 mr-auto"
+            }`}
+          >
+            <div>
+              <strong>{chat?.user?.name}</strong>: {chat.message}
+              <p className="text-xs mt-1 opacity-75">
+                {new Date(chat.created_at).toLocaleTimeString()}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex mt-4 gap-2">
+        <input
+          ref={inputRef}
+          type="text"
+          className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+          value={chatInput}
+          onChange={(e) => setChatInput(e.target.value)}
+          placeholder="Type your response..."
+          onKeyUp={(e) => e.key === "Enter" && handleSendMessage()}
+        />
+        <button
+          className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition"
+          onClick={handleSendMessage}
+        >
+          Send
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const Tickets = () => {
+  const [selectedTicketId, setSelectedTicketId] = useState(null);
+  const [chatInput, setChatInput] = useState("");
+  const [tickets, setTickets] = useState([]);
+
+  useEffect(() => {
+    const getTickets = async () => {
+      try {
+        const res = await api.get("/ticket/");
+        console.log(res.data.data);
+        setTickets(res.data.data || []);
+      } catch (error) {
+        console.error("Error fetching tickets:", error);
+      }
+    };
+    getTickets();
+  }, []);
+
+  return (
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-gray-800">
         <FaComments /> Support Tickets
       </h2>
-      <div className="flex gap-8">
-        <div className="w-1/3 space-y-3">
-          {Object.keys(ticketChats).map((ticket, i) => (
+      <div className="flex gap-8 h-[calc(100vh-10rem)]">
+        <div className="w-1/3 space-y-3 overflow-y-auto">
+          {tickets.map((ticket) => (
             <div
-              key={i}
-              className={`p-3 rounded-md shadow-sm cursor-pointer transition ${
-                selectedTicket === ticket ? 'bg-black text-white' : 'bg-white hover:bg-gray-100'
+              key={ticket.id}
+              className={`p-4 rounded-md shadow-sm cursor-pointer transition border border-gray-200 ${
+                selectedTicketId === ticket.id
+                  ? "bg-black text-white"
+                  : "bg-white hover:bg-gray-100"
               }`}
-              onClick={() => setSelectedTicket(ticket)}
+              onClick={() => setSelectedTicketId(ticket.id)}
             >
-              {ticket}
+              <h3 className="font-semibold">{ticket.name}</h3>
+              <p className="text-sm opacity-75">
+                {ticket.status}
+                {"   "}
+                {new Date(ticket.created_at).toLocaleString("en-US", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                  hour12: true,
+                })}
+              </p>
             </div>
           ))}
         </div>
-        <div className="w-2/3">{renderChat()}</div>
+        <div className="w-2/3 flex flex-col">
+          <Chat
+            selectedTicketId={selectedTicketId}
+            tickets={tickets}
+            chatInput={chatInput}
+            setChatInput={setChatInput}
+          />
+        </div>
       </div>
     </div>
   );

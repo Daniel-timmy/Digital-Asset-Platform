@@ -14,6 +14,9 @@ export class User {
   @Column({ type: "varchar", length: 100 })
   name!: string;
 
+  @Column({ type: "enum", enum: ["active", "closed"], default: "active"})
+  status!: "active" | "closed"
+
   @Column({ type: "enum", enum: ["creator", "consumer", "admin"], default: "consumer" })
   role!: "creator" | "consumer" | "admin";
 

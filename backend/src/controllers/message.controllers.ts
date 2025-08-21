@@ -10,6 +10,7 @@ export class MessageController {
   // Create a new message
   async createMessage(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
+      console.log(`here: ${req.body}`)
       logger.info(`Creating new message for user: ${req.user?.id || 'unknown'}, ticketId: ${req.body.ticketId}`);
       const { ticketId, message } = req.body;
 

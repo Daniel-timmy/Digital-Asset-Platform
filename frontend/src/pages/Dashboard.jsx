@@ -9,6 +9,7 @@ const Dashboard = () => {
   const [orderCounts, setOrderCounts] = useState({});
   const [orders, setOrders] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  // what if the user is not saved in the cache
   const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
 
   const initialize_payment = async (id) => {

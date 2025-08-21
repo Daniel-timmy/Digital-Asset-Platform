@@ -10,6 +10,10 @@ transactionRouter.get("/", authentication, async (req, res, next) => {
   await transactionController.findAll(req, res, next);
 });
 
+transactionRouter.get("/s/count", authentication, async (req, res, next) => {
+  await transactionController.totalSales(req, res, next);
+});
+
 transactionRouter.get("/:id", authentication, async (req, res, next) => {
   await transactionController.findOne(req, res, next);
 });

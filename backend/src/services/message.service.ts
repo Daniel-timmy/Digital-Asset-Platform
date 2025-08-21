@@ -60,13 +60,20 @@ export class MessageService {
     if (!ticket) {
       throw new HttpError("Ticket not found", 404);
     }
-    if (req.user !== ticket.opened_by || req.user.role !== 'admin') throw new Error("Unauthorized access")
+    if (req.user && req.user.role === 'admin') {
+      return await this.messageRepository.find({
+        where: { ticket: { id: ticketId }},
+        relations: ["user", "ticket"],
+        order: { created_at: "ASC" },
+      });
+    }
 
+    if (req.user !== ticket.opened_by)throw new Error("Unauthorized access");
     return await this.messageRepository.find({
-      where: { ticket: { id: ticketId }},
-      relations: ["user", "ticket"],
-      order: { created_at: "ASC" },
-    });
+        where: { ticket: { id: ticketId }},
+        relations: ["user", "ticket"],
+        order: { created_at: "ASC" },
+      });
   }
 
   // Get all messages for a user

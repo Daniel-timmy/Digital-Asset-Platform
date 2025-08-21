@@ -4,6 +4,8 @@ import { Asset } from "../entities/asset.entities";
 import { CustomAsset } from "../entities/customasset.entities";
 import { User } from "../entities/user.entities";
 import { AuthRequest } from "interfaces/auth.interface";
+import logger from "../logger/app.logger";
+import { HttpError } from "../error/HttpError";
 
 interface ICustomAsset{
     name: string,
@@ -129,4 +131,16 @@ export class CustomAssetService {
       
         await this.customAssetRepository.delete(id);
     }
+
+    async countActiveRequests(): Promise<number> {
+      try {
+        logger.info(`Fetching count of open custom requests`);
+        const count = await this.customAssetRepository.count({ where: { status: "open" } });
+        logger.info(`Successfully retrieved open custom requests count: ${count}`);
+        return count;
+      } catch (error) {
+        logger.error(`Error fetching open custom requests count: ${error}`);
+        throw new HttpError("Failed to fetch open custom requests count", 500);
+      }
+  }
 }

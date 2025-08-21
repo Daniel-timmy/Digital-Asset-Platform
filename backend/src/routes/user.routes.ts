@@ -9,6 +9,9 @@ const userController = new UserController(new UserService());
 userRouter.get("/", authentication, isAdmin, async (req, res, next) => {
          await userController.findAll(req, res, next)});
 
+userRouter.get("/s/count/", authentication, isAdmin, async (req, res, next) => {
+         await userController.count(req, res, next)});
+
 userRouter.get("/:id", authentication, async (req, res, next) => {
          await userController.findOne(req, res, next)});
 

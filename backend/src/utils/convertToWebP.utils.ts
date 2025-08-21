@@ -11,7 +11,7 @@ interface FileObject {
 
 
 async function convertToWebP(file: FileObject): Promise<FileObject> {
-    const webpBuffer = await sharp(file.buffer).webp({ quality: 80 }).toBuffer();
+    const webpBuffer = await sharp(file.buffer).webp({ quality: 70 }).toBuffer();
     return {
         ...file,
         buffer: webpBuffer,

@@ -7,7 +7,7 @@ const ticketRouter = Router();
 const ticketController = new TicketController(new TicketService());
 
 // Create a new ticket
-ticketRouter.post("/", async (req, res, next) => {
+ticketRouter.post("/", authentication, async (req, res, next) => {
   await ticketController.createTicket(req, res, next);
 });
 

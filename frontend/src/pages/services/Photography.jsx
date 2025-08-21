@@ -32,7 +32,7 @@ const Photography = () => {
       !/^\S+@\S+\.\S+$/.test(formData.contact) && // email validation
       !/^\+?[\d\s-]{10,}$/.test(formData.contact) // phone validation
     ) {
-      newErrors.contact = "Please enter a valid email or phone number";
+      newErrors.contact = "Please enter a valid email or Whatsapp number";
     }
 
     if (!formData.eventType) {
@@ -154,7 +154,9 @@ const Photography = () => {
                 )}
               </div>
               <div>
-                <label className="text-base font-semibold">Contact</label>
+                <label className="text-base font-semibold">
+                  Contact(Email or Whatsapp Number)
+                </label>
                 <input
                   type="text"
                   name="contact"

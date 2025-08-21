@@ -14,6 +14,10 @@ customAssetRouter.post("/", authentication, upload.none(), async (req, res, next
   await customAssetController.create(req, res, next);
 });
 
+customAssetRouter.get("/s/count", authentication, upload.none(), async (req, res, next) => {
+  await customAssetController.count(req, res, next);
+});
+
 customAssetRouter.get("/",authentication, async (req, res, next) => {
   await customAssetController.findAll(req, res, next);
 });

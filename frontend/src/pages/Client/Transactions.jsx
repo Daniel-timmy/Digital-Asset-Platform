@@ -23,8 +23,8 @@ const Transactions = () => {
   useEffect(() => {
     const getTransactions = async () => {
       try {
-        const res = await api.get("/transactions");
-        setTransactions(res.data);
+        const res = await api.get("/transactions?page=1&limit=10");
+        setTransactions(res.data.results);
         console.log(res.data);
       } catch (error) {
         console.log(error);

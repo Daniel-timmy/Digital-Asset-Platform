@@ -21,6 +21,15 @@ export class AssetController {
     }
   }
 
+  async count(req:Request, res: Response, next: NextFunction){
+    try{
+      const count = await this.assetService.getCounts()
+      res.status(200).json({count})
+    } catch (error){
+      next(error)
+    }
+  }
+
   async findAll(req: Request, res: Response, next: NextFunction) {
     try {
       logger.info(`Fetching assets with filters: ${JSON.stringify(req.query)}`);

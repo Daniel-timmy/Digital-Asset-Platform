@@ -11,6 +11,8 @@ import { AppDataSource } from "../database/db";
 import { verifyPayment } from "../utils/payment";
 import crypto from "crypto";
 import logger from "../logger/app.logger";
+import { HttpError } from "../error/HttpError";
+import { applyTransactionsFilters } from "../filters/transactions.filter";
 
 export class TransactionController {
   private customAssetRepository: Repository<CustomAsset>;
@@ -48,11 +50,30 @@ export class TransactionController {
     }
   }
 
-  async findAll(req: Request, res: Response, next: NextFunction) {
+  async findAll(req: AuthRequest, res: Response, next: NextFunction) {
     try {
+      if (!req.user) {
+          logger.warn('Unauthorized access attempt to fetch all custom assets');
+          throw new HttpError('Unauthorized', 401);
+      }
       logger.info(`Fetching all transactions`);
-      const transactions = await this.transactionService.findAll();
-      logger.info(`Successfully retrieved ${transactions.length} transactions`);
+
+      const filters = req.query;
+      let query = AppDataSource.getRepository(Transaction)
+          .createQueryBuilder("transaction")
+          .leftJoinAndSelect("transaction.user", "user")
+          .leftJoinAndSelect("transaction.custom_asset", "custom_asset");    
+            
+      if (req.user && req.user.role !== 'admin') {
+          filters.userId = { userId: req.user.id };
+          query = query.andWhere("transaction.user_id = :userId", { userId: req.user.id });
+          logger.debug(`Applying user filter for non-admin user: ${req.user.id}`);
+      }
+
+      console.log('print')
+      const transactions = await applyTransactionsFilters(query, filters)
+      
+      logger.info(`Successfully retrieved ${transactions.limit} transactions`);
       res.status(200).json(transactions);
     } catch (error) {
       logger.error(`Error fetching all transactions: ${error}`);
@@ -94,6 +115,11 @@ export class TransactionController {
     }
   }
 
+  async totalSales(req: Request, res: Response, next: NextFunction){
+    const sales = await this.transactionService.getTotalSales()
+    res.json(sales)
+  }
+
   async remove(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params.id;
@@ -122,6 +148,7 @@ export class TransactionController {
       }
 
       const { id } = req.body;
+      console.log(`idddddddddd: ${id}`)
       if (!id) {
         logger.warn(`Payment initialization failed: Missing custom asset ID for user: ${user.id}`);
         throw new Error("Custom asset ID required");

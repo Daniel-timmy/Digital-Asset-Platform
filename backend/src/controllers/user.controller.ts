@@ -162,4 +162,13 @@ export class UserController {
       next(error);
     }
   }
+
+    async count(req:Request, res: Response, next: NextFunction){
+    try{
+      const count = await this.userService.countActiveUsers()
+      res.status(200).json({count})
+    } catch (error){
+      next(error)
+    }
+  }
 }

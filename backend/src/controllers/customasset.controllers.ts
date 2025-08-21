@@ -178,4 +178,13 @@ export class CustomAssetController {
             next(error);
         }
     }
+
+    async count(req:Request, res: Response, next: NextFunction){
+        try{
+          const count = await this.customAssetService.countActiveRequests()
+          res.status(200).json({count})
+        } catch (error){
+          next(error)
+        }
+      }
 }

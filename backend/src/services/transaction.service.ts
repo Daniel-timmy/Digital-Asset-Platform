@@ -3,6 +3,8 @@ import { Repository } from "typeorm";
 import { Transaction } from "../entities/transaction.entities";
 import { User } from "../entities/user.entities";
 import { Asset } from "../entities/asset.entities";
+import logger from "../logger/app.logger";
+import { HttpError } from "../error/HttpError";
 
 export class TransactionService {
   private transactionRepository: Repository<Transaction>;
@@ -47,5 +49,24 @@ export class TransactionService {
 
   async remove(id: string): Promise<void> {
     await this.transactionRepository.delete(id);
+  }
+
+  async getTotalSales(): Promise<number> {
+    try {
+      logger.info(`Fetching total sales amount for completed transactions`);
+
+      const result = await this.transactionRepository
+        .createQueryBuilder("transaction")
+        .select("SUM(transaction.amount)", "total")
+        .where("transaction.payment_status = :status", { status: "completed" })
+        .getRawOne();
+
+      const total = result && result.total ? parseFloat(result.total) : 0;
+      logger.info(`Successfully retrieved total sales amount: ${total}`);
+      return total;
+    } catch (error) {
+      logger.error(`Error fetching total sales amount: ${error}`);
+      throw new HttpError("Failed to fetch total sales amount", 500);
+    }
   }
 }

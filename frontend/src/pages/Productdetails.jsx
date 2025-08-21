@@ -128,7 +128,8 @@ function Productdetails() {
 
       setFormData({ name: "", description: "" });
       setErrors({});
-      initialize_payment(response.data.id);
+      console.log(response.data.data.id);
+      initialize_payment(response.data.data.id);
       alert("Customization order succesfull. Initializing payment...");
     } catch (error) {
       console.error("Error submitting form:", error);
