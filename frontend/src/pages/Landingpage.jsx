@@ -6,6 +6,15 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import "../App.css";
 import Search from "../components/Search";
+import bg_img from "../assets/wallhaven-6d7ow6.png";
+import tab1 from "../assets/tab1.webp";
+import tab2 from "../assets/tab2.webp";
+import tab3 from "../assets/tab3.webp";
+import tab4 from "../assets/tab4.webp";
+import tab5 from "../assets/tab5.webp";
+import tab6 from "../assets/tab6.webp";
+import tab7 from "../assets/tab7.webp";
+// import tab from "../assets/tab.png";
 
 function LandingPage() {
   const [isVisible, setIsVisible] = useState(false);
@@ -20,85 +29,50 @@ function LandingPage() {
       id: 1,
       text: "",
       bg: "bg-teal-200",
-      img: "/src/assets/OIP (2).webp",
+      img: tab1,
       desc: "Creative design solutions",
     },
     {
       id: 2,
       text: "",
       bg: "bg-purple-200",
-      img: "/src/assets/OIP (1).webp",
+      img: tab2,
       desc: "Beautiful artwork collections",
     },
     {
       id: 3,
       text: "",
       bg: "bg-yellow-200",
-      img: "/src/assets/OIP (3).webp",
+      img: tab3,
       desc: "Cutting-edge innovations",
     },
     {
       id: 4,
       text: "",
       bg: "bg-black",
-      img: "/src/assets/OIP (4).webp",
+      img: tab4,
       desc: "Advanced tech insights",
     },
     {
       id: 5,
       text: "",
       bg: "bg-blue-200",
-      img: "/src/assets/R.jpg",
+      img: tab5,
       desc: "Inspiring creative ideas",
     },
     {
       id: 6,
       text: "",
       bg: "bg-green-200",
-      img: "/src/assets/OIP (5).webp",
+      img: tab6,
       desc: "AI-powered tools",
     },
     {
       id: 7,
       text: "",
       bg: "bg-red-200",
-      img: "/src/assets/OIP (2).webp",
+      img: tab7,
       desc: "Digital art masterpieces",
-    },
-    {
-      id: 8,
-      text: "",
-      bg: "bg-pink-200",
-      img: "/src/assets/OIP (1).webp",
-      desc: "Graphic design tools",
-    },
-    {
-      id: 9,
-      text: "",
-      bg: "bg-indigo-200",
-      img: "/src/assets/OIP (3).webp",
-      desc: "Tech innovation hubs",
-    },
-    {
-      id: 10,
-      text: "",
-      bg: "bg-gray-200",
-      img: "/src/assets/OIP (4).webp",
-      desc: "Creative software suites",
-    },
-    {
-      id: 11,
-      text: "",
-      bg: "bg-lime-200",
-      img: "/src/assets/R.jpg",
-      desc: "AI-enhanced workflows",
-    },
-    {
-      id: 12,
-      text: "",
-      bg: "bg-cyan-200",
-      img: "/src/assets/OIP (5).webp",
-      desc: "Design inspiration packs",
     },
   ];
 
@@ -110,7 +84,7 @@ function LandingPage() {
     <div
       className="relative w-full min-h-screen bg-white overflow-hidden font-sans"
       style={{
-        backgroundImage: `url('src/assets/wallhaven-6d7ow6.png')`,
+        backgroundImage: `url(${bg_img})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}

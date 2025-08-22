@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { TransactionService } from "../services/transaction.service";
 import { AuthRequest } from "../interfaces/auth.interface";
 import { Repository, In } from "typeorm";
+import { Transaction } from "../entities/transaction.entities";
 import axios from 'axios'
 import { FRONTEND_URL, PAYSTACK_SECRET_KEY } from "../config/env";
 import { User } from "../entities/user.entities";
@@ -16,10 +17,12 @@ import crypto from "crypto"
 export class TransactionController {
       private customAssetRepository: Repository<CustomAsset>
       private userRepository: Repository<User>;
+      private transactionRepository: Repository<Transaction>
 
   constructor(private transactionService: TransactionService) {
       this.customAssetRepository = AppDataSource.getRepository(CustomAsset);
       this.userRepository = AppDataSource.getRepository(User);
+      this.transactionRepository = AppDataSource.getRepository(Transaction)
   }
 
   async create(req: AuthRequest, res: Response, next: NextFunction) {
@@ -78,31 +81,34 @@ export class TransactionController {
 
   async initialize(req: AuthRequest, res: Response, next: NextFunction){
     try {
-
-      const { email, amount, id } = req.body; // Amount in kobo (e.g., 1000 NGN = 100000 kobo)
-      if (!email || !amount) {
-        return res.status(400).json({ error: 'Email and amount are required' });
-      }
-      const custom_asset = await this.customAssetRepository.findOne(id)
-      if (!custom_asset) throw new Error('Invalid custom asset id')
-
       const user = req.user
+
+      if (!user) throw new Error("User unauthenticated")
+
+      const { id } = req.body; 
+
+      console.log(id)
+      const custom_asset = await this.customAssetRepository.findOne({ where: { id: id } })
+      if (!custom_asset) throw new Error('Invalid custom asset id')
+      console.log(custom_asset)
       const transactionData = {
         custom_asset,
         user,
-        amount,
+        amount: custom_asset.price,
 
       }
-      const transaction = await this.transactionService.create(transactionData)
+      const transaction = this.transactionRepository.create(transactionData);
+      const savedTransaction = await this.transactionRepository.save(transaction)
+      console.log(savedTransaction.id)
 
     
       const response = await axios.post(
         'https://api.paystack.co/transaction/initialize',
         {
-          email,
-          amount: amount * 100, // Convert to kobo
-          reference: transaction[0].id,
-          callback_url: `http://${FRONTEND_URL}/verify-payment`, // URL to redirect after payment
+          email: user.email,
+          amount: custom_asset.price * 100, // Convert to kobo
+          reference: savedTransaction.id,
+          callback_url: `${FRONTEND_URL}/verify-payment`, // URL to redirect after payment
         },
         {
           headers: {
@@ -111,6 +117,11 @@ export class TransactionController {
           },
         }
       );
+      console.log(response.data)
+      if (response.status){
+        custom_asset.payment_status = "processing"
+        await this.customAssetRepository.save(custom_asset)
+      }
         res.status(200).json({
         authorization_url: response.data.data.authorization_url,
         access_code: response.data.data.access_code,
@@ -158,5 +169,77 @@ export class TransactionController {
 
     // Acknowledge receipt of webhook
     res.status(200).send('Webhook received');
-}
+  }
+
+  async verify(req: Request, res: Response, next: NextFunction) {
+    try {
+    const ref = req.params.ref  
+    const response = await axios.get(`https://api.paystack.co/transaction/verify/${ref}`, {
+      headers: {
+        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    console.log(response.data)
+    const transaction = await this.transactionService.findOne(ref)
+    if (!transaction) throw new Error("Transaction not found")
+    
+    if (transaction.payment_status === "completed") {
+      return res.status(200).json({
+        message: "Payment already verified",
+        transaction,
+      });
+    }
+    console.log("Transaction", transaction)
+    
+    const customasset = await this.customAssetRepository.findOne({ where: { id: transaction.custom_asset.id } })
+    if (!customasset) throw new Error("Custom asset not found")
+
+
+    let message;
+    let status;
+    if (response.data.status === true){
+      const data = response.data.data;
+
+      if (data.status === "success"){
+        transaction.payment_status ="completed"
+        customasset.payment_status = "paid"
+        message = "Payment processed successfully"
+        status = "success"
+
+      } else if (data.status === "failed"){
+        transaction.payment_status = "failed"
+        message = "Payment failed"
+        status ="failed"
+      } else if (data.status === "processing") {
+        transaction.payment_status = "pending"
+        status ="processing"
+        message = "Payment is still processing"
+      } else if (data.status === "abandoned") {
+        transaction.payment_status = "failed"
+        customasset.payment_status = "pending"
+        message = "Payment was abandoned"
+      } else {
+        transaction.payment_status = "pending"
+        customasset.payment_status = "pending"
+        message = "Payment still pending"
+        status = "failed"
+      }
+      const savedTransaction = await this.transactionRepository.save(transaction)
+      const savedCustomAsset = await this.customAssetRepository.save(customasset)
+      res.status(200).json({
+        message,
+        savedTransaction,
+        status,
+      })
+    } else {
+       res.status(400).json({
+        message: "Payment failed"
+      })
+    }
+
+  } catch (error) {
+    next(error)
+  }
+  }
 }

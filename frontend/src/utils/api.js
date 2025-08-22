@@ -1,7 +1,7 @@
 import axios from "axios";
 import { ACCESS_TOKEN, API_URL } from "./constants";
 
-const APIURL = API_URL || "http://localhost:5500/api";
+const APIURL = API_URL || "http://localhost:3000/api";
 
 const api = axios.create({
   baseURL: APIURL,

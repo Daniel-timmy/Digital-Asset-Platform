@@ -1,60 +1,99 @@
-import React from 'react';
-
-const mockOrders = [
-  {
-    id: 'ORD-98231',
-    items: ['Logo Pack', '3D Mockup'],
-    date: 'July 10, 2025',
-    status: 'Processing',
-    amount: '₦25,000.00',
-  },
-  {
-    id: 'ORD-98210',
-    items: ['T-shirt Design', 'Promo Banner'],
-    date: 'July 6, 2025',
-    status: 'Completed',
-    amount: '₦42,500.00',
-  },
-  {
-    id: 'ORD-98122',
-    items: ['Branding Kit'],
-    date: 'June 30, 2025',
-    status: 'Cancelled',
-    amount: '₦15,000.00',
-  },
-];
-
-const statusColors = {
-  Processing: 'text-yellow-600',
-  Completed: 'text-green-600',
-  Cancelled: 'text-red-600',
-};
+import React, { useEffect, useState } from "react";
+import api from "../../utils/api";
+import { initialize_payment } from "../../utils/payment";
+import LoadingIndicator from "../../components/LoadingIndicator";
 
 const Orders = () => {
+  const [orders, setOrders] = useState([]);
+  const [offset, setOffset] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [paymentLoading, setPaymentLoading] = useState({}); // Changed to object
+
+  const statusColors = {
+    Processing: "text-yellow-600",
+    Completed: "text-green-600",
+    Cancelled: "text-red-600",
+  };
+
+  const handlePayment = async (orderId) => {
+    try {
+      setPaymentLoading((prev) => ({ ...prev, [orderId]: true }));
+      console.log("Initializing payment for order:", orderId);
+      await initialize_payment(orderId); // Ensure initialize_payment is async
+      // setPaymentLoading((prev) => ({ ...prev, [orderId]: false }));
+    } catch (error) {
+      setPaymentLoading((prev) => ({ ...prev, [orderId]: false }));
+      console.error("Error initializing payment:", error);
+    }
+  };
+
+  useEffect(() => {
+    const getOrders = async () => {
+      try {
+        const res = await api.get(`/custom?page=${offset}&limit=${limit}`);
+        setOrders(res.data.results);
+        console.log(res.data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    getOrders();
+  }, []);
+
   return (
     <div className="animate-fade-in-up space-y-6 px-4 sm:px-6 md:px-8">
       <h2 className="text-3xl font-bold text-black">Your Orders</h2>
-      <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <table className="min-w-[600px] w-full text-sm text-gray-700">
-          <thead className="bg-gray-100 border-b">
+      <div className="overflow-x-auto rounded-lg shadow-md bg-white">
+        <table className="min-w-full text-sm">
+          <thead className="text-left bg-gray-50 border-b">
             <tr>
-              <th className="px-6 py-4 text-left">Order ID</th>
-              <th className="px-6 py-4 text-left">Items</th>
-              <th className="px-6 py-4 text-left">Date</th>
-              <th className="px-6 py-4 text-left">Status</th>
-              <th className="px-6 py-4 text-left">Amount</th>
+              <th className="px-4 py-3">ID</th>
+              <th className="px-4 py-3">Created at</th>
+              <th className="px-4 py-3">Name</th>
+              <th className="px-4 py-3">Due Date</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Payment status</th>
+              <th className="px-4 py-3">Total</th>
             </tr>
           </thead>
           <tbody>
-            {mockOrders.map((order, idx) => (
-              <tr key={idx} className="border-b hover:bg-gray-50 transition">
-                <td className="px-6 py-4 font-medium">{order.id}</td>
-                <td className="px-6 py-4">{order.items.join(', ')}</td>
-                <td className="px-6 py-4">{order.date}</td>
-                <td className={`px-6 py-4 font-semibold ${statusColors[order.status]}`}>
-                  {order.status}
+            {orders.map((row, i) => (
+              <tr className="border-t hover:bg-gray-50 transition" key={i}>
+                <td className="px-4 py-3">{row.id.slice(0, 6)}...</td>
+                <td className="px-4 py-3">{row.created_at.slice(0, 10)}</td>
+                <td className="px-4 py-3">{row.name}</td>
+                <td className="px-4 py-3">{row.date}</td>
+                <td
+                  className={`px-6 py-4 font-semibold ${
+                    statusColors[row.payment_status]
+                  }`}
+                >
+                  {row.status}
                 </td>
-                <td className="px-6 py-4">{order.amount}</td>
+                <td>{row.payment_status}</td>
+                <td className="px-4 py-3">{row.price}</td>
+                <td className="px-4 py-3">
+                  {paymentLoading[row.id] ? (
+                    <LoadingIndicator key={row.id} />
+                  ) : row.payment_status === "pending" ? (
+                    <button
+                      className="rounded-2xl bg-blue-300 h-10 w-25 cursor-pointer hover:bg-blue-400 transition-all duration-300"
+                      onClick={() => handlePayment(row.id)}
+                    >
+                      Make Payment
+                    </button>
+                  ) : row.payment_status === "processing" ? (
+                    <button
+                      className="rounded-2xl bg-green-300 h-10 w-25 cursor-pointer hover:bg-green-400 transition-all duration-300"
+                      // onClick={() => handlePayment(row.id)}
+                    >
+                      Verify payment
+                    </button>
+                  ) : (
+                    ""
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

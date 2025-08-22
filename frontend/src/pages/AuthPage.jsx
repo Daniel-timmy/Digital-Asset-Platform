@@ -4,10 +4,13 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import api from "../utils/api";
 import { ACCESS_TOKEN, REFRESH_TOKEN, USER } from "../utils/constants";
+import LoadingIndicator from "../components/LoadingIndicator";
 import "../App.css";
 
 const AuthPage = ({ state = true }) => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [isLogin, setIsLogin] = useState(state);
   const toggleForm = () => setIsLogin(!isLogin);
   const [errors, setErrors] = useState({});
@@ -76,8 +79,8 @@ const AuthPage = ({ state = true }) => {
         return;
       }
     }
+    setLoading(true);
 
-    // console.log(isLogin ? "Logging in with" : "Signing up with", formData);
     try {
       let res;
       if (isLogin) {
@@ -97,7 +100,12 @@ const AuthPage = ({ state = true }) => {
         setErrors({ error: res.message });
       }
     } catch (error) {
-      setErrors({ error: error });
+      const errorData = error.response.data;
+      setErrors({
+        error: errorData.message || "An error occurred. Please try again.",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -168,12 +176,17 @@ const AuthPage = ({ state = true }) => {
                 </div>
               )}
 
-              <button
-                type="submit"
-                className="w-full bg-black text-white font-semibold py-3 rounded-lg shadow-md hover:bg-gray-900 transition-colors duration-300"
-              >
-                {isLogin ? "Login" : "Sign Up"}
-              </button>
+              {loading ? (
+                <LoadingIndicator />
+              ) : (
+                <button
+                  type="submit"
+                  className="w-full bg-black text-white font-semibold py-3 rounded-lg shadow-md hover:bg-gray-900 transition-colors duration-300"
+                >
+                  {isLogin ? "Login" : "Sign Up"}
+                </button>
+              )}
+              {errors.error && <p className="text-red-500">{errors.error}</p>}
             </form>
 
             <p className="text-center mt-6 text-sm text-gray-600">

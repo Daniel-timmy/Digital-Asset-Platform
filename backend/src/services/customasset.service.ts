@@ -41,20 +41,96 @@ export class CustomAssetService {
 
     }
 
-    async findAll(): Promise<CustomAsset[]>{
-        return await this.customAssetRepository.find()
+    async getCustomAssetPaymentStatusCounts(req: AuthRequest) {
+      const user = req.user;
+      if (!user) throw new Error("Unauthenticated user")
+      const counts = await this.customAssetRepository
+        .createQueryBuilder("customAsset")
+        .select("customAsset.payment_status, COUNT(*) as count")
+        .where("customAsset.user_id = :userId", { userId: user.id })
+        .groupBy("customAsset.payment_status")
+        .getRawMany();
+      
+      const completedCount = await this.customAssetRepository
+        .createQueryBuilder("customAsset")
+        .select("customAsset.status, COUNT(*) as count")
+        .where("customAsset.user_id = :userId", { userId: user.id })
+        .groupBy("customAsset.status")
+        .getRawMany();
+
+      const result = {
+        paid: 0,
+        pending: 0,
+        processing: 0
+      };
+      const completedResult = {
+        open: 0,
+        closed: 0,
+        cancelled: 0
+      };
+      completedCount.forEach((item: { status: string; count: string }) => {
+        completedResult[item.status as keyof typeof completedResult] = parseInt(item.count);})
+    
+      counts.forEach((item: { payment_status: string; count: string }) => {
+        result[item.payment_status as keyof typeof result] = parseInt(item.count);
+      });
+
+      const countresult = { ...result, ...completedResult }
+      return countresult;
     }
 
-    async findOne(id: string): Promise<CustomAsset | null>{
-        return await this.customAssetRepository.findOne({ where: { id }})
+    async findAll(req: AuthRequest): Promise<CustomAsset[]> {
+      const user = req.user;
+      if (!user) throw new Error("User not unauthenticated")
+
+      if (user.role === "admin") {
+        return await this.customAssetRepository.find();
+      }
+      return await this.customAssetRepository.find({ where: { user: { id: user.id } } });
     }
 
-    async update(id: string, data: Partial<CustomAsset>): Promise<CustomAsset | null>{
-        await this.customAssetRepository.update(id, data)
+    async findOne(req: AuthRequest, id: string): Promise<CustomAsset | null>{
+        const user = req.user;
+        if (!user) throw new Error("User not unauthenticated")
+        return await this.customAssetRepository.findOneBy({ id, user: { id: user.id } });
+    }
+
+    async update(id: string, req: AuthRequest): Promise<CustomAsset | null>{
+        const user = req.user
+        await this.customAssetRepository.update(id, req.body)
         return await this.customAssetRepository.findOne({where: { id }})
     }
 
-    async remove(id: string): Promise<void>{
+    async remove(id: string, req: AuthRequest): Promise<void>{
+        const user = req.user
+
       await this.customAssetRepository.delete(id)
     }
+
+  //   async update(id: string, req: AuthRequest): Promise<CustomAsset | null> {
+  //     const user = req.user;
+
+  //       if (!user) throw new Error("User not unauthenticated")
+
+  //     const asset = await this.customAssetRepository.findOneBy({ id, user: { id: user.id } });
+  //     if (!asset) {
+  //       throw new Error("CustomAsset not found or you are not authorized to update it");
+  //     }
+    
+  //     await this.customAssetRepository.update(id, req.body);
+
+  //     return await this.customAssetRepository.findOneBy({ id });
+  //   }
+    
+  //   async remove(id: string, req: AuthRequest): Promise<void> {
+  //     const user = req.user;
+  //     if (!user) throw new Error("User not unauthenticated")
+
+  //     const asset = await this.customAssetRepository.findOneBy({ id, user: { id: user.id } });
+  //     if (!asset) {
+  //       throw new Error("CustomAsset not found or you are not authorized to delete it");
+  //     }
+    
+  //     await this.customAssetRepository.delete(id);
+  // }  
 }

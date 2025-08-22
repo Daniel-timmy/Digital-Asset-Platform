@@ -21,12 +21,20 @@ export class CustomAsset {
     @JoinColumn({ name: "asset_id" })
     asset!: Asset;
 
-    @Column({ type: "enum", enum: ["open", "closed"], default: "open"})
-    status!: "open" | "closed";
+    @Column({ type: "enum", enum: ["open", "closed", "cancelled"], default: "open"})
+    status!: "open" | "closed" | "cancelled";
 
 
-    @Column({ type: "enum", enum: ["paid", "pending"], default: "pending"})
-    payment_status!: "paid" | "pending";
+    @Column({ type: "enum", enum: ["paid", "pending", "cancelled", "processing"], default: "pending"})
+    payment_status!: "paid" | "pending" | "processing";
+
+    // needs a due date
+
+    @Column({ type: "date", nullable: true })
+    due_date: Date = new Date(new Date().setDate(new Date().getDate() + 2));
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 2000 })
+    price!: number ;
 
     @CreateDateColumn()
     created_at: Date = new Date();

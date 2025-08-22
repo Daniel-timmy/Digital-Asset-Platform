@@ -4,14 +4,15 @@ import Dashboard from "./pages/Dashboard";
 import Landingpage from "./pages/Landingpage";
 import Stock from "./pages/Stock";
 import CartPage from "./pages/CartPage";
-import Productdetails from "./pages/productdetails";
+import Productdetails from "./pages/Productdetails";
 import AuthPage from "./pages/AuthPage";
 import AdminPage from "./pages/admin/AdminPage";
 import ProtectedRoutes from "./components/ProtectedRoutes";
+import VerifyPaymentPage from "./pages/VerifyPaymentPage";
 import ClientsPage from "./pages/Client/ClientsPage";
-import Photography from './pages/services/Photography';
-import Branding from './pages/services/Branding';
-import Socialmedia from './pages/services/Socialmedia';
+import Photography from "./pages/services/Photography";
+import Branding from "./pages/services/Branding";
+import Socialmedia from "./pages/services/Socialmedia";
 import Webdev from "./pages/services/Webdev";
 
 function Logout() {
@@ -24,20 +25,21 @@ function App() {
     <Router>
       <Routes>
         <Route path="/socialmedia" element={<Socialmedia />} />
-          <Route path="/photography" element={<Photography />} />
-  <Route path="/branding" element={<Branding />} />
-  <Route path="/webdev" element={<Webdev />} />
-        <Route path="/client" element={<ClientsPage />} />
+        <Route path="/photography" element={<Photography />} />
+        <Route path="/branding" element={<Branding />} />
+        <Route path="/webdev" element={<Webdev />} />
+        {/* <Route path="/client" element={<ClientsPage />} /> */}
         <Route path="/" element={<Landingpage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/login" element={<AuthPage />} />
+        <Route path="/verify-payment" element={<VerifyPaymentPage />} />
         <Route path="/sign-up" element={<AuthPage state={false} />} />
-        <Route path="/product-details" element={<Productdetails />} />
+        <Route path="/product-details/:id" element={<Productdetails />} />
         <Route
           path="/dashboard"
           element={
             <ProtectedRoutes>
-              <Dashboard />
+              <ClientsPage />
             </ProtectedRoutes>
           }
         />
