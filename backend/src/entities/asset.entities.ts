@@ -33,7 +33,7 @@ export class Asset {
 
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
   price!: number | null;
-
+       
   @Column({ type: "enum", enum: ["pending", "approved", "rejected"], default: 'pending' })
   status!: "pending" | "approved" | "rejected";
 
@@ -45,7 +45,7 @@ export class Asset {
 
   @ManyToMany(() => Tag)
   @JoinTable({
-    name: "asset_tags", // Name of the junction table
+    name: "asset_tags", 
     joinColumn: { name: "asset", referencedColumnName: "id" },
     inverseJoinColumn: { name: "tag", referencedColumnName: "id" }
   })

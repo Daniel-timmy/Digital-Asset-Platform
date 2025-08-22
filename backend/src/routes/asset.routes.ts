@@ -50,4 +50,7 @@ assetRouter.patch("/:id", authentication, isAdmin, async (req, res, next) => {
 assetRouter.delete("/:id", authentication, isAdmin, async (req, res, next) => {
          await assetController.remove(req, res, next)});
 
+assetRouter.get("/s/count/", async (req, res, next)=>{
+        await assetController.count(req, res, next)});
+
 export default assetRouter;

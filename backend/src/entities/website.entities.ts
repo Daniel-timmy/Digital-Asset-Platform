@@ -7,16 +7,10 @@ export class Website {
     id!: string;
 
     @Column({ type: "varchar", length: 255 })
-    url!: string;
-
-    @Column({ type: "varchar", length: 255 })
-    title!: string;
+    company_name!: string;
 
     @Column({ type: "text" })
     description!: string;
-
-    @Column({ type: "varchar", length: 255 })
-    company_name!: string;
 
     @Column({ type: "varchar", length: 255 })
     industry!: string;
@@ -24,10 +18,19 @@ export class Website {
     @Column({ type: "varchar", length: 255 })
     contact_email!: string;
 
+    @Column({ type: "varchar", length: 255 })
+    website_type!: string;
+
+    @Column({ type: "varchar", length: 255})
+    features!: string;
+
+    @Column({ type: "enum", enum: ['UI/UX', 'website'], default:'website'})
+    service!: "UI/UX" | 'website'
+
     @CreateDateColumn()
     created_at: Date = new Date();
 
-    @ManyToOne(() => User, { nullable: false })
+    @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: "user_id" })
-    user!: User;
+    user?: User;
 }

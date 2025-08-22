@@ -2,6 +2,7 @@ import api from "./api";
 
 export const initialize_payment = async (id) => {
   try {
+    console.log(`iddddddd: ${id}`);
     const res = await api.post("/transactions/initialize-payment", { id });
     const authorizationUrl = res.data.authorization_url;
     if (authorizationUrl) {

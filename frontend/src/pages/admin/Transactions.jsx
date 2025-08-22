@@ -1,0 +1,275 @@
+import React, { useState, useEffect } from "react";
+import api from "../../utils/api";
+import LoadingIndicator from "../../components/LoadingIndicator";
+
+const Transactions = () => {
+  const [transactions, setTransactions] = useState([]);
+  const [initialTransactions, setInitialTransactions] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Fetch transactions
+  useEffect(() => {
+    const getTransactions = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        console.log("Fetching transactions...");
+        const res = await api.get("/transactions?page=1&limit=10");
+        setTransactions(res.data.results);
+        setInitialTransactions(res.data.results);
+        console.log("Transactions fetched successfully:", res.data);
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+        setError("Failed to load transactions. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    getTransactions();
+  }, []);
+
+  // Handle search filtering
+  const handleSearch = (e) => {
+    const query = e.target.value.toLowerCase();
+    setSearchQuery(query);
+    if (query.trim() === "") {
+      setTransactions(initialTransactions);
+    } else {
+      const filtered = initialTransactions.filter(
+        (txn) =>
+          txn.user?.name?.toLowerCase().includes(query) ||
+          txn.custom_asset?.id?.toLowerCase().includes(query)
+      );
+      setTransactions(filtered);
+    }
+  };
+
+  // Handle checkbox selection for batch delete
+  const handleSelectTransaction = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id)
+        ? prev.filter((selectedId) => selectedId !== id)
+        : [...prev, id]
+    );
+  };
+
+  // Handle single transaction deletion
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this transaction?"))
+      return;
+    setLoading(true);
+    setError(null);
+    try {
+      console.log(`Deleting transaction with ID: ${id}`);
+      await api.delete(`/transactions/${id}`);
+      const updatedTransactions = transactions.filter((txn) => txn.id !== id);
+      setTransactions(updatedTransactions);
+      setInitialTransactions(updatedTransactions);
+      setSelectedIds((prev) => prev.filter((selectedId) => selectedId !== id));
+      console.log(`Successfully deleted transaction with ID: ${id}`);
+    } catch (error) {
+      console.error(`Error deleting transaction with ID: ${id}`, error);
+      setError("Failed to delete transaction. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle batch deletion
+  const handleBatchDelete = async () => {
+    if (selectedIds.length === 0) {
+      setError("Please select at least one transaction to delete.");
+      return;
+    }
+    if (
+      !window.confirm(
+        `Are you sure you want to delete ${selectedIds.length} transaction(s)?`
+      )
+    )
+      return;
+    setLoading(true);
+    setError(null);
+    try {
+      console.log(
+        `Batch deleting transactions with IDs: ${selectedIds.join(", ")}`
+      );
+      await api.post("/transactions/batch-delete", { ids: selectedIds });
+      const updatedTransactions = transactions.filter(
+        (txn) => !selectedIds.includes(txn.id)
+      );
+      setTransactions(updatedTransactions);
+      setInitialTransactions(updatedTransactions);
+      setSelectedIds([]);
+      console.log(
+        `Successfully batch deleted ${selectedIds.length} transactions`
+      );
+    } catch (error) {
+      console.error(`Error batch deleting transactions:`, error);
+      setError("Failed to batch delete transactions. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-6 text-gray-800">Transactions</h2>
+
+      {/* Error Message */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
+          {error}
+          <button
+            className="ml-4 text-sm underline"
+            onClick={() => setError(null)}
+            aria-label="Dismiss error"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* Search Input and Batch Delete Button */}
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <input
+          type="text"
+          className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black mb-4 sm:mb-0"
+          placeholder="Search by user name or asset ID..."
+          value={searchQuery}
+          onChange={handleSearch}
+          aria-label="Search transactions by user name or asset ID"
+          disabled={loading}
+        />
+        <button
+          className={`px-4 py-2 rounded-md text-white ${
+            selectedIds.length === 0 || loading
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-red-600 hover:bg-red-700"
+          }`}
+          onClick={handleBatchDelete}
+          disabled={selectedIds.length === 0 || loading}
+          aria-label="Delete selected transactions"
+        >
+          Delete Selected ({selectedIds.length})
+        </button>
+      </div>
+
+      {/* Transactions Table */}
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
+        <table className="min-w-full text-sm text-left text-gray-800">
+          <thead className="bg-gray-50 border-b">
+            <tr>
+              <th className="px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={
+                    selectedIds.length === transactions.length &&
+                    transactions.length > 0
+                  }
+                  onChange={() =>
+                    setSelectedIds(
+                      selectedIds.length === transactions.length
+                        ? []
+                        : transactions.map((txn) => txn.id)
+                    )
+                  }
+                  disabled={loading || transactions.length === 0}
+                  aria-label="Select all transactions"
+                />
+              </th>
+              <th className="px-4 py-3 font-semibold">ID</th>
+              <th className="px-4 py-3 font-semibold">User Name</th>
+              <th className="px-4 py-3 font-semibold">Custom Asset ID</th>
+              <th className="px-4 py-3 font-semibold">Amount (₦)</th>
+              <th className="px-4 py-3 font-semibold">Payment Status</th>
+              <th className="px-4 py-3 font-semibold">Created At</th>
+              <th className="px-4 py-3 font-semibold">Actions</th>
+            </tr>
+          </thead>
+          {loading ? (
+            <LoadingIndicator />
+          ) : (
+            <tbody>
+              {transactions.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan="8"
+                    className="px-4 py-3 text-center text-gray-600"
+                  >
+                    No transactions found.
+                  </td>
+                </tr>
+              ) : (
+                transactions.map((txn) => (
+                  <tr
+                    key={txn.id}
+                    className="border-t hover:bg-gray-50 transition"
+                  >
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(txn.id)}
+                        onChange={() => handleSelectTransaction(txn.id)}
+                        disabled={loading}
+                        aria-label={`Select transaction ${txn.id}`}
+                      />
+                    </td>
+                    <td className="px-4 py-3">{txn.id}</td>
+                    <td className="px-4 py-3">{txn?.user?.name || "N/A"}</td>
+                    <td className="px-4 py-3">
+                      {txn?.custom_asset?.id || "N/A"}
+                    </td>
+                    <td className="px-4 py-3">
+                      {txn.amount.toLocaleString("en-NG", {
+                        style: "currency",
+                        currency: "NGN",
+                      })}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full ${
+                          txn.payment_status === "completed"
+                            ? "bg-green-100 text-green-700"
+                            : txn.payment_status === "pending"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {txn.payment_status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {new Date(txn.created_at).toLocaleString("en-US", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        className={`px-3 py-1 text-sm text-white rounded-md ${
+                          loading
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-red-600 hover:bg-red-700"
+                        }`}
+                        onClick={() => handleDelete(txn.id)}
+                        disabled={loading}
+                        aria-label={`Delete transaction ${txn.id}`}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          )}
+        </table>
+      </div>
+    </div>
+  );
+};
+
+export default Transactions;

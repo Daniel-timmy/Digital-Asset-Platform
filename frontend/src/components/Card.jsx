@@ -23,7 +23,7 @@ export default function Card({ product, onAddToCart, handleProductClick }) {
       <Link to={`/product-details/${product.id}`} key={product.id}>
         {/* Product Image */}
         <img
-          src={IMAGE_URL + product.thumbnail_url}
+          src={product.thumbnail_url}
           alt={product.name}
           className="w-full h-52 object-cover"
         />

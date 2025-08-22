@@ -18,7 +18,7 @@ websiteRouter.get("/:id", authentication, async (req, res, next) => {
     await websiteController.findOne(req, res, next);
 });
 
-websiteRouter.post("/", authentication, async (req, res, next) => {
+websiteRouter.post("/", async (req, res, next) => {
     await websiteController.create(req, res, next);
 });
 websiteRouter.patch("/:id", authentication, async (req, res, next) => {

@@ -17,7 +17,7 @@ photographyRouter.get("/:id", async (req, res, next) => {
     await photographyController.findOne(req, res, next);
 });
 
-photographyRouter.post("/", authentication, async (req, res, next) => {
+photographyRouter.post("/", async (req, res, next) => {
     await photographyController.create(req, res, next);
 });
 // photographyRouter.patch("/:id", authentication, async (req, res, next) => {

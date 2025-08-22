@@ -14,7 +14,8 @@ import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import logo from "../assets/OIP.webp";
 import userIcon from "../assets/user-line.png";
 
-export default function Navbar() {
+export default function Header() {
+  const [open, setOpen] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const servicesRef = useRef(null);

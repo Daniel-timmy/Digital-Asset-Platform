@@ -3,7 +3,7 @@ import { Repository } from "typeorm";
 import { Message } from "../entities/message.entities";
 import { User } from "../entities/user.entities";
 import { Ticket } from "../entities/ticket.entities";
-import { AuthRequest } from "interfaces/auth.interface";
+import { AuthRequest } from "../interfaces/auth.interface";
 import { HttpError } from "../error/HttpError";
 
 export class MessageService {
@@ -51,7 +51,6 @@ export class MessageService {
     });
     if (!message) throw new Error("Can't access message");
 
-    // if (req.user.id !== message.user.id) throw new Error("Can't access message")
     return message;
   }
 
@@ -61,13 +60,20 @@ export class MessageService {
     if (!ticket) {
       throw new HttpError("Ticket not found", 404);
     }
-    if (req.user !== ticket.opened_by || req.user.role !== 'admin') throw new Error("Unauthorized access")
+    if (req.user && req.user.role === 'admin') {
+      return await this.messageRepository.find({
+        where: { ticket: { id: ticketId }},
+        relations: ["user", "ticket"],
+        order: { created_at: "ASC" },
+      });
+    }
 
+    if (req.user !== ticket.opened_by)throw new Error("Unauthorized access");
     return await this.messageRepository.find({
-      where: { ticket: { id: ticketId }},
-      relations: ["user", "ticket"],
-      order: { created_at: "ASC" },
-    });
+        where: { ticket: { id: ticketId }},
+        relations: ["user", "ticket"],
+        order: { created_at: "ASC" },
+      });
   }
 
   // Get all messages for a user

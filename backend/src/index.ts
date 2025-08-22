@@ -1,6 +1,11 @@
 import "reflect-metadata";
-import express from "express";
+import express, { Request, Response, NextFunction } from 'express';
 import cookieParser from "cookie-parser";
+import cors from "cors"
+import path from "path";
+import rateLimit from 'express-rate-limit';
+import logger from "./logger/app.logger";
+import { morganMiddleware } from "./logger/http.logger";
 import authRouter from "./routes/auth.routes";
 import downloadRouter from "./routes/download.routes";
 import transactionRouter from "./routes/transaction.routes";
@@ -14,16 +19,16 @@ import ticketRouter from "./routes/ticket.routes";
 import photographyRouter from "./routes/photography.routes";
 import websiteRouter from "./routes/website.routes";
 import brandingRouter from "./routes/branding.routes";
+import { redisClient } from "./database/redis_cache";
 import { FRONTEND_URL } from "./config/env";
 import { AppDataSource } from "./database/db";
 import { errorMiddleware } from "./middlewares/error.middleware";
 import messageRouter from "./routes/message.routes";
-import rateLimit from 'express-rate-limit';
-import cors from "cors"
-import path from "path";
-// import { PORT } from "../src/config/env";
+import socialMediaRouter from "./routes/socialMedia.routes";
+
 
 const app = express();
+app.use(morganMiddleware)
 app.use('/uploads/thumbnail', express.static(path.join(process.cwd(), 'uploads/thumbnail')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -39,7 +44,6 @@ app.use(
 );
 
 
-
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
@@ -50,22 +54,28 @@ const apiLimiter = rateLimit({
 });
 
 app.use(apiLimiter);
+app.set('trust proxy', 1); 
 
+app.get('/health', (req: Request, res: Response) => {
+  logger.debug('Health check endpoint accessed');
+  res.status(200).json({ status: 'OK' });
+});
 
-app.use("/api/auth", authRouter);
-app.use('/api/category', categoryRouter)
-app.use("/api/downloads", downloadRouter);
-app.use("/api/transactions", transactionRouter);
 app.use("/api/assets", assetRouter);
-app.use("/api/users", userRouter);
-app.use("/api/licenses", licenseRouter);
-app.use("/api/tags", tagRouter);
-app.use("/api/custom", customAssetRouter)
-app.use("/api/photography", photographyRouter)
-app.use("/api/website", websiteRouter)
+app.use("/api/auth", authRouter);
 app.use("/api/branding", brandingRouter)
-app.use("/api/ticket", ticketRouter)
+app.use('/api/category', categoryRouter)
+app.use("/api/custom", customAssetRouter)
+app.use("/api/downloads", downloadRouter);
+app.use("/api/licenses", licenseRouter);
 app.use("/api/messages", messageRouter)
+app.use("/api/photography", photographyRouter)
+app.use("/api/social-media", socialMediaRouter)
+app.use("/api/tags", tagRouter);
+app.use("/api/ticket", ticketRouter)
+app.use("/api/transactions", transactionRouter);
+app.use("/api/users", userRouter);
+app.use("/api/website", websiteRouter)
 app.use(errorMiddleware)
 
 if (process.env.PORT === undefined) {

@@ -1,6 +1,8 @@
 import { AppDataSource } from "../database/db";
 import { Repository } from "typeorm";
 import { User } from "../entities/user.entities";
+import logger from "../logger/app.logger";
+import { HttpError } from "../error/HttpError";
 
 export class UserService {
   private userRepository: Repository<User>;
@@ -33,5 +35,17 @@ export class UserService {
 
   async remove(id: string): Promise<void> {
     await this.userRepository.delete(id);
+  }
+  
+  async countActiveUsers(): Promise<number> {
+    try {
+      logger.info(`Fetching count of active users`);
+      const count = await this.userRepository.count({ where: { status: "active" } });
+      logger.info(`Successfully retrieved active user count: ${count}`);
+      return count;
+    } catch (error) {
+      logger.error(`Error fetching active user count: ${error}`);
+      throw new HttpError("Failed to fetch active user count", 500);
+    }
   }
 }

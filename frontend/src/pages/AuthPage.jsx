@@ -85,20 +85,31 @@ const AuthPage = ({ state = true }) => {
       let res;
       if (isLogin) {
         res = await api.post("/auth/login", formData);
+        if (res.data.success) {
+          localStorage.setItem(ACCESS_TOKEN, res.data.access);
+          localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
+          localStorage.setItem(USER, JSON.stringify(res.data.user));
+          navigate("/dashboard");
+        } else {
+          console.log(res);
+          setErrors({ error: res.message });
+        }
       } else {
         res = await api.post("/auth/register", formData);
-      }
-      console.log(formData);
-      console.log(res);
-      if (res.data.success) {
-        localStorage.setItem(ACCESS_TOKEN, res.data.access);
-        localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
-        localStorage.setItem(USER, JSON.stringify(res.data.user));
-        navigate("/dashboard");
-      } else {
         console.log(res);
-        setErrors({ error: res.message });
+        if (res.data.success) {
+          navigate("/verify");
+        }
       }
+      // if (res.data.success) {
+      //   localStorage.setItem(ACCESS_TOKEN, res.data.access);
+      //   localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
+      //   localStorage.setItem(USER, JSON.stringify(res.data.user));
+      //   navigate("/dashboard");
+      // } else {
+      //   console.log(res);
+      //   setErrors({ error: res.message });
+      // }
     } catch (error) {
       const errorData = error.response.data;
       setErrors({

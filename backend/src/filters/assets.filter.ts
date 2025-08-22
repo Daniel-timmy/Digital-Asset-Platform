@@ -1,3 +1,4 @@
+import { IFitltered } from "../interfaces/asset.interface";
 // First, update the AssetFilter interface to include pagination parameters
 interface AssetFilter {
   userId?: string;
@@ -15,7 +16,7 @@ interface AssetFilter {
   limit?: number; // Add items per page limit
 }
 
-export async function applyAssetFilters(query: any, filter: AssetFilter) {
+export async function applyAssetFilters(query: any, filter: AssetFilter): Promise<IFitltered> {
     // Apply existing filters
     if (filter.userId) {
         query = query.andWhere("asset.user_id = :userId", { userId: filter.userId });

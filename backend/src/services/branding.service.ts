@@ -17,23 +17,22 @@ export class BrandingService {
 
     async create(req: AuthRequest): Promise<Branding> {
         const user = req.user ? await this.userRepository.findOne({ where: { id: req.user.id } }) : null;
-        if (!user) throw new HttpError( "User not found", 404);
+        // if (!user) throw new HttpError( "User not found", 404);
 
         // if (user.role !== "admin") throw new HttpError(403, "User not an admin");
 
         const data = req.body;
-
+        console.log(user)
+        
         const brandingData = {
-            logo: data.logo,
-            brand_name: data.brand_name,
+            brand_name: data.brandName,
             colors: data.colors,
             description: data.description,
             contact_email: data.contact_email,
             preferred_contact_method: data.preferred_contact_method,
             contact_means: data.contact_means,
-            user,
+            user: user ? user : undefined,
         };
-
         const branding = this.brandingRepository.create(brandingData);
         return await this.brandingRepository.save(branding);
     }
@@ -41,7 +40,6 @@ export class BrandingService {
     async findByUserId(userId: string): Promise<Branding[]> {
         const user = await this.userRepository.findOne({ where: { id: userId } });
         if (!user) throw new HttpError("User not found", 404);
-
         return await this.brandingRepository.find({ where: { user } });
     }
 
@@ -62,9 +60,7 @@ export class BrandingService {
         const branding = await this.brandingRepository.findOne({ where: { id, user } });
         if (!branding) throw new HttpError("Branding not found", 404);
         return branding;
-
-}
-
+    }
 
     async update(id: string, req: AuthRequest): Promise<Branding> {
         if (!req.user) throw new HttpError("User not authenticated", 401);
@@ -78,7 +74,6 @@ export class BrandingService {
         Object.assign(branding, data);
         return await this.brandingRepository.save(branding);
     }
-
 
     async delete(id: string, req: AuthRequest): Promise<{ message: string }> {
         if (!req.user) throw new HttpError("User not authenticated", 401);

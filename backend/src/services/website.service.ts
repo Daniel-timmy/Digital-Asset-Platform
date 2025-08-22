@@ -16,18 +16,18 @@ export class WebsiteService {
 
   async create(req: AuthRequest): Promise<Website> {
     const user = req.user ? await this.userRepository.findOne({ where: { id: req.user.id } }) : null;
-    if (!user) throw new Error("User not found");
+    // if (!user) throw new Error("User not found");
 
     const data = req.body;
 
     const websiteData = {
-      url: data.url,
-      title: data.title,
       description: data.description,
       company_name: data.company_name,
       industry: data.industry,
       contact_email: data.contact_email,
-      user,
+      website_type: data.website_type,
+      features: data.features,
+      user: user ? user : undefined,
     };
 
     const website = this.websiteRepository.create(websiteData);
@@ -69,8 +69,6 @@ export class WebsiteService {
 
     const data = req.body;
 
-    website.url = data.url || website.url;
-    website.title = data.title || website.title;
     website.description = data.description || website.description;
     website.company_name = data.company_name || website.company_name;
     website.industry = data.industry || website.industry;

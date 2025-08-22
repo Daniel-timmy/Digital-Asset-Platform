@@ -7,7 +7,6 @@ import { NextFunction } from "express";
 import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 
 
-
 const userController = new UserService();
 
 
@@ -29,11 +28,8 @@ export const authentication = async (req: AuthRequest, res: Response, next: Next
             res.status(401).json({ message: 'Unauthorized' });
             return;
         }
-
         const decoded = jwt.verify(token , JWT_SECRET as string) as JwtPayload;
-
         const user = await userController.findOne(decoded.userId);
-        
 
         if(!user) {
             res.status(401).json({ message: 'Unauthorized' });

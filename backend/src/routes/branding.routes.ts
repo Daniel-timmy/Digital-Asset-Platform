@@ -18,7 +18,7 @@ brandingRouter.get("/:id", authentication, async (req, res, next) => {
     await brandingController.findOne(req, res, next);
 });
 
-brandingRouter.post("/", authentication, async (req, res, next) => {
+brandingRouter.post("/", async (req, res, next) => {
     await brandingController.create(req, res, next);
 });
 

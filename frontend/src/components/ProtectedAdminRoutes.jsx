@@ -1,7 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import api from "../utils/api";
-import { ACCESS_TOKEN, REFRESH_TOKEN } from "../../src/utils/constants";
+import { ACCESS_TOKEN, REFRESH_TOKEN, USER } from "../../src/utils/constants";
 import { useEffect, useState } from "react";
 
 const ProtectedAdminRoutes = ({ children }) => {
@@ -42,14 +42,22 @@ const ProtectedAdminRoutes = ({ children }) => {
     const now = Date.now() / 1000;
 
     if (tokenExpiration < now) {
-      await refreshToken();
-    } else {
-      setIsAuthorized(true);
+      return <Navigate to="/login" />;
+      // await refreshToken();
     }
+    const user = JSON.parse(localStorage.getItem(USER));
+    console.log(user);
+    if (!user) {
+      return <Navigate to="/login" />;
+    }
+    if (user.role !== "admin") {
+      return <Navigate to="/login" />;
+    }
+    setIsAuthorized(true);
   };
 
   if (isAuthorized === null) {
-    return <div>Loading...</div>;
+    return <div>...</div>;
   }
 
   return isAuthorized ? children : <Navigate to="/login" />;

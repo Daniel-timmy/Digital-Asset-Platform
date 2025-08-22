@@ -22,4 +22,5 @@ export const EMAIL_SERVICE_ID = process.env.EMAIL_SERVICE_ID;
 export const EMAIL_TEMPLATE_ID = process.env.EMAIL_TEMPLATE_ID;
 export const PUBLIC_KEY = process.env.PUBLIC_KEY;
 export const GOOGLE_MAIL_PASSWORD = process.env.GOOGLE_MAIL_PASSWORD;
-export const GOOGLE_MAIL_USER = process.env.GOOGLE_MAIL_USER 
+export const GOOGLE_MAIL_USER = process.env.GOOGLE_MAIL_USER;
+export const REDIS_URL = process.env.REDIS_URL
