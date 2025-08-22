@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { refreshToken } from "./ProtectedRoutes";
 import { ACCESS_TOKEN } from "../../src/utils/constants";
 import { jwtDecode } from "jwt-decode";
-import logo from "/src/assets/OIP.webp";
+import logo from "../assets/OIP.webp";
 import {
   Disclosure,
   DisclosureButton,

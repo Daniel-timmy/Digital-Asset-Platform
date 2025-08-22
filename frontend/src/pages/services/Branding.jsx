@@ -98,7 +98,7 @@ export default function Branding() {
   }, [submitStatus]);
 
   return (
-    <div className="bg-[#ffffff] flex flex-col min-h-screen font-[Inter]">
+    <div className="bg-white flex flex-col min-h-screen font-Inter">
       <Header />
       <main className="flex justify-center p-4">
         <div className="bg-[#f4e8d8] w-full max-w-3xl rounded-3xl p-8 shadow-lg">
