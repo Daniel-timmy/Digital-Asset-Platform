@@ -1,6 +1,10 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Dashboard from "./pages/Dashboard";
+import ClientsPage from "./pages/Client/ClientsPage";
+import Dashboard from "./pages/Client/Dashboard";
+import ClientsTickets from "./pages/Client/ClientsTickets";
+import ClientsOrders from "./pages/Client/ClientsOrders";
+import CLientsTransactions from "./pages/Client/ClientsTransactions";
 import Landingpage from "./pages/Landingpage";
 import Stock from "./pages/Stock";
 import CartPage from "./pages/CartPage";
@@ -9,7 +13,6 @@ import AuthPage from "./pages/AuthPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ProtectedRoutes from "./components/ProtectedRoutes";
 import VerifyPaymentPage from "./pages/VerifyPaymentPage";
-import ClientsPage from "./pages/Client/ClientsPage";
 import Photography from "./pages/services/Photography";
 import Branding from "./pages/services/Branding";
 import Socialmedia from "./pages/services/Socialmedia";
@@ -23,6 +26,8 @@ import Bookings from "./pages/admin/Bookings";
 import Transactions from "./pages/admin/Transactions";
 import VerifyCode from "./pages/VerifyCode";
 import ProtectedAdminRoutes from "./components/ProtectedAdminRoutes";
+import NotFound from "./NotFound";
+import ClientsLayout from "./pages/Client/ClientsLayout";
 
 function Logout() {
   localStorage.clear();
@@ -33,6 +38,7 @@ function App() {
   return (
     <Router>
       <Routes>
+        <Route path="notfound" element={<NotFound />} />
         <Route path="/socialmedia" element={<Socialmedia />} />
         <Route path="/photography" element={<Photography />} />
         <Route path="/branding" element={<Branding />} />
@@ -65,10 +71,18 @@ function App() {
           path="/dashboard"
           element={
             <ProtectedRoutes>
-              <ClientsPage />
+              <ClientsLayout />
             </ProtectedRoutes>
           }
-        />
+      >
+       < Route index element={<Dashboard />} />
+       
+     
+       <Route path="orders" element={<ClientsOrders />} />
+       <Route path="transactions" element={<CLientsTransactions />} />
+       <Route path="tickets" element={<ClientsTickets />} />
+      </Route>
+
         <Route path="/logout" element={<Logout />} />
         <Route path="/stock" element={<Stock />} />
         <Route path="/cart" element={<CartPage />} />

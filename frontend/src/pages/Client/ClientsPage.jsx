@@ -3,8 +3,9 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import Sidebar from "./Sidebar";
 import Dashboard from "./Dashboard";
-import Orders from "./Orders";
-import Transactions from "./Transactions";
+import ClientsOrders from "./ClientsOrders";
+import ClientsTransactions from "./ClientsTransactions";
+import ClientsTickets from "./ClientsTickets";
 import { ErrorBoundary } from "react-error-boundary";
 import { useNavigate } from "react-router-dom";
 
@@ -23,8 +24,9 @@ const ClientsPage = () => {
   }
   const tabContent = {
     dashboard: <Dashboard />,
-    orders: <Orders />,
-    transactions: <Transactions />,
+    orders: <ClientsOrders />,
+    transactions: <ClientsTransactions />,
+    tickets: <ClientsTickets />,
     logout: <Logout />,
   };
   const MemoizedHeader = React.memo(Header);

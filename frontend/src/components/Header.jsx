@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { refreshToken } from "./ProtectedRoutes";
 import { ACCESS_TOKEN } from "../../src/utils/constants";
 import { jwtDecode } from "jwt-decode";
-import logo from "/src/assets/OIP.webp";
+import logo from "../assets/OIP.webp";
 import {
   Disclosure,
   DisclosureButton,
@@ -11,36 +11,67 @@ import {
 } from "@headlessui/react";
 import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
-import logo from "../assets/OIP.webp";
-import userIcon from "../assets/user-line.png";
+const navigation = [
+  { name: "HOME", href: "/", current: true },
+  { name: "PRODUCTS", href: "/stock", current: false },
+  { name: "CART", href: "/cart", current: false },
+];
+
+function classNames(...classes) {
+  return classes.filter(Boolean).join(" ");
+}
 
 export default function Header() {
   const [open, setOpen] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
-  const [loginOpen, setLoginOpen] = useState(false);
+  const dropdownRef = useRef(null);
   const servicesRef = useRef(null);
-  const loginRef = useRef(null);
+  const navigate = useNavigate();
+  const [isAuthorized, setIsAuthorized] = useState(null);
+
+  const toggleDropdown = () => setOpen(!open);
+  const toggleServices = () => setServicesOpen(!servicesOpen);
+
+  const handleClickOutside = (e) => {
+    if (
+      dropdownRef.current &&
+      !dropdownRef.current.contains(e.target) &&
+      servicesRef.current &&
+      !servicesRef.current.contains(e.target)
+    ) {
+      setOpen(false);
+      setServicesOpen(false);
+    }
+  };
 
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (servicesRef.current && !servicesRef.current.contains(event.target)) {
-        setServicesOpen(false);
-      }
-      if (loginRef.current && !loginRef.current.contains(event.target)) {
-        setLoginOpen(false);
-      }
-    }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const auth = async () => {
+    const token = localStorage.getItem(ACCESS_TOKEN);
+    if (!token) return setIsAuthorized(false);
+    const decoded = jwtDecode(token);
+    const now = Date.now() / 1000;
+    if (decoded.exp < now) {
+      await refreshToken();
+    } else {
+      setIsAuthorized(true);
+    }
+  };
+
+  useEffect(() => {
+    auth().catch(() => setIsAuthorized(false));
+  }, []);
+
   return (
-    <Disclosure as="nav" className="bg-gray-800">
+    <Disclosure as="nav" className="bg-white shadow-md sticky top-0 z-50">
       <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
         <div className="relative flex h-16 items-center justify-between">
           {/* Mobile menu button */}
           <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
-            <DisclosureButton className="group relative inline-flex items-center justify-center rounded-md p-2 text-gray-50 hover:bg-gray-400 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset">
+            <DisclosureButton className="group relative inline-flex items-center justify-center rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-black focus:ring-2 focus:ring-black focus:outline-hidden focus:ring-inset">
               <span className="sr-only">Open main menu</span>
               <Bars3Icon className="block size-6 group-data-open:hidden" />
               <XMarkIcon className="hidden size-6 group-data-open:block" />
@@ -52,70 +83,173 @@ export default function Header() {
             <div className="flex shrink-0 items-center">
               <img alt="BASELINKS" src={logo} className="h-8 w-auto" />
             </div>
+            <div className="hidden sm:ml-6 sm:flex sm:space-x-6">
+              {navigation.map((item) => (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  aria-current={item.current ? "page" : undefined}
+                  className={classNames(
+                    item.current
+                      ? "text-black border-b-2 border-black"
+                      : "text-gray-600 hover:text-black hover:border-b-2 hover:border-black",
+                    "px-3 py-2 text-sm font-medium transition-all duration-200"
+                  )}
+                >
+                  {item.name}
+                </a>
+              ))}
 
-              {/* User Icon and Dropdown */}
-              <div className="hidden md:flex items-center relative" ref={loginRef}>
+              {/* SERVICES dropdown */}
+              <div className="relative" ref={servicesRef}>
                 <button
-                  onClick={() => setLoginOpen(!loginOpen)}
-                  className="rounded-full bg-white h-10 w-10 flex items-center justify-center"
+                  onClick={toggleServices}
+                  className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium transition"
                 >
                   SERVICES
                 </button>
-                {loginOpen && (
-                  <div className="absolute right-0 top-12 bg-gray-800 w-40 rounded-md shadow-lg z-50">
-                    <Link to="/login" className="block px-4 py-2 text-sm text-white hover:bg-gray-700">Login / Signup</Link>
-                    
+                {servicesOpen && (
+                  <div className="absolute mt-2 w-56 bg-white border rounded-lg shadow-lg z-50">
+                    <Link
+                      to="/photography"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Photography and video editing
+                    </Link>
+                    <Link
+                      to="/branding"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Design and branding
+                    </Link>
+                    <Link
+                      to="/webdev"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Website and development
+                    </Link>
+                    <Link
+                      to="/socialmedia"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Social media
+                    </Link>
                   </div>
                 )}
-              </div>
-
-              {/* Mobile Toggle Button */}
-              <div className="md:hidden">
-                <Disclosure.Button className="p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700">
-                  {open ? <XMarkIcon className="block h-6 w-6" /> : <Bars3Icon className="block h-6 w-6" />}
-                </Disclosure.Button>
               </div>
             </div>
           </div>
 
-          {/* Mobile Menu Panel */}
-          <Disclosure.Panel className="md:hidden px-2 pt-2 pb-3 space-y-1">
-            <Link to="/" className="block text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-base font-medium">HOME</Link>
-            <Link to="/stock" className="block text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-base font-medium">PRODUCTS</Link>
-            <Link to="/cart" className="block text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-base font-medium">CART</Link>
+          {/* Right: Notifications & User */}
+          <div
+            className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0"
+            ref={dropdownRef}
+          >
+            <button
+              type="button"
+              className="relative rounded-full bg-gray-100 p-2 text-gray-600 hover:text-black hover:bg-gray-200 focus:ring-2 focus:ring-black focus:outline-hidden"
+            >
+              <BellIcon className="size-6" />
+              <span className="sr-only">View notifications</span>
+            </button>
 
-            <Disclosure>
-              {({ open }) => (
-                <>
-                  <Disclosure.Button className="w-full text-left text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-base font-medium">SERVICES</Disclosure.Button>
-                  {open && (
-                    <div className="pl-6 space-y-1">
-                      <Link to="/photography" className="block text-sm text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-1">Photography</Link>
-                      <Link to="/branding" className="block text-sm text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-1">Branding</Link>
-                      <Link to="/webdev" className="block text-sm text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-1">Web Dev</Link>
-                      <Link to="/socialmedia" className="block text-sm text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-1">Social Media</Link>
-                    </div>
+            {/* User menu */}
+            <div className="ml-4 relative">
+              <button onClick={toggleDropdown} className="focus:outline-none">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 shadow-sm hover:scale-105 transition-transform duration-200">
+                  <img
+                    alt="user"
+                    src="/src/assets/user-line.png"
+                    className="h-6 w-auto"
+                  />
+                </div>
+              </button>
+              {open && (
+                <div className="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-lg z-50 py-2 animate-fade-in-up">
+                  {!isAuthorized && (
+                    <Link to="/login">
+                      <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        Login / Signup
+                      </button>
+                    </Link>
                   )}
-                </>
+                  {isAuthorized && (
+                    <>
+                      <Link to="/dashboard">
+                        <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                          Dashboard
+                        </button>
+                      </Link>
+                      <Link to="/logout">
+                        <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                          Logout
+                        </button>
+                      </Link>
+                    </>
+                  )}
+                </div>
               )}
-            </Disclosure>
+            </div>
+          </div>
+        </div>
+      </div>
 
-            <Disclosure>
-              {({ open }) => (
-                <>
-                  <Disclosure.Button className="w-full text-left text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-base font-medium">LOGIN</Disclosure.Button>
-                  {open && (
-                    <div className="pl-6 space-y-1">
-                      <Link to="/login" className="block text-sm text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-1">Login / Signup</Link>
-                      
-                    </div>
-                  )}
-                </>
+      {/* Mobile menu */}
+      <DisclosurePanel className="sm:hidden bg-white border-t">
+        <div className="space-y-1 px-2 pt-2 pb-3">
+          {navigation.map((item) => (
+            <DisclosureButton
+              key={item.name}
+              as="a"
+              href={item.href}
+              aria-current={item.current ? "page" : undefined}
+              className={classNames(
+                item.current
+                  ? "text-black border-l-4 border-black bg-gray-50"
+                  : "text-gray-600 hover:text-black hover:bg-gray-100",
+                "block rounded-md px-3 py-2 text-base font-medium"
               )}
-            </Disclosure>
-          </Disclosure.Panel>
-        </>
-      )}
+            >
+              {item.name}
+            </DisclosureButton>
+          ))}
+          <DisclosureButton
+            as="div"
+            onClick={toggleServices}
+            className="block rounded-md px-3 py-2 text-base text-gray-600 hover:text-black hover:bg-gray-100 cursor-pointer"
+          >
+            Services
+            {servicesOpen && (
+              <div className="mt-1 space-y-1 pl-4">
+                <Link
+                  to="/photography"
+                  className="block px-3 py-1 text-sm text-gray-600 hover:text-black hover:bg-gray-100"
+                >
+                  Photography and video editing
+                </Link>
+                <Link
+                  to="/branding"
+                  className="block px-3 py-1 text-sm text-gray-600 hover:text-black hover:bg-gray-100"
+                >
+                  Design and branding
+                </Link>
+                <Link
+                  to="/webdev"
+                  className="block px-3 py-1 text-sm text-gray-600 hover:text-black hover:bg-gray-100"
+                >
+                  Website and development
+                </Link>
+                <Link
+                  to="/socialmedia"
+                  className="block px-3 py-1 text-sm text-gray-600 hover:text-black hover:bg-gray-100"
+                >
+                  Social media
+                </Link>
+              </div>
+            )}
+          </DisclosureButton>
+        </div>
+      </DisclosurePanel>
     </Disclosure>
   );
 }
