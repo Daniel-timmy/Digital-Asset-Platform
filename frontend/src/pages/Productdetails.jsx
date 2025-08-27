@@ -11,21 +11,18 @@ import LoadingIndicator from "../components/LoadingIndicator";
 import { initialize_payment } from "../utils/payment";
 
 function Productdetails() {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState({});
   const [product, setProduct] = useState({});
   const [relatedProduct, setRelatedProduct] = useState([]);
   const [loading, setLoading] = useState(false);
   const [customLoading, setCustomLoading] = useState(false);
+  const [buyLoading, setBuyLoading] = useState(false);
   const [relatedLoading, setRelatedLoading] = useState(false);
   const { id } = useParams();
   const [errors, setErrors] = useState({});
   const [loadAssetError, setLoadAssetError] = useState({});
   const [isAuthorized, setIsAuthorized] = useState(true);
-
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -64,18 +61,14 @@ function Productdetails() {
     const getRelatedAssets = async (id) => {
       setRelatedLoading(true);
       try {
-        console.log(product.tags);
         const res = await api.get(
           `/assets?tagIds=${product.tags[0].id}&page=1&limit=5`
         );
-        console.log("Related assets response:", res);
         setRelatedProduct(res.data.results);
       } catch (error) {
-        console.log("Error fetching related assets:", error);
         setLoadAssetError({
           error: "Failed to load related assets. Try again.",
         });
-        console.log(error);
       } finally {
         setRelatedLoading(false);
       }
@@ -128,14 +121,48 @@ function Productdetails() {
 
       setFormData({ name: "", description: "" });
       setErrors({});
-      console.log(response.data.data.id);
       initialize_payment(response.data.data.id);
       alert("Customization order succesful. Initializing payment...");
     } catch (error) {
       console.error("Error submitting form:", error);
       setErrors({ name: "Failed to submit. Please try again." });
       setCustomLoading(false);
-    } finally {
+    }
+  };
+
+  const handleBuyNow = async () => {
+    const token = localStorage.getItem(ACCESS_TOKEN);
+    if (!token) {
+      setIsAuthorized(false);
+      setErrors({ user: "You can't customize unless you Sign up or log in" });
+      return;
+    }
+    const decoded = jwtDecode(token);
+    const tokenExpiration = decoded.exp;
+    const now = Date.now() / 1000;
+
+    if (tokenExpiration < now) {
+      setErrors({ user: "You can't customize unless you Sign up or log in" });
+      return;
+    }
+    setBuyLoading(true);
+    try {
+      const response = await api.post("/custom", {
+        name: product.name,
+        description: "Uncustomized asset download",
+        type: "download",
+        asset: id,
+      });
+      console.log(response);
+      if (response.status !== 201) {
+        throw new Error("Failed to submit order");
+      }
+
+      setErrors({});
+      initialize_payment(response.data.data.id);
+      alert("Buy order succesful. Initializing payment...");
+    } catch (error) {
+      setErrors({ name: "Failed to submit. Please try again." });
       setCustomLoading(false);
     }
   };
@@ -217,18 +244,36 @@ function Productdetails() {
                   )}
                 </div>
                 {customLoading ? (
-                  <div className="col-span-4 flex justify-center items-center h-64">
+                  <div className="col-span-4 flex justify-center items-center">
                     <LoadingIndicator />
                   </div>
                 ) : (
                   <button
                     type="submit"
-                    className="w-full bg-black hover:bg-gray-800 text-white py-3 rounded-md font-semibold shadow-md transition duration-300"
+                    disabled={buyLoading}
+                    className={`w-full bg-black  text-white py-3 rounded-md font-semibold shadow-md transition duration-300 ${
+                      buyLoading ? "opacity-50" : "hover:bg-gray-700"
+                    }`}
                   >
                     Submit Customization
                   </button>
                 )}
               </form>
+              {buyLoading ? (
+                <div className="col-span-4 flex justify-center mt-4 items-center">
+                  <LoadingIndicator />
+                </div>
+              ) : (
+                <button
+                  disabled={customLoading}
+                  className={`w-full bg-blue-500 mt-4  text-white py-3 rounded-md font-semibold shadow-md transition duration-300 ${
+                    customLoading ? "opacity-50" : "hover:bg-blue-800"
+                  }`}
+                  onClick={() => handleBuyNow()}
+                >
+                  Buy Now
+                </button>
+              )}
             </div>
           </div>
         )}

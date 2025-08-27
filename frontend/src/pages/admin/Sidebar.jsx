@@ -70,7 +70,7 @@ const Sidebar = () => {
         {
           key: "webdev",
           label: "Web Dev/UIUX",
-          path: "/admin/bookings/webdev",
+          path: "/admin/bookings/website",
           icon: <FaCode className="mr-2" />,
         },
         {
@@ -82,7 +82,7 @@ const Sidebar = () => {
         {
           key: "socialmedia",
           label: "Social Media Management",
-          path: "/admin/bookings/socialmedia",
+          path: "/admin/bookings/social-media",
           icon: <FaShareAlt className="mr-2" />,
         },
       ],

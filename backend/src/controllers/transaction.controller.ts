@@ -7,22 +7,26 @@ import axios from 'axios';
 import { FRONTEND_URL, PAYSTACK_SECRET_KEY } from "../config/env";
 import { User } from "../entities/user.entities";
 import { CustomAsset } from "../entities/customasset.entities";
+import { Download } from "../entities/download.entities";
 import { AppDataSource } from "../database/db";
 import { verifyPayment } from "../utils/payment";
 import crypto from "crypto";
 import logger from "../logger/app.logger";
 import { HttpError } from "../error/HttpError";
 import { applyTransactionsFilters } from "../filters/transactions.filter";
+import { DownloadController } from "./download.controller";
 
 export class TransactionController {
   private customAssetRepository: Repository<CustomAsset>;
   private userRepository: Repository<User>;
   private transactionRepository: Repository<Transaction>;
+  private downloadRepository: Repository<Download>
 
   constructor(private transactionService: TransactionService) {
     this.customAssetRepository = AppDataSource.getRepository(CustomAsset);
     this.userRepository = AppDataSource.getRepository(User);
     this.transactionRepository = AppDataSource.getRepository(Transaction);
+    this.downloadRepository = AppDataSource.getRepository(Download)
   }
 
   async create(req: AuthRequest, res: Response, next: NextFunction) {
@@ -201,59 +205,7 @@ export class TransactionController {
     }
   }
 
-  // async initialize(req: AuthRequest, res: Response, next: NextFunction){
-  //   try {
-  //     const user = req.user
 
-  //     if (!user) throw new Error("User unauthenticated")
-
-  //     const { id } = req.body; 
-
-  //     console.log(id)
-  //     const custom_asset = await this.customAssetRepository.findOne({ where: { id: id } })
-  //     if (!custom_asset) throw new Error('Invalid custom asset id')
-  //     console.log(custom_asset)
-  //     const transactionData = {
-  //       custom_asset,
-  //       user,
-  //       amount: custom_asset.price,
-
-  //     }
-  //     const transaction = this.transactionRepository.create(transactionData);
-  //     const savedTransaction = await this.transactionRepository.save(transaction)
-  //     console.log(savedTransaction.id)
-
-    
-  //     const response = await axios.post(
-  //       'https://api.paystack.co/transaction/initialize',
-  //       {
-  //         email: user.email,
-  //         amount: custom_asset.price * 100, // Convert to kobo
-  //         reference: savedTransaction.id,
-  //         callback_url: `${FRONTEND_URL}/verify-payment`, // URL to redirect after payment
-  //       },
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-  //           'Content-Type': 'application/json',
-  //         },
-  //       }
-  //     );
-  //     console.log(response.data)
-  //     if (response.status){
-  //       custom_asset.payment_status = "processing"
-  //       await this.customAssetRepository.save(custom_asset)
-  //     }
-  //       res.status(200).json({
-  //       authorization_url: response.data.data.authorization_url,
-  //       access_code: response.data.data.access_code,
-  //       reference: response.data.data.reference,
-  //     });
-  //   } catch (error) {
-  //     console.error('Error initializing payment:', error);
-  //     res.status(500).json({ error: 'Failed to initialize payment' });
-  //   }
-  // }
   async webhook_paystack(req: Request, res: Response, next: NextFunction) {
     try {
       logger.info(`Received Paystack webhook event: ${req.body.event}`);
@@ -277,6 +229,11 @@ export class TransactionController {
             .then(async (paymentData) => {
               if (paymentData.status === 'success') {
                 await this.transactionService.update(reference, { payment_status: "completed" });
+                  // if (customasset.type === 'download'){
+                  //   const cdownload = this.downloadRepository.create({user: req.user, asset: customasset.asset})
+                  //   const download = await this.downloadRepository.save(cdownload)
+                  //   console.log(`DOWNLOADDDDDDDDDDDDDDDD ${download.id}`)
+                  // }
                 logger.info(`Payment successful for reference: ${reference}, amount: ${amount}`);
               } else {
                 logger.warn(`Payment verification failed for reference: ${reference}, status: ${paymentData.status}`);
@@ -298,7 +255,7 @@ export class TransactionController {
     }
   }
 
-  async verify(req: Request, res: Response, next: NextFunction) {
+  async verify(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const ref = req.params.ref;
       logger.info(`Verifying payment for transaction reference: ${ref}`);
@@ -311,13 +268,14 @@ export class TransactionController {
 
       if (transaction.payment_status === "completed") {
         logger.info(`Payment already verified for transaction reference: ${ref}`);
+        // check for corresponding download
         return res.status(200).json({
           message: "Payment already verified",
           transaction,
         });
       }
 
-      const customasset = await this.customAssetRepository.findOne({ where: { id: transaction.custom_asset.id } });
+      const customasset = await this.customAssetRepository.findOne({ where: { id: transaction.custom_asset.id }, relations: ["asset"], });
       if (!customasset) {
         logger.warn(`Custom asset not found for transaction reference: ${ref}, asset ID: ${transaction.custom_asset.id}`);
         throw new Error("Custom asset not found");
@@ -339,6 +297,11 @@ export class TransactionController {
         if (data.status === "success") {
           transaction.payment_status = "completed";
           customasset.payment_status = "paid";
+          if (customasset.type === 'download'){
+            const cdownload = this.downloadRepository.create({user: req.user, asset: customasset.asset})
+            const download = await this.downloadRepository.save(cdownload)
+
+          }
           message = "Payment processed successfully";
           status = "success";
           logger.info(`Payment verified as successful for reference: ${ref}`);
@@ -389,114 +352,3 @@ export class TransactionController {
 }
 
 
-  // async webhook_paystack(req: Request, res: Response, next: NextFunction) {
-  //   // Verify Paystack signature
-  //   const hash = crypto
-  //     .createHmac('sha512', PAYSTACK_SECRET_KEY!)
-  //     .update(JSON.stringify(req.body))
-  //     .digest('hex');
-
-  //   if (hash !== req.headers['x-paystack-signature']) {
-  //     return res.status(401).json({ error: 'Invalid signature' });
-  //   }
-
-  //   const event = req.body;
-
-  //   // Handle the event
-  //   switch (event.event) {
-  //     case 'charge.success':
-  //       const { reference, amount, status } = event.data;
-  //       // Verify payment with Paystack API
-  //       verifyPayment(reference)
-  //         .then((paymentData) => {
-  //           if (paymentData.status === 'success') {
-  //             // Update your database or perform other actions
-  //             const transaction = this.transactionService.update(reference, {payment_status: "completed"})
-  //             console.log(`Payment successful for reference: ${reference}, Amount: ${amount}`);
-  //             // Example: Save to database, send confirmation email, etc.
-  //           }
-  //         })
-  //         .catch((error) => {
-  //           console.error('Payment verification failed:', error);
-  //         });
-  //       break;
-  //     default:
-  //       console.log(`Unhandled event: ${event.event}`);
-  //   }
-
-  //   // Acknowledge receipt of webhook
-  //   res.status(200).send('Webhook received');
-  // }
-
-  // async verify(req: Request, res: Response, next: NextFunction) {
-  //   try {
-  //   const ref = req.params.ref  
-  //   const response = await axios.get(`https://api.paystack.co/transaction/verify/${ref}`, {
-  //     headers: {
-  //       Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-  //       'Content-Type': 'application/json',
-  //     },
-  //   });
-  //   console.log(response.data)
-  //   const transaction = await this.transactionService.findOne(ref)
-  //   if (!transaction) throw new Error("Transaction not found")
-    
-  //   if (transaction.payment_status === "completed") {
-  //     return res.status(200).json({
-  //       message: "Payment already verified",
-  //       transaction,
-  //     });
-  //   }
-  //   console.log("Transaction", transaction)
-    
-  //   const customasset = await this.customAssetRepository.findOne({ where: { id: transaction.custom_asset.id } })
-  //   if (!customasset) throw new Error("Custom asset not found")
-
-
-  //   let message;
-  //   let status;
-  //   if (response.data.status === true){
-  //     const data = response.data.data;
-
-  //     if (data.status === "success"){
-  //       transaction.payment_status ="completed"
-  //       customasset.payment_status = "paid"
-  //       message = "Payment processed successfully"
-  //       status = "success"
-
-  //     } else if (data.status === "failed"){
-  //       transaction.payment_status = "failed"
-  //       message = "Payment failed"
-  //       status ="failed"
-  //     } else if (data.status === "processing") {
-  //       transaction.payment_status = "pending"
-  //       status ="processing"
-  //       message = "Payment is still processing"
-  //     } else if (data.status === "abandoned") {
-  //       transaction.payment_status = "failed"
-  //       customasset.payment_status = "pending"
-  //       message = "Payment was abandoned"
-  //     } else {
-  //       transaction.payment_status = "pending"
-  //       customasset.payment_status = "pending"
-  //       message = "Payment still pending"
-  //       status = "failed"
-  //     }
-  //     const savedTransaction = await this.transactionRepository.save(transaction)
-  //     const savedCustomAsset = await this.customAssetRepository.save(customasset)
-  //     res.status(200).json({
-  //       message,
-  //       savedTransaction,
-  //       status,
-  //     })
-  //   } else {
-  //      res.status(400).json({
-  //       message: "Payment failed"
-  //     })
-  //   }
-
-  // } catch (error) {
-  //   next(error)
-  // }
-  // }
-// }

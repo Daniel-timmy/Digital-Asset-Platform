@@ -45,12 +45,10 @@ function RecentOrders({ orders, setOrders }) {
   const handlePayment = async (orderId) => {
     try {
       setPaymentLoading((prev) => ({ ...prev, [orderId]: true }));
-      console.log("Initializing payment for order:", orderId);
       await initialize_payment(orderId); // Ensure initialize_payment is async
       // setPaymentLoading((prev) => ({ ...prev, [orderId]: false }));
     } catch (error) {
       setPaymentLoading((prev) => ({ ...prev, [orderId]: false }));
-      console.error("Error initializing payment:", error);
     } finally {
       setPaymentLoading((prev) => ({ ...prev, [orderId]: false }));
       const updatedOrders = orders.map((order) =>
@@ -60,7 +58,6 @@ function RecentOrders({ orders, setOrders }) {
       );
     }
     setOrders(updatedOrders);
-    console.log("Updated orders:", updatedOrders);
   };
   return (
     <section className="animate-fade-in-up delay-400">
@@ -137,14 +134,19 @@ const Dashboard = () => {
   const [orderCounts, setOrderCounts] = useState({});
   const [orders, setOrders] = useState([]);
   const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
+  const [errors, setErrors] = useState({
+    count: "",
+    orders: "",
+  });
 
   useEffect(() => {
+    const newErrors = {};
     const getCounts = async () => {
       try {
         const res = await api.get("/custom/counts");
         setOrderCounts(res.data.data);
-        console.log(res.data.data);
       } catch (error) {
+        newErrors.count = "Unable to get users stat. Network error.";
         console.log(error);
       }
     };
@@ -153,14 +155,14 @@ const Dashboard = () => {
       try {
         const res = await api.get("/custom?page=1&limit=5");
         setOrders(res.data.data.results);
-        console.log(res.data.data);
       } catch (error) {
-        console.log(error);
+        newErrors.orders = "Unable to get recent orders. Network error.";
       }
     };
 
     getCounts();
     getOrders();
+    setErrors(newErrors);
   }, []);
   return (
     <>

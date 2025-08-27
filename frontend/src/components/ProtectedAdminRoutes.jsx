@@ -46,7 +46,6 @@ const ProtectedAdminRoutes = ({ children }) => {
       // await refreshToken();
     }
     const user = JSON.parse(localStorage.getItem(USER));
-    console.log(user);
     if (!user) {
       return <Navigate to="/login" />;
     }

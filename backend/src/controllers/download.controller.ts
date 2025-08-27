@@ -1,21 +1,22 @@
 import { NextFunction, Request, Response } from "express";
 import { DownloadService } from "../services/download.service";
+import { AuthRequest } from "../interfaces/auth.interface";
 
 export class DownloadController {
   constructor(private downloadService: DownloadService) {}
 
-  async create(req: Request, res: Response, next: NextFunction) {
+  async create(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const download = await this.downloadService.create(req.body);
+      const download = await this.downloadService.create(req);
       res.status(201).json(download);
     } catch (error) {
       next(error);
     }
   }
 
-  async findAll(req: Request, res: Response, next: NextFunction) {
+  async findAll(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const downloads = await this.downloadService.findAll();
+      const downloads = await this.downloadService.findAll(req);
       res.json(downloads);
     } catch (error) {
       next(error);

@@ -18,7 +18,7 @@ export default function Card({ product, onAddToCart, handleProductClick }) {
         }}
         className="absolute top-3 right-3 z-10 bg-black text-white p-2 rounded-full hover:bg-gray-800 transition"
       >
-        <FaShoppingCart className="text-sm" />
+        <FaShoppingCart className="text-sm cursor-pointer hover:scale-130" />
       </button>
       <Link to={`/product-details/${product.id}`} key={product.id}>
         {/* Product Image */}

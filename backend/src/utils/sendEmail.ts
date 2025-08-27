@@ -66,7 +66,7 @@ export async function sendEmail(userId: string, subject: string, message: string
   }
 }
 
-export async function sendEmailBooking(email: string, subject: string, message: string) {
+export async function sendEmailGeneric(email: string, subject: string, message: string) {
   try {
     logger.info(`Sending booking email to: ${email}, subject: ${subject}`);
 

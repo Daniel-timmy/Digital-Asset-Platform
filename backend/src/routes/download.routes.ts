@@ -6,11 +6,11 @@ import { DownloadController } from "../controllers/download.controller";
 const downloadRouter = Router();
 const downloadController = new DownloadController(new DownloadService());
 
-downloadRouter.get("/", async (req, res, next) => {
+downloadRouter.get("/", authentication, async (req, res, next) => {
   await downloadController.findAll(req, res, next);
 });
 
-downloadRouter.get("/:id", async (req, res, next) => {
+downloadRouter.get("/:id", authentication, async (req, res, next) => {
   await downloadController.findOne(req, res, next);
 });
 

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { remove_from_cart } from "../utils/cart";
+import { FaEye, FaEyeSlash, FaTrash, FaTools } from "react-icons/fa";
 import "../App.css";
 import LoadingIndicator from "../components/LoadingIndicator";
 import bg_img from "../assets/wallhaven-6d7ow6.png";
@@ -10,44 +11,13 @@ import bg_img from "../assets/wallhaven-6d7ow6.png";
 export default function CartPage() {
   const [isVisible, setIsVisible] = useState(false);
   const [cart, setCart] = useState([]);
-  const [customizingProduct, setCustomizingProduct] = useState(null);
-  const [customizations, setCustomizations] = useState({});
+  const [previewAsset, setPreviewAsset] = useState(null);
 
   const removeFromCart = (asset) => {
     const updatedCart = cart.filter((item) => item.id !== asset.id);
     remove_from_cart(asset);
 
     setCart(updatedCart);
-  };
-
-  const handleCustomize = (product) => {
-    setCustomizingProduct(product);
-    setCustomizations((prev) => ({
-      ...prev,
-      [product.id]: prev[product.id] || "",
-    }));
-  };
-
-  const handleCustomizationChange = (e) => {
-    const { value } = e.target;
-    setCustomizations((prev) => ({ ...prev, [customizingProduct.id]: value }));
-  };
-
-  const saveCustomization = () => {
-    setCustomizingProduct(null);
-    console.log(
-      "Customized:",
-      customizingProduct.name,
-      customizations[customizingProduct.id]
-    );
-  };
-
-  const cancelCustomization = () => {
-    setCustomizingProduct(null);
-    setCustomizations((prev) => {
-      const { [customizingProduct.id]: _, ...rest } = prev;
-      return rest;
-    });
   };
 
   useEffect(() => {
@@ -60,11 +30,24 @@ export default function CartPage() {
           arr.push(parsedCart[key]);
         }
         setCart(arr);
+        setPreviewAsset(arr[0]);
       } catch (error) {
         console.error("Error parsing cart:", error);
       }
     }
   }, []);
+
+  const addAssetToPreview = (asset) => {
+    console.log("In preview mode");
+    console.log(asset.name);
+    setPreviewAsset(asset);
+  };
+
+  const removeAssetFromPreview = () => {
+    console.log("Removed from preview mode");
+    // console.log(asset.name);
+    setPreviewAsset(null);
+  };
 
   return (
     <div
@@ -92,13 +75,13 @@ export default function CartPage() {
         >
           Shopping Cart
         </h1>
-        <p
+        {/* <p
           className={`text-xl sm:text-2xl text-white font-semibold mb-8 ${
             isVisible ? "animate-fade-in-up" : ""
           } delay-200`}
         >
           Review and Customize Your Items
-        </p>
+        </p> */}
         {cart.length === 0 ? (
           <p
             className={`text-lg text-white ${
@@ -108,63 +91,54 @@ export default function CartPage() {
             Your cart is empty.
           </p>
         ) : (
-          <div className="w-full max-w-4xl mx-auto">
-            {cart.map((item, key) => (
-              <div
-                key={item.id}
-                className={`bg-white p-6 mb-4 rounded-lg shadow-md flex justify-between items-center ${
-                  isVisible ? "animate-fade-in-up" : ""
-                } ${`delay-${item.id * 100}`}`}
-              >
-                <span className="text-lg text-gray-900">
-                  {item.name || `Product ${item.id}`} - ${item.price}
-                </span>
-                <div>
-                  <button
-                    onClick={() => removeFromCart(item)}
-                    className="bg-red-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-red-600 transition-colors duration-300 mr-2"
-                  >
-                    Remove
-                  </button>
-                  <Link to={`/product-details/${item.id}`} key={key}>
+          <div className="w-8/10 space-x-10 h-[100vh] flex items-center justify-content mx-auto">
+            <div className="w-2/3">
+              {cart.map((item, key) => (
+                <div
+                  key={item.id}
+                  className={`bg-white p-6 mb-4 rounded-lg shadow-md flex justify-between items-center ${
+                    isVisible ? "animate-fade-in-up" : ""
+                  }`}
+                >
+                  <span className="text-lg text-gray-900">
+                    {item.name || `Product ${item.id}`} - ${item.price}
+                  </span>
+                  <div className="flex space-x-4">
                     <button
-                      onClick={() => handleCustomize(item)}
-                      to={`/product-details/${item.id}`}
-                      className="bg-teal-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-teal-600 transition-colors duration-300"
+                      onClick={() => removeFromCart(item)}
+                      className="bg-red-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-red-600 transition-colors duration-300"
                     >
-                      Customize
+                      <FaTrash />
                     </button>
-                  </Link>
+                    <Link to={`/product-details/${item.id}`} key={key}>
+                      <button
+                        to={`/product-details/${item.id}`}
+                        className="bg-teal-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-teal-600 transition-colors duration-300"
+                      >
+                        <FaTools />
+                      </button>
+                    </Link>
+                    {previewAsset && previewAsset.id === item.id ? (
+                      <FaEyeSlash
+                        className="size-6"
+                        onClick={() => removeAssetFromPreview()}
+                      />
+                    ) : (
+                      <FaEye
+                        className="size-6"
+                        onClick={() => addAssetToPreview(item)}
+                      />
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-        {customizingProduct && (
-          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-11/12 max-w-md bg-orange-100 bg-opacity-95 rounded-xl p-6 shadow-2xl z-20 animate-slide-up">
-            <h2 className="text-xl text-orange-800 mb-4">
-              Customize{" "}
-              {customizingProduct.name || `Product ${customizingProduct.id}`}
-            </h2>
-            <textarea
-              value={customizations[customizingProduct.id] || ""}
-              onChange={handleCustomizationChange}
-              placeholder="Enter customization details..."
-              className="w-full p-3 mb-4 rounded-lg border border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-            <div className="flex justify-end gap-4">
-              <button
-                onClick={saveCustomization}
-                className="bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-700 transition-colors duration-300"
-              >
-                Save
-              </button>
-              <button
-                onClick={cancelCustomization}
-                className="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400 transition-colors duration-300"
-              >
-                Cancel
-              </button>
+              ))}
+            </div>
+            <div className="w-1/3  bg-white/30 h-1/2 bg-opacity-95 rounded-xl p-6 shadow-2xl z-20 animate-slide-up">
+              {previewAsset ? (
+                <img src={previewAsset.thumbnail_url} />
+              ) : (
+                <p className="italic">Select an item to preview</p>
+              )}
             </div>
           </div>
         )}

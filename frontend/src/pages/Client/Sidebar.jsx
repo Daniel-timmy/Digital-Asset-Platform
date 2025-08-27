@@ -1,11 +1,12 @@
-import React from 'react';
+import React from "react";
 
 const Sidebar = ({ activeTab, setActiveTab }) => {
   const tabs = [
-    { key: 'dashboard', label: 'Dashboard' },
-    { key: 'orders', label: 'Orders' },
-    { key: 'transactions', label: 'Transactions' },
-    { key: 'logout', label: 'Logout' },
+    { key: "dashboard", label: "Dashboard" },
+    { key: "orders", label: "Orders" },
+    { key: "transactions", label: "Transactions" },
+    { key: "downloads", label: "Downloads" },
+    { key: "logout", label: "Logout" },
   ];
 
   return (
@@ -16,7 +17,9 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`px-4 py-2 rounded-md cursor-pointer transition ${
-              activeTab === tab.key ? 'bg-black text-white shadow-sm' : 'hover:bg-gray-200'
+              activeTab === tab.key
+                ? "bg-black text-white shadow-sm"
+                : "hover:bg-gray-200"
             }`}
           >
             {tab.label}

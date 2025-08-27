@@ -1,9 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { AuthRequest } from "../interfaces/auth.interface";
-import { AppDataSource } from "../database/db";
-import { CustomAsset } from "../entities/customasset.entities";
 import { CustomAssetService } from "../services/customasset.service";
-import { applyCustomAssetFilters } from "../filters/customassets.filter";
 import logger from "../logger/app.logger";
 import CustomAssetError from "../error/CustomAssetError";
 
@@ -55,19 +52,7 @@ export class CustomAssetController {
             }
 
             logger.info(`Fetching custom assets for user: ${req.user.id}, role: ${req.user.role}`);
-            const filters = req.query;
-
-            if (req.user && req.user.role !== 'admin') {
-                filters.user = { id: req.user.id };
-                logger.debug(`Applying user filter for non-admin user: ${req.user.id}`);
-            }
-
-            const query = AppDataSource.getRepository(CustomAsset)
-                .createQueryBuilder("customAsset")
-                .leftJoinAndSelect("customAsset.user", "user")
-                .leftJoinAndSelect("customAsset.asset", "asset");
-
-            const filteredAssets = await applyCustomAssetFilters(query, filters);
+            const filteredAssets = await this.customAssetService.findAll(req)
             logger.info(`Successfully retrieved ${filteredAssets.results.length} custom assets for user: ${req.user.id}`);
 
             return res.status(200).json({

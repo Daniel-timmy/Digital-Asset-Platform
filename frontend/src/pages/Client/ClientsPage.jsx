@@ -5,6 +5,7 @@ import Sidebar from "./Sidebar";
 import Dashboard from "./Dashboard";
 import Orders from "./Orders";
 import Transactions from "./Transactions";
+import Downloads from "./Downloads";
 import { ErrorBoundary } from "react-error-boundary";
 import { useNavigate } from "react-router-dom";
 
@@ -26,6 +27,7 @@ const ClientsPage = () => {
     orders: <Orders />,
     transactions: <Transactions />,
     logout: <Logout />,
+    downloads: <Downloads />,
   };
   const MemoizedHeader = React.memo(Header);
   const MemoizedFooter = React.memo(Footer);

@@ -17,4 +17,7 @@ export class Download {
 
   @CreateDateColumn()
   downloaded_at: Date = new Date();
+
+  @CreateDateColumn()
+  created_at: Date = new Date();
 }

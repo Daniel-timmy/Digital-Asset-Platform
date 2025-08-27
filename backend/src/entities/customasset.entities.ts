@@ -24,11 +24,11 @@ export class CustomAsset {
     @Column({ type: "enum", enum: ["open", "closed", "cancelled"], default: "open"})
     status!: "open" | "closed" | "cancelled";
 
+    @Column({ type: "enum", enum: ["custom", "download"], default: "custom"})
+    type!: "custom" | "download"
 
     @Column({ type: "enum", enum: ["paid", "pending", "cancelled", "processing"], default: "pending"})
     payment_status!: "paid" | "pending" | "processing";
-
-    // needs a due date
 
     @Column({ type: "date", nullable: true })
     due_date: Date = new Date(new Date().setDate(new Date().getDate() + 2));

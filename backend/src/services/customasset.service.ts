@@ -1,34 +1,36 @@
 import { AppDataSource } from "../database/db";
 import { Repository, In } from "typeorm";
 import { Asset } from "../entities/asset.entities";
-import { CustomAsset } from "../entities/customasset.entities";
 import { User } from "../entities/user.entities";
+import { CustomAsset } from "../entities/customasset.entities";
+import { applyCustomAssetFilters } from "../filters/customassets.filter";
 import { AuthRequest } from "interfaces/auth.interface";
 import logger from "../logger/app.logger";
 import { HttpError } from "../error/HttpError";
+import { IFitltered } from "../interfaces/asset.interface";
+
 
 interface ICustomAsset{
     name: string,
     description: string,
-    user: any,
-    asset?: any
+    user: User,
+    asset?: Asset,
+    type?: "custom" | "download",
+    status?: "open" | "closed",
 }
 
 export class CustomAssetService {
     private customAssetRepository: Repository<CustomAsset>
     private assetRepository: Repository<Asset>;
-    private userRepository: Repository<User>;
 
       constructor() {
         this.assetRepository = AppDataSource.getRepository(Asset);
         this.customAssetRepository = AppDataSource.getRepository(CustomAsset);
-        this.userRepository = AppDataSource.getRepository(User);
       }
 
     async create(req: AuthRequest){
       const user = req.user
-      // const user = req.user ? await this.userRepository.findOne({ where: { id: req.user.id } }) : null;
-      // if (!user) throw new Error("Login to customize your assets");
+      if (!user) throw new Error("Unauthorized")
 
       const asset = req.body ? await this.assetRepository.findOne({where: {id : req.body.asset }}) : null;
       if (!asset) throw new Error("Asset not found")
@@ -37,6 +39,8 @@ export class CustomAssetService {
         name: req.body.name,
         description: req.body.description,
         asset: asset,
+        type: req.body.type,
+        status: req.body.type === "download" ? "closed" : "open",
         user,
       }
       const customasset = this.customAssetRepository.create(customAssetData)
@@ -82,14 +86,21 @@ export class CustomAssetService {
       return countresult;
     }
 
-    async findAll(req: AuthRequest): Promise<CustomAsset[]> {
-      const user = req.user;
-      if (!user) throw new Error("User not unauthenticated")
+    async findAll(req: AuthRequest): Promise<IFitltered> {
 
-      if (user.role === "admin") {
-        return await this.customAssetRepository.find();
+      const filters = req.query;
+
+      if (req.user && req.user.role !== 'admin') {
+          filters.user = { id: req.user.id };
+          logger.debug(`Applying user filter for non-admin user: ${req.user.id}`);
       }
-      return await this.customAssetRepository.find({ where: { user: { id: user.id } } });
+      
+      const query = this.customAssetRepository
+          .createQueryBuilder("customAsset")
+          .leftJoinAndSelect("customAsset.user", "user")
+          .leftJoinAndSelect("customAsset.asset", "asset");
+          
+      return await applyCustomAssetFilters(query, filters);
     }
 
     async findOne(req: AuthRequest, id: string): Promise<CustomAsset | null>{
@@ -117,7 +128,6 @@ export class CustomAssetService {
 
     async remove(id: string, req: AuthRequest): Promise<void>{
         const user = req.user
-        console.log(`11111111111111111111111========================asdfgdfgkmjnhbvbjkl;,mn${id}`)
         if (!user) throw new Error("Unauthorized")
           
         const asset = await this.customAssetRepository.findOne({
@@ -129,7 +139,6 @@ export class CustomAssetService {
           logger.warn(`Custom asset not found for ID: ${id}`);
         throw new HttpError("Asset not found", 404);
       }
-        console.log(`22222222   ${asset.name} ${user.id} ${asset} ${id}`)
         const isOwner = asset.user.id === user.id;
         const isAdmin = user.role === "admin";
 
