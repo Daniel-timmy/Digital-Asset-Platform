@@ -115,8 +115,8 @@ export default function Branding() {
           )}
 
           {/* Tabs */}
-          <div className="flex justify-between border-b-2 border-[#b4a99b] mb-8">
-            <div className="text-black font-semibold text-lg pb-2 border-b-4 border-black w-1/2 text-center">
+          <div className="flex justify-between border-b-2 border-[var(--border-color)] mb-8">
+            <div className="text-[var(--text-color)] font-semibold text-lg pb-2 border-b-4 border-[var(--text-color)] w-1/2 text-center">
               Branding
             </div>
           </div>

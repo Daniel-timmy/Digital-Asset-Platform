@@ -52,10 +52,8 @@ export default function Header() {
   const auth = async () => {
     const token = localStorage.getItem(ACCESS_TOKEN);
     if (!token) return setIsAuthorized(false);
-
     const decoded = jwtDecode(token);
     const now = Date.now() / 1000;
-
     if (decoded.exp < now) {
       await refreshToken();
     } else {
@@ -68,12 +66,12 @@ export default function Header() {
   }, []);
 
   return (
-    <Disclosure as="nav" className="bg-gray-800">
+    <Disclosure as="nav" className="bg-white shadow-md sticky top-0 z-50">
       <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
         <div className="relative flex h-16 items-center justify-between">
           {/* Mobile menu button */}
           <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
-            <DisclosureButton className="group relative inline-flex items-center justify-center rounded-md p-2 text-gray-50 hover:bg-gray-400 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset">
+            <DisclosureButton className="group relative inline-flex items-center justify-center rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-black focus:ring-2 focus:ring-black focus:outline-hidden focus:ring-inset">
               <span className="sr-only">Open main menu</span>
               <Bars3Icon className="block size-6 group-data-open:hidden" />
               <XMarkIcon className="hidden size-6 group-data-open:block" />
@@ -85,8 +83,7 @@ export default function Header() {
             <div className="flex shrink-0 items-center">
               <img alt="BASELINKS" src={logo} className="h-8 w-auto" />
             </div>
-
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-4">
+            <div className="hidden sm:ml-6 sm:flex sm:space-x-6">
               {navigation.map((item) => (
                 <a
                   key={item.name}
@@ -94,9 +91,9 @@ export default function Header() {
                   aria-current={item.current ? "page" : undefined}
                   className={classNames(
                     item.current
-                      ? "bg-gray-50 text-black"
-                      : "text-gray-300 hover:bg-gray-700 hover:text-white",
-                    "rounded-md px-3 py-2 text-sm font-medium"
+                      ? "text-black border-b-2 border-black"
+                      : "text-gray-600 hover:text-black hover:border-b-2 hover:border-black",
+                    "px-3 py-2 text-sm font-medium transition-all duration-200"
                   )}
                 >
                   {item.name}
@@ -107,33 +104,33 @@ export default function Header() {
               <div className="relative" ref={servicesRef}>
                 <button
                   onClick={toggleServices}
-                  className="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium transition"
+                  className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium transition"
                 >
                   SERVICES
                 </button>
                 {servicesOpen && (
-                  <div className="absolute mt-2 w-56 bg-gray-800 rounded-md shadow-lg z-50">
+                  <div className="absolute mt-2 w-56 bg-white border rounded-lg shadow-lg z-50">
                     <Link
                       to="/photography"
-                      className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       Photography and video editing
                     </Link>
                     <Link
                       to="/branding"
-                      className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       Design and branding
                     </Link>
                     <Link
                       to="/webdev"
-                      className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       Website and development
                     </Link>
                     <Link
                       to="/socialmedia"
-                      className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       Social media
                     </Link>
@@ -150,15 +147,16 @@ export default function Header() {
           >
             <button
               type="button"
-              className="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:ring-2 focus:ring-white focus:ring-offset-2 focus:outline-hidden focus:ring-offset-gray-800"
+              className="relative rounded-full bg-gray-100 p-2 text-gray-600 hover:text-black hover:bg-gray-200 focus:ring-2 focus:ring-black focus:outline-hidden"
             >
               <BellIcon className="size-6" />
               <span className="sr-only">View notifications</span>
             </button>
 
+            {/* User menu */}
             <div className="ml-4 relative">
               <button onClick={toggleDropdown} className="focus:outline-none">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md hover:scale-105 transition-transform duration-200">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 shadow-sm hover:scale-105 transition-transform duration-200">
                   <img
                     alt="user"
                     src="/src/assets/user-line.png"
@@ -166,12 +164,11 @@ export default function Header() {
                   />
                 </div>
               </button>
-
               {open && (
-                <div className="absolute right-0 mt-2 w-40 bg-gray-800 rounded-md shadow-lg z-50 py-2 animate-fade-in-up">
+                <div className="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-lg z-50 py-2 animate-fade-in-up">
                   {!isAuthorized && (
                     <Link to="/login">
-                      <button className="block w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white">
+                      <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                         Login / Signup
                       </button>
                     </Link>
@@ -179,12 +176,12 @@ export default function Header() {
                   {isAuthorized && (
                     <>
                       <Link to="/dashboard">
-                        <button className="block w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white">
+                        <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                           Dashboard
                         </button>
                       </Link>
                       <Link to="/logout">
-                        <button className="block w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white">
+                        <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                           Logout
                         </button>
                       </Link>
@@ -198,7 +195,7 @@ export default function Header() {
       </div>
 
       {/* Mobile menu */}
-      <DisclosurePanel className="sm:hidden">
+      <DisclosurePanel className="sm:hidden bg-white border-t">
         <div className="space-y-1 px-2 pt-2 pb-3">
           {navigation.map((item) => (
             <DisclosureButton
@@ -208,44 +205,43 @@ export default function Header() {
               aria-current={item.current ? "page" : undefined}
               className={classNames(
                 item.current
-                  ? "bg-gray-50 text-black"
-                  : "text-gray-300 hover:bg-gray-700 hover:text-white",
+                  ? "text-black border-l-4 border-black bg-gray-50"
+                  : "text-gray-600 hover:text-black hover:bg-gray-100",
                 "block rounded-md px-3 py-2 text-base font-medium"
               )}
             >
               {item.name}
             </DisclosureButton>
           ))}
-
           <DisclosureButton
             as="div"
             onClick={toggleServices}
-            className="block rounded-md px-3 py-2 text-base text-gray-300 hover:bg-gray-700 hover:text-white cursor-pointer"
+            className="block rounded-md px-3 py-2 text-base text-gray-600 hover:text-black hover:bg-gray-100 cursor-pointer"
           >
             Services
             {servicesOpen && (
               <div className="mt-1 space-y-1 pl-4">
                 <Link
                   to="/photography"
-                  className="block px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                  className="block px-3 py-1 text-sm text-gray-600 hover:text-black hover:bg-gray-100"
                 >
                   Photography and video editing
                 </Link>
                 <Link
                   to="/branding"
-                  className="block px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                  className="block px-3 py-1 text-sm text-gray-600 hover:text-black hover:bg-gray-100"
                 >
                   Design and branding
                 </Link>
                 <Link
                   to="/webdev"
-                  className="block px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                  className="block px-3 py-1 text-sm text-gray-600 hover:text-black hover:bg-gray-100"
                 >
                   Website and development
                 </Link>
                 <Link
                   to="/socialmedia"
-                  className="block px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                  className="block px-3 py-1 text-sm text-gray-600 hover:text-black hover:bg-gray-100"
                 >
                   Social media
                 </Link>

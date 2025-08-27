@@ -291,7 +291,9 @@ const Webdev = () => {
               )}
             </div>
             <div>
-              <label className="block font-medium mb-2">Description</label>
+              <label className="block font-medium mb-2 text-[var(--text-color)]">
+                Description
+              </label>
               <textarea
                 name="description"
                 value={formData.description}

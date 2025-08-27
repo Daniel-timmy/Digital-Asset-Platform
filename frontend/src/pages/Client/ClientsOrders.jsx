@@ -42,7 +42,7 @@ const Orders = () => {
   }, []);
 
   return (
-    <div className="animate-fade-in-up space-y-6">
+    <div className="animate-fade-in-up space-y-6 px-4 sm:px-6 md:px-8">
       <h2 className="text-3xl font-bold text-black">Your Orders</h2>
       <div className="overflow-x-auto rounded-lg shadow-md bg-white">
         <table className="min-w-full text-sm">

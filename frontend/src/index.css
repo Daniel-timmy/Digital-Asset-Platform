@@ -1,1 +1,19 @@
 @import "tailwindcss";
+
+
+@font-face {
+  font-family: 'Inter';
+  src: url('./assets/fonts/Inter/Inter-VariableFont_opsz,wght.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+
+:root {
+  --card-bg: #f4e8d8;
+  --main-bg: #ffffff;
+  --border-color: #b4a99b;
+  --logo-border: #c4b7a6;
+  --text-color: #000000;
+}
