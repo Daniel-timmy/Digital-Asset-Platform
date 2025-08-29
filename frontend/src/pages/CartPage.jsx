@@ -1,149 +1,126 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import React, { useContext, useState } from "react";
+import { FaTrash } from "react-icons/fa";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { remove_from_cart } from "../utils/cart";
-import { FaEye, FaEyeSlash, FaTrash, FaTools } from "react-icons/fa";
-import "../App.css";
-import LoadingIndicator from "../components/LoadingIndicator";
-import bg_img from "../assets/wallhaven-6d7ow6.png";
+import { CartContext } from "../context/CartContext";
 
 export default function CartPage() {
-  const [isVisible, setIsVisible] = useState(false);
-  const [cart, setCart] = useState([]);
-  const [previewAsset, setPreviewAsset] = useState(null);
+  const { cart, removeFromCart } = useContext(CartContext);
+  const [previewItem, setPreviewItem] = useState(null);
 
-  const removeFromCart = (asset) => {
-    const updatedCart = cart.filter((item) => item.id !== asset.id);
-    remove_from_cart(asset);
-
-    setCart(updatedCart);
-  };
-
-  useEffect(() => {
-    const storedCart = localStorage.getItem("cart");
-    if (storedCart) {
-      try {
-        const parsedCart = JSON.parse(storedCart);
-        const arr = [];
-        for (const key in parsedCart) {
-          arr.push(parsedCart[key]);
-        }
-        setCart(arr);
-        setPreviewAsset(arr[0]);
-      } catch (error) {
-        console.error("Error parsing cart:", error);
-      }
-    }
-  }, []);
-
-  const addAssetToPreview = (asset) => {
-    console.log("In preview mode");
-    console.log(asset.name);
-    setPreviewAsset(asset);
-  };
-
-  const removeAssetFromPreview = () => {
-    console.log("Removed from preview mode");
-    // console.log(asset.name);
-    setPreviewAsset(null);
-  };
+  // ✅ Ensure price is treated as a number
+  const subtotal = cart.reduce(
+    (sum, item) => sum + (Number(item.price) || 0),
+    0
+  );
+  const total = subtotal;
 
   return (
-    <div
-      className="relative w-full min-h-screen bg-white overflow-hidden font-sans"
-      style={{
-        backgroundImage: `url(${bg_img})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
+    <div className="min-h-screen flex flex-col bg-white text-black">
       <Header />
 
-      <div className="relative w-full text-center px-4 z-10 min-h-screen flex flex-col items-center justify-center">
-        <div
-          className={`inline-block bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-bold mb-6 ${
-            isVisible ? "animate-pulse-slow" : ""
-          }`}
-        >
-          YOUR CART
-        </div>
-        <h1
-          className={`text-4xl sm:text-6xl font-extrabold text-white mb-4 ${
-            isVisible ? "animate-fade-in-up" : ""
-          }`}
-        >
-          Shopping Cart
-        </h1>
-        {/* <p
-          className={`text-xl sm:text-2xl text-white font-semibold mb-8 ${
-            isVisible ? "animate-fade-in-up" : ""
-          } delay-200`}
-        >
-          Review and Customize Your Items
-        </p> */}
-        {cart.length === 0 ? (
-          <p
-            className={`text-lg text-white ${
-              isVisible ? "animate-fade-in-up" : ""
-            } delay-300`}
-          >
-            Your cart is empty.
-          </p>
-        ) : (
-          <div className="w-8/10 space-x-10 h-[100vh] flex items-center justify-content mx-auto">
-            <div className="w-2/3">
-              {cart.map((item, key) => (
+      <div className="flex-1 container mx-auto px-4 py-10 flex flex-col lg:flex-row gap-8">
+        {/* Cart Table */}
+        <div className="lg:w-2/3 bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+          {cart.length === 0 ? (
+            <p className="text-gray-600 text-lg">Your cart is empty.</p>
+          ) : (
+            <>
+              <div className="grid grid-cols-4 font-semibold border-b pb-3 mb-4 text-gray-700">
+                <span className="col-span-2">PRODUCT</span>
+                <span>PRICE</span>
+                <span className="text-right">SUBTOTAL</span>
+              </div>
+              {cart.map((item) => (
                 <div
                   key={item.id}
-                  className={`bg-white p-6 mb-4 rounded-lg shadow-md flex justify-between items-center ${
-                    isVisible ? "animate-fade-in-up" : ""
-                  }`}
+                  className="grid grid-cols-4 items-center border-b py-4 gap-4 hover:bg-gray-50 transition"
                 >
-                  <span className="text-lg text-gray-900">
-                    {item.name || `Product ${item.id}`} - ${item.price}
-                  </span>
-                  <div className="flex space-x-4">
+                  {/* Product Info */}
+                  <div className="col-span-2 flex items-center gap-4">
                     <button
-                      onClick={() => removeFromCart(item)}
-                      className="bg-red-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-red-600 transition-colors duration-300"
+                      onClick={() => removeFromCart(item.id)}
+                      className="text-red-500 hover:text-red-700 transition"
                     >
                       <FaTrash />
                     </button>
-                    <Link to={`/product-details/${item.id}`} key={key}>
-                      <button
-                        to={`/product-details/${item.id}`}
-                        className="bg-teal-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-teal-600 transition-colors duration-300"
-                      >
-                        <FaTools />
-                      </button>
-                    </Link>
-                    {previewAsset && previewAsset.id === item.id ? (
-                      <FaEyeSlash
-                        className="size-6"
-                        onClick={() => removeAssetFromPreview()}
-                      />
-                    ) : (
-                      <FaEye
-                        className="size-6"
-                        onClick={() => addAssetToPreview(item)}
-                      />
-                    )}
+                    <img
+                      src={item.thumbnail_url}
+                      alt={item.name}
+                      className="w-16 h-16 object-cover rounded-md shadow cursor-pointer"
+                      onClick={() => setPreviewItem(item)}
+                    />
+                    <span className="text-gray-900 font-medium">
+                      {item.name}
+                    </span>
+                  </div>
+
+                  {/* Price */}
+                  <div className="text-gray-700">
+                    ₦{Number(item.price).toLocaleString()}
+                  </div>
+
+                  {/* Subtotal */}
+                  <div className="text-right font-semibold">
+                    ₦{Number(item.price).toLocaleString()}
                   </div>
                 </div>
               ))}
-            </div>
-            <div className="w-1/3  bg-white/30 h-1/2 bg-opacity-95 rounded-xl p-6 shadow-2xl z-20 animate-slide-up">
-              {previewAsset ? (
-                <img src={previewAsset.thumbnail_url} />
-              ) : (
-                <p className="italic">Select an item to preview</p>
-              )}
-            </div>
+            </>
+          )}
+        </div>
+
+        {/* Cart Totals */}
+        <div className="lg:w-1/3 bg-white rounded-2xl shadow-lg border border-gray-200 p-6 h-fit">
+          <h2 className="text-xl font-semibold mb-6 border-b pb-3">
+            Cart Summary
+          </h2>
+          <div className="flex justify-between mb-4">
+            <span className="text-gray-700">Subtotal</span>
+            <span className="font-medium">₦{subtotal.toLocaleString()}</span>
           </div>
-        )}
+          <div className="flex justify-between font-bold text-lg mb-6">
+            <span>Total</span>
+            <span className="text-black">₦{total.toLocaleString()}</span>
+          </div>
+          <button className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition shadow-md">
+            Proceed to Checkout
+          </button>
+        </div>
       </div>
+
       <Footer />
+
+      {/* ✅ Preview Modal */}
+      {previewItem && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50 transition-opacity duration-300 ease-in-out"
+          onClick={() => setPreviewItem(null)}
+        >
+          <div
+            className="bg-white rounded-2xl p-4 max-w-lg w-full shadow-xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={previewItem.thumbnail_url}
+              alt={previewItem.name}
+              className="w-full h-auto rounded-lg"
+            />
+            <h3 className="mt-4 text-lg font-semibold text-gray-900">
+              {previewItem.name}
+            </h3>
+            <p className="text-gray-700 mt-2">
+              ₦{Number(previewItem.price)?.toLocaleString()}
+            </p>
+            <button
+              className="absolute top-2 right-2 bg-red-600 text-white rounded-full px-3 py-1 text-sm hover:bg-red-700"
+              onClick={() => setPreviewItem(null)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

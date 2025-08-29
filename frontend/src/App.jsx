@@ -29,6 +29,7 @@ import ProtectedAdminRoutes from "./components/ProtectedAdminRoutes";
 import NotFound from "./NotFound";
 import ClientsLayout from "./pages/Client/ClientsLayout";
 
+
 function Logout() {
   localStorage.clear();
   return <AuthPage />;
@@ -38,7 +39,6 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="notfound" element={<NotFound />} />
         <Route path="/socialmedia" element={<Socialmedia />} />
         <Route path="/photography" element={<Photography />} />
         <Route path="/branding" element={<Branding />} />
@@ -86,6 +86,7 @@ function App() {
         <Route path="/logout" element={<Logout />} />
         <Route path="/stock" element={<Stock />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );

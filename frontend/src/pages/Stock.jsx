@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Search from "../components/Search";
 import Card from "../components/Card";
 import LoadingIndicator from "../components/LoadingIndicator";
 import api from "../utils/api";
-import { add_to_cart } from "../utils/cart";
+import { CartContext } from "../context/CartContext";
 import "../App.css";
 
 export default function StockPage() {
+  const { addToCart, cart } = useContext(CartContext);
+
   const [isVisible, setIsVisible] = useState(false);
-  const [cart, setCart] = useState([]);
   const [assets, setAssets] = useState([]);
   const [hoveredProduct, setHoveredProduct] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -23,10 +24,6 @@ export default function StockPage() {
   useEffect(() => {
     setIsVisible(true);
   }, []);
-
-  const handleProceed = (product) => {
-    setCart([...cart, product]);
-  };
 
   const handleProductClick = (product) => {
     if (!selectedProduct) setSelectedProduct(product);
@@ -46,7 +43,6 @@ export default function StockPage() {
             (tag, index, self) =>
               index === self.findIndex((t) => t.id === tag.id)
           );
-
         setTags(uniqueTags);
       } catch (error) {
         console.log(error);
@@ -108,7 +104,7 @@ export default function StockPage() {
           ))}
         </div>
 
-        {/* Product Grid using Card.jsx */}
+        {/* Product Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10 px-6 w-full max-w-7xl mx-auto mb-20">
           {loading ? (
             <div className="col-span-4 flex justify-center items-center h-64">
@@ -117,8 +113,9 @@ export default function StockPage() {
           ) : (
             assets.map((asset) => (
               <Card
+                key={asset.id}
                 product={asset}
-                onAddToCart={add_to_cart}
+                onAddToCart={() => addToCart(asset)}
                 handleProductClick={handleProductClick}
               />
             ))
@@ -133,10 +130,7 @@ export default function StockPage() {
             </p>
             <div className="flex justify-between items-center">
               <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleProceed(selectedProduct || hoveredProduct);
-                }}
+                onClick={() => addToCart(selectedProduct || hoveredProduct)}
                 className="bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-700 transition"
               >
                 Proceed
