@@ -111,10 +111,17 @@ const AuthPage = ({ state = true }) => {
       //   setErrors({ error: res.message });
       // }
     } catch (error) {
+      if (error.name === "AxiosError") {
+        setErrors({
+          error: "Network Error"
+        })
+      }
+      else {
       const errorData = error.response.data;
       setErrors({
         error: errorData.message || "An error occurred. Please try again.",
-      });
+      });}
+      
     } finally {
       setLoading(false);
     }
