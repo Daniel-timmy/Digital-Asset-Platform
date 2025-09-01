@@ -123,7 +123,8 @@
     "forceConsistentCasingInFileNames": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "moduleResolution": "node",
+    "moduleResolution": "node10",
+    "ignoreDeprecations": "6.0",
     "typeRoots": ["./node_modules/@types", "./src/types"],
     "baseUrl": "src",
     "paths": {

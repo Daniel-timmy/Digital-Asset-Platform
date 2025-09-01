@@ -6,6 +6,7 @@ import {
   FaMoneyCheck,
   FaCartArrowDown,
   FaSignOutAlt,
+  FaDownload,
 } from "react-icons/fa";
 
 const Sidebar = () => {
@@ -37,6 +38,12 @@ const Sidebar = () => {
       label: "Tickets",
       path: "/dashboard/tickets",
       icon: <FaTicketAlt className="mr-2" />,
+    },
+    {
+      key: "downloads",
+      label: "Downloads",
+      path: "/dashboard/downloads",
+      icon: <FaDownload className="mr-2" />,
     },
   ];
 

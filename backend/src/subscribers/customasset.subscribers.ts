@@ -12,6 +12,6 @@ export class CustomAssetSubscriber implements EntitySubscriberInterface<CustomAs
         sendEmail(event.entity.user.id, "New Custom Asset Created", `A new custom asset has been created with ID: ${event.entity.id}.`)
             .then(() => console.log("Email sent successfully"))
             .catch(error => console.error("Error sending email:", error));
-
     } 
+
 }

@@ -80,7 +80,6 @@ const Downloads = () => {
       setLoading(true);
       try {
         const res = await api.get("/downloads");
-        console.log(res.data);
         setDownloads(res.data); // Fixed typo: setDownload → setDownloads
       } catch (error) {
         setErrors(

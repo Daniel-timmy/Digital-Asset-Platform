@@ -14,6 +14,9 @@ export class Ticket{
     @Column({type : "varchar"})
     name!: string;
 
+    @Column({type: "varchar"})
+    description!: string;
+
     @OneToOne(() => CustomAsset)
     @JoinColumn({ name: "custom_asset" })
     custom_asset?: CustomAsset;

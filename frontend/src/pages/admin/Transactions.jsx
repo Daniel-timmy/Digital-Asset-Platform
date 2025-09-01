@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import api from "../../utils/api";
 import LoadingIndicator from "../../components/LoadingIndicator";
 
@@ -9,27 +9,60 @@ const Transactions = () => {
   const [selectedIds, setSelectedIds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(1); // Changed from offset to page for clarity
+  const [limit, setLimit] = useState(15);
+  const [totalPages, setTotalPages] = useState(1); // Track total pages
+  const observer = useRef(null); // Ref for Intersection Observer
+  const loadMoreRef = useRef(null); // Ref for the sentinel element
+
+  const getTransactions = async (pageNum = 1, append = false) => {
+    if (pageNum > totalPages && append) return;
+    setLoading(true);
+    setError(null);
+    try {
+      console.log("Fetching transactions...");
+      const res = await api.get(`/transactions?page=${page}&limit=${limit}`);
+      const txns = res.data.results || [];
+      const newTotalPages = res.data.totalPages || 1;
+      setTransactions((prev) => (append ? [...prev, ...txns] : txns));
+      setInitialTransactions((prev) => (append ? [...prev, ...txns] : txns));
+      setTotalPages(newTotalPages);
+
+      console.log("Transactions fetched successfully:", res.data);
+      setError("");
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      setError("Failed to load transactions. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    observer.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loading && page < totalPages) {
+          setPage((prev) => prev + 1);
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.current.observe(loadMoreRef.current);
+    }
+
+    return () => {
+      if (loadMoreRef.current && observer.current) {
+        observer.current.unobserve(loadMoreRef.current);
+      }
+    };
+  }, [loading, page, totalPages]);
 
   // Fetch transactions
   useEffect(() => {
-    const getTransactions = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        console.log("Fetching transactions...");
-        const res = await api.get("/transactions?page=1&limit=10");
-        setTransactions(res.data.results);
-        setInitialTransactions(res.data.results);
-        console.log("Transactions fetched successfully:", res.data);
-      } catch (error) {
-        console.error("Error fetching transactions:", error);
-        setError("Failed to load transactions. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    getTransactions();
-  }, []);
+    getTransactions(page, page > 1);
+  }, [page]);
 
   // Handle search filtering
   const handleSearch = (e) => {
@@ -159,39 +192,40 @@ const Transactions = () => {
 
       {/* Transactions Table */}
       <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <table className="min-w-full text-sm text-left text-gray-800">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="px-4 py-3">
-                <input
-                  type="checkbox"
-                  checked={
-                    selectedIds.length === transactions.length &&
-                    transactions.length > 0
-                  }
-                  onChange={() =>
-                    setSelectedIds(
-                      selectedIds.length === transactions.length
-                        ? []
-                        : transactions.map((txn) => txn.id)
-                    )
-                  }
-                  disabled={loading || transactions.length === 0}
-                  aria-label="Select all transactions"
-                />
-              </th>
-              <th className="px-4 py-3 font-semibold">ID</th>
-              <th className="px-4 py-3 font-semibold">User Name</th>
-              <th className="px-4 py-3 font-semibold">Custom Asset ID</th>
-              <th className="px-4 py-3 font-semibold">Amount (₦)</th>
-              <th className="px-4 py-3 font-semibold">Payment Status</th>
-              <th className="px-4 py-3 font-semibold">Created At</th>
-              <th className="px-4 py-3 font-semibold">Actions</th>
-            </tr>
-          </thead>
-          {loading ? (
-            <LoadingIndicator />
-          ) : (
+        {loading ? (
+          <LoadingIndicator />
+        ) : (
+          <table className="min-w-full text-sm text-left text-gray-800">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th className="px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={
+                      selectedIds.length === transactions.length &&
+                      transactions.length > 0
+                    }
+                    onChange={() =>
+                      setSelectedIds(
+                        selectedIds.length === transactions.length
+                          ? []
+                          : transactions.map((txn) => txn.id)
+                      )
+                    }
+                    disabled={loading || transactions.length === 0}
+                    aria-label="Select all transactions"
+                  />
+                </th>
+                <th className="px-4 py-3 font-semibold">ID</th>
+                <th className="px-4 py-3 font-semibold">User Name</th>
+                <th className="px-4 py-3 font-semibold">Custom Asset ID</th>
+                <th className="px-4 py-3 font-semibold">Amount (₦)</th>
+                <th className="px-4 py-3 font-semibold">Payment Status</th>
+                <th className="px-4 py-3 font-semibold">Created At</th>
+                <th className="px-4 py-3 font-semibold">Actions</th>
+              </tr>
+            </thead>
+
             <tbody>
               {transactions.length === 0 ? (
                 <tr>
@@ -265,9 +299,14 @@ const Transactions = () => {
                 ))
               )}
             </tbody>
-          )}
-        </table>
+          </table>
+        )}
       </div>
+      {page < totalPages && (
+        <div ref={loadMoreRef} className="h-10">
+          <LoadingIndicator />
+        </div>
+      )}
     </div>
   );
 };

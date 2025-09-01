@@ -120,7 +120,7 @@ function RecentOrders({ orders, setOrders }) {
         </table>
       </div>
       <div>
-        <Link>
+        <Link to={"/dashboard/orders"}>
           <button className="bg-black text-white text-xl p-3 rounded-lg mt-4 hover:bg-gray-400 transition-colors duration-300">
             See All
           </button>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   FaBoxOpen,
   FaUsers,
@@ -404,8 +404,14 @@ const AdminDashboard = () => {
   const [apiError, setApiError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [editingAsset, setEditingAsset] = useState(null);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10); // Default limit, adjust as needed
+  const [totalPages, setTotalPages] = useState(1);
+  const observer = useRef(null); // Ref for Intersection Observer
+  const loadMoreRef = useRef(null); // Ref for the sentinel element
+  const [countLoading, setCountLoading] = useState(false);
 
-  const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+  const CACHE_DURATION = 1 * 60 * 60 * 1000; // 1 hour
 
   const fileTypeOptions = [
     { value: "image", label: "Image" },
@@ -414,10 +420,10 @@ const AdminDashboard = () => {
     { value: "video", label: "Video" },
   ];
 
-  const fetchData = async () => {
-    setIsLoading(true);
+  // Fetch counts for assets, users, custom requests, and sales
+  const fetchCounts = async () => {
     try {
-      // Check localStorage for cached counts
+      setCountLoading(true);
       const cachedCounts = localStorage.getItem("dashboardCounts");
       const cachedCountsTimestamp = localStorage.getItem("countsTimestamp");
       if (
@@ -426,87 +432,183 @@ const AdminDashboard = () => {
         Date.now() - parseInt(cachedCountsTimestamp) < CACHE_DURATION
       ) {
         setCounts(JSON.parse(cachedCounts));
-      } else {
-        const resAset = await api.get("/assets/s/count/");
-        const totalAssests =
-          typeof resAset.data.count === "number" ? resAset.data.count : 0;
-        const resUsers = await api.get("/users/s/count/");
-        const activeUsers =
-          typeof resUsers.data.count === "number" ? resUsers.data.count : 0;
-        const resCustom = await api.get("/custom/s/count/");
-        const requests =
-          typeof resCustom.data.count === "number" ? resCustom.data.count : 0;
-        const resTran = await api.get("/transactions/s/count/");
-        const sales = typeof resTran.data === "number" ? resTran.data : 0;
-
-        const newCounts = [totalAssests, activeUsers, requests, sales];
-        setCounts(newCounts);
-        localStorage.setItem("dashboardCounts", JSON.stringify(newCounts));
-        localStorage.setItem("countsTimestamp", Date.now().toString());
+        return;
       }
 
-      // Check localStorage for cached assets
-      const cachedAssets = localStorage.getItem("assets");
-      const cachedAssetsTimestamp = localStorage.getItem("assetsTimestamp");
-      if (
-        cachedAssets &&
-        cachedAssetsTimestamp &&
-        Date.now() - parseInt(cachedAssetsTimestamp) < CACHE_DURATION
-      ) {
-        setAssets(JSON.parse(cachedAssets));
-      } else {
-        const resAssets = await api.get("/assets");
-        const fetchedAssets = resAssets.data.results || [];
-        setAssets(fetchedAssets);
-        localStorage.setItem("assets", JSON.stringify(fetchedAssets));
-        localStorage.setItem("assetsTimestamp", Date.now().toString());
-      }
+      const [resAset, resUsers, resCustom, resTran] = await Promise.all([
+        api.get("/assets/s/count/"),
+        api.get("/users/s/count/"),
+        api.get("/custom/s/count/"),
+        api.get("/transactions/s/count/"),
+      ]);
 
-      // Check localStorage for tags and categories (for update modal)
+      const totalAssests =
+        typeof resAset.data.count === "number" ? resAset.data.count : 0;
+      const activeUsers =
+        typeof resUsers.data.count === "number" ? resUsers.data.count : 0;
+      const requests =
+        typeof resCustom.data.count === "number" ? resCustom.data.count : 0;
+      const sales = typeof resTran.data === "number" ? resTran.data : 0;
+
+      const newCounts = [totalAssests, activeUsers, requests, sales];
+      setCounts(newCounts);
+      localStorage.setItem("dashboardCounts", JSON.stringify(newCounts));
+      localStorage.setItem("countsTimestamp", Date.now().toString());
+    } catch (error) {
+      console.error("Error fetching counts:", error);
+      setApiError("Failed to load dashboard counts. Please try again.");
+    } finally {
+      setCountLoading(false);
+    }
+  };
+
+  // Fetch tags and categories
+  const fetchTagsAndCategories = async () => {
+    try {
       const cachedTags = localStorage.getItem("tags");
       const cachedCategories = localStorage.getItem("categories");
       if (cachedTags && cachedCategories) {
         setTagOptions(JSON.parse(cachedTags));
         setCategoryOptions(JSON.parse(cachedCategories));
-      } else {
-        const tagRes = await api.get("/tags");
-        const tags = (tagRes.data.data || tagRes.data || []).map((tag) => ({
-          value: tag.id,
-          label: tag.name,
-        }));
-        setTagOptions(tags);
-        localStorage.setItem("tags", JSON.stringify(tags));
-
-        const catRes = await api.get("/category");
-        const categories = (catRes.data.data || catRes.data || []).map(
-          (category) => ({
-            value: category.id,
-            label: category.name,
-          })
-        );
-        setCategoryOptions(categories);
-        localStorage.setItem("categories", JSON.stringify(categories));
+        return;
       }
 
-      setApiError("");
+      const [tagRes, catRes] = await Promise.all([
+        api.get("/tags"),
+        api.get("/category"),
+      ]);
+
+      const tags = (tagRes.data.data || tagRes.data || []).map((tag) => ({
+        value: tag.id,
+        label: tag.name,
+      }));
+      setTagOptions(tags);
+      localStorage.setItem("tags", JSON.stringify(tags));
+
+      const categories = (catRes.data.data || catRes.data || []).map(
+        (category) => ({
+          value: category.id,
+          label: category.name,
+        })
+      );
+      setCategoryOptions(categories);
+      localStorage.setItem("categories", JSON.stringify(categories));
     } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-      setApiError("Failed to load dashboard data. Please try again.");
-    } finally {
-      setIsLoading(false);
+      console.error("Error fetching tags or categories:", error);
+      setApiError("Failed to load tags or categories. Please try again.");
     }
   };
 
+  // Fetch assets with pagination
+  const fetchAssets = async (pageNum = 1, append = false) => {
+    if (pageNum > totalPages && append) return; // Prevent fetching beyond total pages
+    try {
+      if (pageNum === 1 && !append) {
+        const cachedAssets = localStorage.getItem("assets");
+        const cachedAssetsTimestamp = localStorage.getItem("assetsTimestamp");
+        if (
+          cachedAssets &&
+          cachedAssetsTimestamp &&
+          Date.now() - parseInt(cachedAssetsTimestamp) < CACHE_DURATION
+        ) {
+          setAssets(JSON.parse(cachedAssets));
+          return;
+        }
+      }
+
+      const resAssets = await api.get(`/assets?page=${pageNum}&limit=${limit}`);
+      const fetchedAssets = resAssets.data.results || [];
+      const newTotalPages = resAssets.data.totalPages || 1;
+
+      setAssets((prev) =>
+        append ? [...prev, ...fetchedAssets] : fetchedAssets
+      );
+      setTotalPages(newTotalPages);
+
+      if (pageNum === 1) {
+        localStorage.setItem("assets", JSON.stringify(fetchedAssets));
+        localStorage.setItem("assetsTimestamp", Date.now().toString());
+      }
+    } catch (error) {
+      console.error("Error fetching assets:", error);
+      setApiError("Failed to load assets. Please try again.");
+    }
+  };
+
+  // Fetch all data on mount
   useEffect(() => {
-    fetchData();
+    const fetchAllData = async () => {
+      setIsLoading(true);
+      try {
+        await Promise.all([
+          fetchCounts(),
+          fetchTagsAndCategories(),
+          fetchAssets(1, false),
+        ]);
+        setApiError("");
+      } catch (error) {
+        setApiError("Failed to load dashboard data. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchAllData();
   }, []);
+
+  // Fetch assets when page changes
+  useEffect(() => {
+    if (page > 1) {
+      fetchAssets(page, true);
+    }
+  }, [page]);
+
+  // Set up Intersection Observer for infinite scrolling
+  useEffect(() => {
+    observer.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isLoading && page < totalPages) {
+          setPage((prev) => prev + 1);
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.current.observe(loadMoreRef.current);
+    }
+
+    return () => {
+      if (loadMoreRef.current && observer.current) {
+        observer.current.unobserve(loadMoreRef.current);
+      }
+    };
+  }, [isLoading, page, totalPages]);
 
   const clearCache = () => {
     localStorage.removeItem("dashboardCounts");
     localStorage.removeItem("countsTimestamp");
     localStorage.removeItem("assets");
     localStorage.removeItem("assetsTimestamp");
-    fetchData();
+    localStorage.removeItem("tags");
+    localStorage.removeItem("categories");
+    setPage(1);
+    setAssets([]);
+    const fetchAllData = async () => {
+      setIsLoading(true);
+      try {
+        await Promise.all([
+          fetchCounts(),
+          fetchTagsAndCategories(),
+          fetchAssets(1, false),
+        ]);
+        setApiError("");
+      } catch (error) {
+        setApiError("Failed to load dashboard data. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchAllData();
   };
 
   const handleDelete = async (id, setCardLoading) => {
@@ -544,27 +646,28 @@ const AdminDashboard = () => {
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-4">Welcome, Admin</h2>
-      {isLoading ? (
-        <LoadingIndicator />
-      ) : (
-        <>
-          {apiError && (
-            <div className="mb-4">
-              <p className="text-red-500 text-sm">{apiError}</p>
-              <button
-                onClick={fetchData}
-                className="mt-2 px-4 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700"
-              >
-                Retry Loading Data
-              </button>
-            </div>
-          )}
-          <button
-            onClick={clearCache}
-            className="px-4 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 mb-4"
-          >
-            Refresh Dashboard
-          </button>
+
+      <>
+        {apiError && (
+          <div className="mb-4">
+            <p className="text-red-500 text-sm">{apiError}</p>
+            <button
+              onClick={clearCache}
+              className="mt-2 px-4 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700"
+            >
+              Retry Loading Data
+            </button>
+          </div>
+        )}
+        <button
+          onClick={clearCache}
+          className="px-4 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 mb-4"
+        >
+          Refresh Dashboard
+        </button>
+        {countLoading ? (
+          <LoadingIndicator />
+        ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {[
               {
@@ -585,7 +688,9 @@ const AdminDashboard = () => {
               {
                 title: `Today’s Sales (${new Date().toLocaleDateString(
                   "en-US",
-                  { timeZone: "Africa/Lagos" }
+                  {
+                    timeZone: "Africa/Lagos",
+                  }
                 )})`,
                 value:
                   counts[3] != null
@@ -606,7 +711,11 @@ const AdminDashboard = () => {
               </div>
             ))}
           </div>
-          <h3 className="text-xl font-bold mb-4">All Assets</h3>
+        )}
+        <h3 className="text-xl font-bold mb-4">All Assets</h3>
+        {isLoading && assets.length === 0 ? (
+          <LoadingIndicator />
+        ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {assets.map((asset) => (
               <AssetCard
@@ -617,8 +726,15 @@ const AdminDashboard = () => {
               />
             ))}
           </div>
-        </>
-      )}
+        )}
+
+        {/* Sentinel for Infinite Scrolling */}
+        {page < totalPages && (
+          <div ref={loadMoreRef} className="h-10 flex justify-center py-4">
+            {isLoading && <LoadingIndicator />}
+          </div>
+        )}
+      </>
       {editingAsset && (
         <UpdateAssetModal
           asset={editingAsset}

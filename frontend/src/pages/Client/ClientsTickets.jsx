@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { FaComments } from "react-icons/fa";
 import api from "../../utils/api";
 
-// Chat component
+// Define Chat component outside of Tickets
 const Chat = ({ selectedTicketId, tickets, chatInput, setChatInput }) => {
   const [messages, setMessages] = useState([]);
 
@@ -17,6 +17,7 @@ const Chat = ({ selectedTicketId, tickets, chatInput, setChatInput }) => {
     const getMessages = async () => {
       try {
         const res = await api.get(`/messages/ticket/${selectedTicketId}`);
+        console.log(res.data);
         setMessages(res.data.data || []);
       } catch (error) {
         console.error("Error fetching messages:", error);
@@ -36,7 +37,7 @@ const Chat = ({ selectedTicketId, tickets, chatInput, setChatInput }) => {
       });
       setMessages((prevMessages) => [...prevMessages, res.data.data]);
       setChatInput("");
-      inputRef.current.focus();
+      inputRef.current.focus(); // Restore focus after sending
     } catch (error) {
       console.error("Error sending message:", error);
     }
@@ -95,18 +96,16 @@ const Chat = ({ selectedTicketId, tickets, chatInput, setChatInput }) => {
   );
 };
 
-// Tickets page (Client version)
 const Tickets = () => {
   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const [chatInput, setChatInput] = useState("");
   const [tickets, setTickets] = useState([]);
-  const [newTicket, setNewTicket] = useState({ name: "", description: "" });
 
-  // Fetch tickets
   useEffect(() => {
     const getTickets = async () => {
       try {
         const res = await api.get("/ticket/");
+        console.log(res.data.data);
         setTickets(res.data.data || []);
       } catch (error) {
         console.error("Error fetching tickets:", error);
@@ -115,57 +114,13 @@ const Tickets = () => {
     getTickets();
   }, []);
 
-  // Handle new ticket creation
-  const handleCreateTicket = async () => {
-    if (!newTicket.name.trim() || !newTicket.description.trim()) return;
-    try {
-      const res = await api.post("/ticket/", newTicket);
-      setTickets((prev) => [res.data.data, ...prev]);
-      setNewTicket({ name: "", description: "" });
-    } catch (error) {
-      console.error("Error creating ticket:", error);
-    }
-  };
-
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-gray-800">
         <FaComments /> Support Tickets
       </h2>
-
       <div className="flex gap-8 h-[calc(100vh-10rem)]">
-        {/* Ticket list + Create form */}
         <div className="w-1/3 space-y-3 overflow-y-auto">
-          {/* Create Ticket Form */}
-          <div className="p-4 bg-white rounded-md shadow border border-gray-200 mb-4">
-            <h3 className="font-semibold text-gray-800 mb-2">Create Ticket</h3>
-            <input
-              type="text"
-              placeholder="Ticket Title"
-              value={newTicket.name}
-              onChange={(e) =>
-                setNewTicket({ ...newTicket, name: e.target.value })
-              }
-              className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-            />
-            <textarea
-              placeholder="Describe your issue..."
-              value={newTicket.description}
-              onChange={(e) =>
-                setNewTicket({ ...newTicket, description: e.target.value })
-              }
-              className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-              rows="3"
-            />
-            <button
-              onClick={handleCreateTicket}
-              className="w-full px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition"
-            >
-              Submit Ticket
-            </button>
-          </div>
-
-          {/* Ticket list */}
           {tickets.map((ticket) => (
             <div
               key={ticket.id}
@@ -193,8 +148,6 @@ const Tickets = () => {
             </div>
           ))}
         </div>
-
-        {/* Chat area */}
         <div className="w-2/3 flex flex-col">
           <Chat
             selectedTicketId={selectedTicketId}

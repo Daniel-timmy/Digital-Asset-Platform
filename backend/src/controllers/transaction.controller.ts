@@ -73,8 +73,6 @@ export class TransactionController {
           query = query.andWhere("transaction.user_id = :userId", { userId: req.user.id });
           logger.debug(`Applying user filter for non-admin user: ${req.user.id}`);
       }
-
-      console.log('print')
       const transactions = await applyTransactionsFilters(query, filters)
       
       logger.info(`Successfully retrieved ${transactions.limit} transactions`);

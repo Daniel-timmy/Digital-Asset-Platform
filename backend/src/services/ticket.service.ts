@@ -1,6 +1,5 @@
 import { AppDataSource } from "../database/db";
-import { Repository, In } from "typeorm";
-import { User } from "../entities/user.entities";
+import { Repository } from "typeorm";
 import { AuthRequest } from "interfaces/auth.interface";
 import { HttpError } from "../error/HttpError";
 import { CustomAsset } from "../entities/customasset.entities";
@@ -8,12 +7,10 @@ import { Ticket } from "../entities/ticket.entities";
 
 export class TicketService {
   private ticketRepository: Repository<Ticket>;
-  private userRepository: Repository<User>;
   private customAssetRepository: Repository<CustomAsset>;
 
   constructor() {
     this.ticketRepository = AppDataSource.getRepository(Ticket);
-    this.userRepository = AppDataSource.getRepository(User);
     this.customAssetRepository = AppDataSource.getRepository(CustomAsset);
   }
 
@@ -22,12 +19,7 @@ export class TicketService {
     req: AuthRequest,
     customAssetId?: string
   ): Promise<Ticket> {
-
-    if (!req.user)
-
-    // const user = await this.userRepository.findOne({
-    //   where: { id: req.user.id },
-    // });
+  
     if (!req.user) {
       throw new HttpError( "User not found", 404);
     }
@@ -35,6 +27,7 @@ export class TicketService {
     const ticket = new Ticket();
     ticket.opened_by = req.user;
     ticket.name = req.body.name
+    ticket.description = req.body.description
 
     if (customAssetId) {
       const customAsset = await this.customAssetRepository.findOne({

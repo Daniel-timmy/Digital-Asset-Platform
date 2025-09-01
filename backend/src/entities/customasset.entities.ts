@@ -30,6 +30,9 @@ export class CustomAsset {
     @Column({ type: "enum", enum: ["paid", "pending", "cancelled", "processing"], default: "pending"})
     payment_status!: "paid" | "pending" | "processing";
 
+    @Column({ type: "varchar", nullable: true})
+    custom_url?: string;
+
     @Column({ type: "date", nullable: true })
     due_date: Date = new Date(new Date().setDate(new Date().getDate() + 2));
 

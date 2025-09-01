@@ -35,10 +35,10 @@ export class DownloadService {
     if (!user) throw new Error("User not unauthenticated")
 
     if (user.role === "admin") {
-      return await this.downloadRepository.find();
+      return await this.downloadRepository.find({ where: { user: { id: user.id } }, relations: ['asset', ] });
 
       }
-      return await this.downloadRepository.find({ where: { user: { id: user.id } }, relations: ['asset'] });
+      return await this.downloadRepository.find({ where: { user: { id: user.id } }, relations: ['asset', ] });
   }
 
   async findOne(id: string): Promise<Download | null> {

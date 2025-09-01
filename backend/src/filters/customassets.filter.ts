@@ -10,6 +10,7 @@ interface ICustomAsset {
     limit?: number; 
     orderBy?: string; 
     orderDirection?: 'ASC' | 'DESC'; 
+    type?: string;
 }
 
 
@@ -30,6 +31,10 @@ export async function applyCustomAssetFilters(query: any, filter: ICustomAsset):
 
     if (filter.asset) {
         query = query.andWhere("customAsset.asset_id = :assetId", { assetId: filter.asset.id });
+    }
+
+    if (filter.type){
+        query = query.andWhere("customAsset.type = :type", { type: filter.type})
     }
 
     // Order by

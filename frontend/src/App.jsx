@@ -1,6 +1,5 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import ClientsPage from "./pages/Client/ClientsPage";
 import Dashboard from "./pages/Client/Dashboard";
 import ClientsTickets from "./pages/Client/ClientsTickets";
 import ClientsOrders from "./pages/Client/ClientsOrders";
@@ -27,6 +26,7 @@ import Transactions from "./pages/admin/Transactions";
 import VerifyCode from "./pages/VerifyCode";
 import ProtectedAdminRoutes from "./components/ProtectedAdminRoutes";
 import NotFound from "./NotFound";
+import Downloads from "./pages/Client/Downloads";
 import ClientsLayout from "./pages/Client/ClientsLayout";
 
 function Logout() {
@@ -38,7 +38,6 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="notfound" element={<NotFound />} />
         <Route path="/socialmedia" element={<Socialmedia />} />
         <Route path="/photography" element={<Photography />} />
         <Route path="/branding" element={<Branding />} />
@@ -74,18 +73,19 @@ function App() {
               <ClientsLayout />
             </ProtectedRoutes>
           }
-      >
-       < Route index element={<Dashboard />} />
-       
-     
-       <Route path="orders" element={<ClientsOrders />} />
-       <Route path="transactions" element={<CLientsTransactions />} />
-       <Route path="tickets" element={<ClientsTickets />} />
-      </Route>
+        >
+          <Route index element={<Dashboard />} />
+
+          <Route path="orders" element={<ClientsOrders />} />
+          <Route path="downloads" element={<Downloads />} />
+          <Route path="transactions" element={<CLientsTransactions />} />
+          <Route path="tickets" element={<ClientsTickets />} />
+        </Route>
 
         <Route path="/logout" element={<Logout />} />
         <Route path="/stock" element={<Stock />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );

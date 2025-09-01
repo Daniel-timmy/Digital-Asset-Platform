@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Search from "../components/Search";
@@ -9,69 +9,88 @@ import { add_to_cart } from "../utils/cart";
 import "../App.css";
 
 export default function StockPage() {
-  const [isVisible, setIsVisible] = useState(false);
   const [cart, setCart] = useState([]);
   const [assets, setAssets] = useState([]);
-  const [hoveredProduct, setHoveredProduct] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [activeTag, setActiveTag] = useState("All");
   const [loading, setLoading] = useState(false);
   const [tags, setTags] = useState([]);
   const [limit, setLimit] = useState(20);
-  const [offset, setOffset] = useState(1);
-
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
-
-  const handleProceed = (product) => {
-    setCart([...cart, product]);
-  };
+  const [page, setPage] = useState(1); // Changed from offset to page
+  const [totalPages, setTotalPages] = useState(1); // Track total pages
+  const observer = useRef(null); // Ref for Intersection Observer
+  const loadMoreRef = useRef(null); // Ref for the sentinel element
 
   const handleProductClick = (product) => {
     if (!selectedProduct) setSelectedProduct(product);
-    setHoveredProduct(null);
   };
 
-  useEffect(() => {
-    const fecthAssets = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get(`/assets?page=${offset}&limit=${limit}`);
-        setAssets(res.data.results);
-        setOffset(res.data.page + 1);
+  // Fetch assets with pagination
+  const fecthAssets = async (pageNum = 1, append = false, tagId = null) => {
+    if (pageNum > totalPages && append) return; // Prevent fetching beyond total pages
+    setLoading(true);
+    try {
+      const url = tagId
+        ? `/assets?tagIds=${tagId}&page=${pageNum}&limit=${limit}`
+        : `/assets?page=${pageNum}&limit=${limit}`;
+      const res = await api.get(url);
+      const newAssets = res.data.results || [];
+      const newTotalPages = res.data.totalPages || 1;
+
+      setAssets((prev) => (append ? [...prev, ...newAssets] : newAssets));
+      setTotalPages(newTotalPages);
+
+      // Only update tags for the initial fetch (page 1) and when not filtering by tag
+      if (pageNum === 1 && !tagId) {
         const uniqueTags = res.data.results
           .flatMap((asset) => asset.tags)
           .filter(
             (tag, index, self) =>
               index === self.findIndex((t) => t.id === tag.id)
           );
-
-        setTags(uniqueTags);
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setLoading(false);
+        setTags([{ id: "All", name: "All" }, ...uniqueTags]); // Include "All" tag
       }
-    };
-    fecthAssets();
-  }, []);
-
-  const getByTags = async (id) => {
-    setLoading(true);
-    setActiveTag(id);
-
-    try {
-      const res = await api.get(`/assets?tagIds=${id}`);
-      setAssets(res.data.results);
     } catch (error) {
-      console.log(error);
+      console.error("Error fetching assets:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCloseTab = () => setSelectedProduct(null);
+  // Fetch assets when page changes or on mount
+  useEffect(() => {
+    fecthAssets(page, page > 1, activeTag === "All" ? null : activeTag);
+  }, [page, activeTag]);
+
+  // Set up Intersection Observer for infinite scrolling
+  useEffect(() => {
+    observer.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loading && page < totalPages) {
+          setPage((prev) => prev + 1);
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.current.observe(loadMoreRef.current);
+    }
+
+    return () => {
+      if (loadMoreRef.current && observer.current) {
+        observer.current.unobserve(loadMoreRef.current);
+      }
+    };
+  }, [loading, page, totalPages]);
+
+  // Fetch assets by tag and reset pagination
+  const getByTags = async (id) => {
+    setActiveTag(id);
+    setPage(1); // Reset to first page when filtering by tag
+    setAssets([]); // Clear current assets
+    await fecthAssets(1, false, id === "All" ? null : id);
+  };
 
   return (
     <div className="relative w-full min-h-screen bg-white overflow-hidden font-sans">
@@ -92,12 +111,12 @@ export default function StockPage() {
         <Search />
 
         {/* Tabs */}
-        <div className="flex space-x-4 mb-10 animate-fade-in-up delay-400">
+        <div className="flex space-x-4 mb-10 animate-fade-in-up delay-400 overflow-x-auto">
           {tags.map((tag) => (
             <button
               key={tag.id}
               onClick={() => getByTags(tag.id)}
-              className={`px-4 py-2 rounded-full font-medium text-sm transition shadow-md ${
+              className={`px-4 py-2 rounded-full font-medium text-sm transition shadow-md whitespace-nowrap ${
                 activeTag === tag.id
                   ? "bg-black text-white"
                   : "bg-white text-gray-800 hover:bg-gray-100"
@@ -110,13 +129,14 @@ export default function StockPage() {
 
         {/* Product Grid using Card.jsx */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10 px-6 w-full max-w-7xl mx-auto mb-20">
-          {loading ? (
+          {loading && assets.length === 0 ? (
             <div className="col-span-4 flex justify-center items-center h-64">
               <LoadingIndicator />
             </div>
           ) : (
             assets.map((asset) => (
               <Card
+                key={asset.id}
                 product={asset}
                 onAddToCart={add_to_cart}
                 handleProductClick={handleProductClick}
@@ -125,31 +145,13 @@ export default function StockPage() {
           )}
         </div>
 
-        {/* Product Preview */}
-        {(hoveredProduct || selectedProduct) && (
-          <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 w-11/12 max-w-2xl bg-white bg-opacity-95 rounded-xl p-6 shadow-2xl z-20 animate-slide-up">
-            <p className="text-lg text-gray-800 mb-4">
-              {(selectedProduct || hoveredProduct)?.desc}
-            </p>
-            <div className="flex justify-between items-center">
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleProceed(selectedProduct || hoveredProduct);
-                }}
-                className="bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-700 transition"
-              >
-                Proceed
-              </button>
-              {selectedProduct && (
-                <button
-                  onClick={handleCloseTab}
-                  className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition"
-                >
-                  Close
-                </button>
-              )}
-            </div>
+        {/* Sentinel for Infinite Scrolling */}
+        {page < totalPages && (
+          <div
+            ref={loadMoreRef}
+            className="h-10 col-span-4 flex justify-center"
+          >
+            {loading && <LoadingIndicator />}
           </div>
         )}
       </div>

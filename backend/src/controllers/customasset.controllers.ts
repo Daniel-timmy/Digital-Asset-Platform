@@ -4,6 +4,12 @@ import { CustomAssetService } from "../services/customasset.service";
 import logger from "../logger/app.logger";
 import CustomAssetError from "../error/CustomAssetError";
 
+interface ICustomAsset {
+    description?: string;
+    custom_url?: string;
+    status?: "open" | "closed" | "cancelled";
+}
+
 export class CustomAssetController {
     constructor(private customAssetService: CustomAssetService) {}
 
@@ -117,17 +123,35 @@ export class CustomAssetController {
 
     async update(req: AuthRequest, res: Response, next: NextFunction) {
         try {
-            if (!req.user) {
+            const user = req.user
+            if (!user ||  user.role !== "admin") {
                 logger.warn('Unauthorized attempt to update custom asset');
                 throw new CustomAssetError(401, 'Unauthorized');
             }
             const id = req.params.id;
-            logger.info(`Updating custom asset with ID: ${id} for user: ${req.user.id}`);
-            const customAsset = await this.customAssetService.update(id, req);
+            logger.info(`Updating custom asset with ID: ${id} for user: ${user.id}`);
+            const {description, custom_url, status} = req.body
+            const updateData: ICustomAsset = {}
+            if (description){
+                updateData.description = description
+                logger.debug(`Updating description for custom asset ID: ${id}`);
+            }
+            if (custom_url){
+                updateData.custom_url = custom_url
+                logger.debug(`Updating custom_url for custom asset ID: ${id}`);
+            }
+            if (status){
+                updateData.status = status
+                logger.debug(`Updating status for custom asset ID: ${id}`);
+
+            }
+
+            const customAsset = await this.customAssetService.update(id, updateData);
             if (!customAsset) {
-                logger.warn(`Custom asset not found for update with ID: ${id} for user: ${req.user.id}`);
+                logger.warn(`Custom asset not found for update with ID: ${id} for user: ${user.id}`);
                 throw new CustomAssetError(404, 'Custom asset not found');
             }
+        
 
             logger.info(`Successfully updated custom asset with ID: ${id}`);
             return res.status(200).json({

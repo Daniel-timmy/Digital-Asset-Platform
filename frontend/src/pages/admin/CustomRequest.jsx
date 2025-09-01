@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import api from "../../utils/api";
 import LoadingIndicator from "../../components/LoadingIndicator";
 
@@ -8,32 +8,34 @@ const CustomRequest = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const observer = useRef(null);
+  const loadMoreRef = useRef(null);
+  // New state for modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedRequestId, setSelectedRequestId] = useState(null);
+  const [customUrl, setCustomUrl] = useState("");
 
-  const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+  const CACHE_DURATION = 1 * 60 * 60 * 1000; // 1 hour
 
   // Fetch customization requests
-  const getCustomRequest = async () => {
+  const getCustomRequest = async (pageNum = 1, append = false) => {
+    if (pageNum > totalPages && append) return;
     setIsLoading(true);
     try {
-      // Check localStorage for cached requests
-      const cachedRequests = localStorage.getItem("customRequests");
-      const cachedTimestamp = localStorage.getItem("customRequestsTimestamp");
-      if (
-        cachedRequests &&
-        cachedTimestamp &&
-        Date.now() - parseInt(cachedTimestamp) < CACHE_DURATION
-      ) {
-        setCustomizationRequests(JSON.parse(cachedRequests));
-        setError("");
-        setIsLoading(false);
-        return;
-      }
+      const res = await api.get(
+        `/custom?page=${pageNum}&limit=${limit}&type=custom`
+      );
+      const requests = res.data.data?.results || [];
+      const newTotalPages = res.data.data?.totalPages || 1;
+      console.log(requests);
 
-      const res = await api.get("/custom");
-      const requests = res.data.data?.results || res.data || [];
-      setCustomizationRequests(requests);
-      localStorage.setItem("customRequests", JSON.stringify(requests));
-      localStorage.setItem("customRequestsTimestamp", Date.now().toString());
+      setCustomizationRequests((prev) =>
+        append ? [...prev, ...requests] : requests
+      );
+      setTotalPages(newTotalPages);
       setError("");
     } catch (error) {
       console.error("Error fetching customization requests:", error);
@@ -43,9 +45,32 @@ const CustomRequest = () => {
     }
   };
 
+  // Set up Intersection Observer for infinite scrolling
   useEffect(() => {
-    getCustomRequest();
-  }, []);
+    observer.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isLoading && page < totalPages) {
+          setPage((prev) => prev + 1);
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.current.observe(loadMoreRef.current);
+    }
+
+    return () => {
+      if (loadMoreRef.current && observer.current) {
+        observer.current.unobserve(loadMoreRef.current);
+      }
+    };
+  }, [isLoading, page, totalPages]);
+
+  // Fetch data when page changes
+  useEffect(() => {
+    getCustomRequest(page, page > 1);
+  }, [page]);
 
   // Toggle expansion state for a specific item
   const toggleExpand = (id) => {
@@ -73,18 +98,6 @@ const CustomRequest = () => {
         (req) => req.id !== id
       );
       setCustomizationRequests(updatedRequests);
-      localStorage.setItem("customRequests", JSON.stringify(updatedRequests));
-      localStorage.setItem("customRequestsTimestamp", Date.now().toString());
-
-      // Update dashboard counts
-      const cachedCounts = localStorage.getItem("dashboardCounts");
-      if (cachedCounts) {
-        const counts = JSON.parse(cachedCounts);
-        counts[2] = (counts[2] || 0) - 1; // Decrease custom requests count
-        localStorage.setItem("dashboardCounts", JSON.stringify(counts));
-        localStorage.setItem("countsTimestamp", Date.now().toString());
-      }
-
       setSelectedIds((prev) => prev.filter((selectedId) => selectedId !== id));
       setError("");
     } catch (error) {
@@ -107,27 +120,11 @@ const CustomRequest = () => {
 
     setIsLoading(true);
     try {
-      // Assuming a batch delete endpoint exists; otherwise, use sequential DELETE calls
       await api.post("/custom/batch-delete", { ids: selectedIds });
-      // Alternative for sequential DELETE calls if no batch endpoint:
-      // await Promise.all(selectedIds.map((id) => api.delete(`/custom/${id}`)));
-
       const updatedRequests = customizationRequests.filter(
         (req) => !selectedIds.includes(req.id)
       );
       setCustomizationRequests(updatedRequests);
-      localStorage.setItem("customRequests", JSON.stringify(updatedRequests));
-      localStorage.setItem("customRequestsTimestamp", Date.now().toString());
-
-      // Update dashboard counts
-      const cachedCounts = localStorage.getItem("dashboardCounts");
-      if (cachedCounts) {
-        const counts = JSON.parse(cachedCounts);
-        counts[2] = (counts[2] || 0) - selectedIds.length; // Decrease custom requests count
-        localStorage.setItem("dashboardCounts", JSON.stringify(counts));
-        localStorage.setItem("countsTimestamp", Date.now().toString());
-      }
-
       setSelectedIds([]);
       setError("");
     } catch (error) {
@@ -145,18 +142,20 @@ const CustomRequest = () => {
   const handleStatusUpdate = async (id, newStatus) => {
     setIsLoading(true);
     try {
-      const res = await api.put(`/custom/${id}`, { status: newStatus });
-      setCustomizationRequests((prev) =>
-        prev.map((req) =>
-          req.id === id ? { ...req, ...res.data.data, ...res.data } : req
-        )
+      const payload = { status: newStatus };
+      if (newStatus === "closed" && customUrl) {
+        payload.custom_url = customUrl; // Include custom_url for closed status
+      }
+      const res = await api.put(`/custom/${id}`, payload);
+      const updatedRequests = customizationRequests.map((req) =>
+        req.id === id ? { ...req, ...res.data.data, ...res.data } : req
       );
-      localStorage.setItem(
-        "customRequests",
-        JSON.stringify(customizationRequests)
-      );
-      localStorage.setItem("customRequestsTimestamp", Date.now().toString());
+      setCustomizationRequests(updatedRequests);
       setError("");
+      // Close modal and reset customUrl after successful update
+      setIsModalOpen(false);
+      setCustomUrl("");
+      setSelectedRequestId(null);
     } catch (error) {
       console.error(`Error updating status to ${newStatus}:`, error);
       setError(
@@ -168,6 +167,28 @@ const CustomRequest = () => {
     }
   };
 
+  // Open modal for Close action
+  const openCloseModal = (id) => {
+    setSelectedRequestId(id);
+    setIsModalOpen(true);
+  };
+
+  // Close modal
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setCustomUrl("");
+    setSelectedRequestId(null);
+  };
+
+  // Handle modal form submission
+  const handleModalSubmit = () => {
+    if (!customUrl.trim()) {
+      setError("Please provide a valid URL.");
+      return;
+    }
+    handleStatusUpdate(selectedRequestId, "closed");
+  };
+
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-6 text-gray-800">
@@ -177,7 +198,7 @@ const CustomRequest = () => {
         <div className="mb-4">
           <p className="text-red-600 text-sm">{error}</p>
           <button
-            onClick={getCustomRequest}
+            onClick={() => getCustomRequest(1, false)}
             className="mt-2 px-4 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700"
           >
             Retry Loading Data
@@ -205,7 +226,6 @@ const CustomRequest = () => {
               key={req.id}
               className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
             >
-              {/* Main summary row */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <input
@@ -238,9 +258,9 @@ const CustomRequest = () => {
                       Status:{" "}
                       <span
                         className={`px-2 py-1 text-xs rounded-full ${
-                          req.status === "approved"
+                          req.status === "closed"
                             ? "bg-green-100 text-green-700"
-                            : req.status === "declined"
+                            : req.status === "cancelled"
                             ? "bg-red-100 text-red-700"
                             : req.status === "open"
                             ? "bg-blue-100 text-blue-700"
@@ -289,12 +309,9 @@ const CustomRequest = () => {
                   )}
                 </button>
               </div>
-
-              {/* Expanded details */}
               {expandedItems[req.id] && (
                 <div className="mt-4 border-t border-gray-200 pt-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Asset Details */}
                     <div>
                       <h4 className="text-sm font-medium text-gray-700">
                         Asset Details
@@ -314,7 +331,7 @@ const CustomRequest = () => {
                         Status:{" "}
                         <span
                           className={`px-2 py-1 text-xs rounded-full ${
-                            req.asset.status === "approved"
+                            req.asset.status === "closed"
                               ? "bg-green-100 text-green-700"
                               : req.asset.status === "pending"
                               ? "bg-yellow-100 text-yellow-700"
@@ -366,7 +383,6 @@ const CustomRequest = () => {
                         </p>
                       )}
                     </div>
-                    {/* User Details */}
                     <div>
                       <h4 className="text-sm font-medium text-gray-700">
                         User Details
@@ -407,7 +423,6 @@ const CustomRequest = () => {
                       </p>
                     </div>
                   </div>
-                  {/* Payment and Due Date */}
                   <div className="mt-4">
                     <h4 className="text-sm font-medium text-gray-700">
                       Request Details
@@ -436,21 +451,20 @@ const CustomRequest = () => {
                         : "N/A"}
                     </p>
                   </div>
-                  {/* Action Buttons */}
                   <div className="mt-4 flex gap-2">
                     <button
-                      onClick={() => handleStatusUpdate(req.id, "approved")}
+                      onClick={() => openCloseModal(req.id)} // Open modal instead of direct update
                       className="px-4 py-1 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition disabled:bg-gray-400"
-                      disabled={req.status === "approved" || isLoading}
+                      disabled={req.status === "closed" || isLoading}
                     >
-                      Approve
+                      Close
                     </button>
                     <button
-                      onClick={() => handleStatusUpdate(req.id, "declined")}
+                      onClick={() => handleStatusUpdate(req.id, "cancelled")}
                       className="px-4 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition disabled:bg-gray-400"
-                      disabled={req.status === "declined" || isLoading}
+                      disabled={req.status === "cancelled" || isLoading}
                     >
-                      Decline
+                      Cancel
                     </button>
                     <button
                       onClick={() => handleDelete(req.id)}
@@ -466,6 +480,47 @@ const CustomRequest = () => {
           ))
         )}
       </ul>
+      {/* Modal for Close Action */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Close Request</h3>
+            <p className="text-gray-600 mb-4">
+              Please provide the custom URL for this request.
+            </p>
+            <input
+              type="url"
+              value={customUrl}
+              onChange={(e) => setCustomUrl(e.target.value)}
+              placeholder="Enter custom URL"
+              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 mb-4"
+            />
+            {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={closeModal}
+                className="px-4 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 transition"
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleModalSubmit}
+                className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition disabled:bg-gray-400"
+                disabled={isLoading}
+              >
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Sentinel element for Intersection Observer */}
+      {page < totalPages && (
+        <div ref={loadMoreRef} className="h-10">
+          <LoadingIndicator />
+        </div>
+      )}
     </div>
   );
 };

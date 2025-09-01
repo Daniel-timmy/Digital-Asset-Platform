@@ -8,6 +8,7 @@ import { AuthRequest } from "interfaces/auth.interface";
 import logger from "../logger/app.logger";
 import { HttpError } from "../error/HttpError";
 import { IFitltered } from "../interfaces/asset.interface";
+import sendEmail from "../utils/sendEmail";
 
 
 interface ICustomAsset{
@@ -113,18 +114,22 @@ export class CustomAssetService {
         return await this.customAssetRepository.findOneBy({ id, user: { id: user.id } });
     }
 
-    async update(id: string, req: AuthRequest): Promise<CustomAsset | null>{
-        const user = req.user
-        if (user && user?.role === "admin"){
-          await this.customAssetRepository.update(id, req.body)
-          return await this.customAssetRepository.findOne({where: { id }})
-        }
-        const customAsset = await this.customAssetRepository.findOneBy({ id, user: { id: user?.id } });
+async update(id: string, data: Partial<CustomAsset>): Promise<CustomAsset | null> {
+    const result = await this.customAssetRepository.update(id, data);
 
-        if (!customAsset) throw new Error("You can not access this custom asset.")
-        await this.customAssetRepository.update(id, req.body)
-        return await this.customAssetRepository.findOne({where: { id }})
-    }
+    const updatedEntity = await this.customAssetRepository.findOne({ where: { id }, relations: ["user", "asset"], });
+    if (updatedEntity && updatedEntity.type === 'custom'){
+            await sendEmail(
+               updatedEntity.user.id,
+               "Your customisation request is done!!!",
+               `Here is the link to download your custom request: ${updatedEntity.custom_url}`
+            );
+        }
+
+    return updatedEntity;
+}
+
+
 
     async remove(id: string, req: AuthRequest): Promise<void>{
         const user = req.user
