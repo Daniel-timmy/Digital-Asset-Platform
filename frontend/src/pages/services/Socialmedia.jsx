@@ -108,7 +108,7 @@ const SocialMedia = () => {
     <>
       <Header />
       <div className="bg-white py-16 px-4 min-h-screen font-[Inter] flex justify-center items-start">
-        <div className="bg-[#f4e8d8] rounded-2xl shadow-xl p-10 w-full max-w-4xl">
+        <div className="bg-[#f8f1e6] rounded-2xl shadow-xl p-10 w-full max-w-4xl">
           {/* Success/Error Alert */}
           {submitStatus === "success" && (
             <div className="mb-4 p-4 bg-green-100 text-green-700 rounded">
@@ -147,7 +147,7 @@ const SocialMedia = () => {
                 onChange={handleInputChange}
                 placeholder="Enter Company Name"
                 className={`w-full bg-white text-black p-3 border rounded-md ${
-                  errors.company_name ? "border-red-500" : "border-black"
+                  errors.company_name ? "border-red-500" : "border-gray-300"
                 }`}
               />
               {errors.company_name && (
@@ -165,7 +165,7 @@ const SocialMedia = () => {
                 onChange={handleInputChange}
                 placeholder="Enter Contact Email"
                 className={`w-full bg-white text-black p-3 border rounded-md ${
-                  errors.contact_email ? "border-red-500" : "border-black"
+                  errors.contact_email ? "border-red-500" : "border-gray-300"
                 }`}
               />
               {errors.contact_email && (
@@ -183,7 +183,7 @@ const SocialMedia = () => {
                 onChange={handleInputChange}
                 placeholder="e.g., Students, Entrepreneurs"
                 className={`w-full bg-white text-black p-3 border rounded-md ${
-                  errors.audience ? "border-red-500" : "border-black"
+                  errors.audience ? "border-red-500" : "border-gray-300"
                 }`}
               />
               {errors.audience && (
@@ -201,7 +201,7 @@ const SocialMedia = () => {
                 className={`w-full bg-white text-black p-3 border rounded-md ${
                   errors.preferred_contact_method
                     ? "border-red-500"
-                    : "border-black"
+                    : "border-gray-300"
                 }`}
               >
                 <option value="">Select Preferred Contact Method</option>
@@ -225,7 +225,7 @@ const SocialMedia = () => {
                 onChange={handleInputChange}
                 placeholder="e.g., Phone number, WhatsApp handle"
                 className={`w-full bg-white text-black p-3 border rounded-md ${
-                  errors.contact_means ? "border-red-500" : "border-black"
+                  errors.contact_means ? "border-red-500" : "border-gray-300"
                 }`}
               />
               {errors.contact_means && (
@@ -242,7 +242,7 @@ const SocialMedia = () => {
                 onChange={handleInputChange}
                 placeholder="Tell us what you're looking for..."
                 className={`w-full bg-white text-black p-3 border rounded-md h-28 ${
-                  errors.description ? "border-red-500" : "border-black"
+                  errors.description ? "border-red-500" : "border-gray-300"
                 }`}
               />
               {errors.description && (

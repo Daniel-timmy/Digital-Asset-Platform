@@ -114,7 +114,7 @@ const Webdev = () => {
     <>
       <Header />
       <div className="bg-white py-16 px-4 min-h-screen font-[Inter] flex justify-center items-start">
-        <div className="bg-[#f4e8d8] rounded-2xl shadow-xl p-10 w-full max-w-4xl">
+        <div className="bg-[#f8f1e6] rounded-2xl shadow-xl p-10 w-full max-w-4xl">
           {/* Success/Error Alert */}
           {submitStatus === "success" && (
             <div className="mb-4 p-4 bg-green-100 text-green-700 rounded">
@@ -130,7 +130,7 @@ const Webdev = () => {
           )}
 
           {/* Tabs */}
-          <div className="flex justify-center gap-10 mb-8 border-b border-black">
+          <div className="flex justify-center gap-10 mb-8 border-b border-gray-300">
             <button
               className={`text-lg font-semibold pb-2 border-b-2 ${
                 activeTab === "uiux"
@@ -145,7 +145,7 @@ const Webdev = () => {
               className={`text-lg font-medium pb-2 border-b-2 ${
                 activeTab === "website"
                   ? "text-black border-black"
-                  : "text-gray-400 border-grey-200"
+                  : "text-gray-400 border-gray-200"
               }`}
               onClick={() => setActiveTab("website")}
             >
@@ -174,7 +174,7 @@ const Webdev = () => {
                 onChange={handleInputChange}
                 placeholder="Enter Company Name"
                 className={`w-full bg-white text-black p-3 border rounded-md ${
-                  errors.company_name ? "border-red-500" : "border-black"
+                  errors.company_name ? "border-red-500" : "border-gray-300"
                 }`}
               />
               {errors.company_name && (
@@ -192,7 +192,7 @@ const Webdev = () => {
                 onChange={handleInputChange}
                 placeholder="Enter Contact Email"
                 className={`w-full bg-white text-black p-3 border rounded-md ${
-                  errors.contact_email ? "border-red-500" : "border-black"
+                  errors.contact_email ? "border-red-500" : "border-gray-300"
                 }`}
               />
               {errors.contact_email && (
@@ -210,7 +210,7 @@ const Webdev = () => {
                 onChange={handleInputChange}
                 placeholder="Enter Industry (e.g., Tech, Retail)"
                 className={`w-full bg-white text-black p-3 border rounded-md ${
-                  errors.industry ? "border-red-500" : "border-black"
+                  errors.industry ? "border-red-500" : "border-gray-300"
                 }`}
               />
               {errors.industry && (
@@ -229,7 +229,7 @@ const Webdev = () => {
                   onChange={handleInputChange}
                   placeholder="Enter Company Type (e.g., Tech, Retail)"
                   className={`w-full bg-white text-black p-3 border rounded-md ${
-                    errors.website_type ? "border-red-500" : "border-black"
+                    errors.website_type ? "border-red-500" : "border-gray-300"
                   }`}
                 />
               ) : (
@@ -238,7 +238,7 @@ const Webdev = () => {
                   value={formData.website_type}
                   onChange={handleInputChange}
                   className={`w-full bg-white text-black p-3 border rounded-md ${
-                    errors.website_type ? "border-red-500" : "border-black"
+                    errors.website_type ? "border-red-500" : "border-gray-300"
                   }`}
                 >
                   <option value="">Select Website Type</option>
@@ -266,7 +266,7 @@ const Webdev = () => {
                   onChange={handleInputChange}
                   placeholder="Enter your Brand Slogan"
                   className={`w-full bg-white text-black p-3 border rounded-md h-28 ${
-                    errors.features ? "border-red-500" : "border-black"
+                    errors.features ? "border-red-500" : "border-gray-300"
                   }`}
                 />
               ) : (
@@ -275,7 +275,7 @@ const Webdev = () => {
                   value={formData.features}
                   onChange={handleInputChange}
                   className={`w-full bg-white text-black p-3 border rounded-md ${
-                    errors.features ? "border-red-500" : "border-black"
+                    errors.features ? "border-red-500" : "border-gray-300"
                   }`}
                 >
                   <option value="">Select Features Needed</option>
@@ -299,7 +299,7 @@ const Webdev = () => {
                 value={formData.description}
                 onChange={handleInputChange}
                 placeholder="Add description"
-                className="w-full bg-white text-black p-3 border border-black rounded-md h-28"
+                className="w-full bg-white text-black p-3 border border-gray-300 rounded-md h-28"
               />
             </div>
             {/* Button */}

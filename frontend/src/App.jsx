@@ -29,7 +29,6 @@ import NotFound from "./NotFound";
 import Downloads from "./pages/Client/Downloads";
 import ClientsLayout from "./pages/Client/ClientsLayout";
 
-
 function Logout() {
   localStorage.clear();
   return <AuthPage />;

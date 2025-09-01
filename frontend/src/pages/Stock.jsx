@@ -1,17 +1,15 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Search from "../components/Search";
 import Card from "../components/Card";
 import LoadingIndicator from "../components/LoadingIndicator";
 import api from "../utils/api";
-import { CartContext } from "../context/CartContext";
+import { add_to_cart } from "../utils/cart";
 import "../App.css";
 
 export default function StockPage() {
-  const { addToCart, cart } = useContext(CartContext);
-
-  const [isVisible, setIsVisible] = useState(false);
+  const [cart, setCart] = useState([]);
   const [assets, setAssets] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [activeTag, setActiveTag] = useState("All");
@@ -129,7 +127,7 @@ export default function StockPage() {
           ))}
         </div>
 
-        {/* Product Grid */}
+        {/* Product Grid using Card.jsx */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10 px-6 w-full max-w-7xl mx-auto mb-20">
           {loading && assets.length === 0 ? (
             <div className="col-span-4 flex justify-center items-center h-64">
@@ -139,9 +137,8 @@ export default function StockPage() {
             assets.map((asset) => (
               <Card
                 key={asset.id}
-                key={asset.id}
                 product={asset}
-                onAddToCart={() => addToCart(asset)}
+                onAddToCart={add_to_cart}
                 handleProductClick={handleProductClick}
               />
             ))
