@@ -124,7 +124,6 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "moduleResolution": "node",
-    "ignoreDeprecations": "6.0",
     "typeRoots": ["./node_modules/@types", "./src/types"],
     "baseUrl": "src",
     "paths": {
