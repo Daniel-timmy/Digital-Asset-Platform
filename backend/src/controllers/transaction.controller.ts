@@ -74,6 +74,8 @@ export class TransactionController {
           logger.debug(`Applying user filter for non-admin user: ${req.user.id}`);
       }
       const transactions = await applyTransactionsFilters(query, filters)
+      // const transactions = await this.transactionService.findAll()
+
       
       logger.info(`Successfully retrieved ${transactions.limit} transactions`);
       res.status(200).json(transactions);
@@ -150,7 +152,6 @@ export class TransactionController {
       }
 
       const { id } = req.body;
-      console.log(`idddddddddd: ${id}`)
       if (!id) {
         logger.warn(`Payment initialization failed: Missing custom asset ID for user: ${user.id}`);
         throw new Error("Custom asset ID required");

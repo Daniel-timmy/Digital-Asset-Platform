@@ -20,13 +20,12 @@ const VerifyPaymentPage = () => {
 
     // Verify payment with backend
     const verifyPayment = async () => {
-      console.log("verifying");
       try {
         const response = await api.get(`/transactions/verify/${ref}`);
-        console.log("Response from verification:", response);
         const { status, message } = response.data;
 
         if (status === "success") {
+          navigate("/dashboard");
           setStatus("Payment verified successfully!");
         } else {
           setStatus("Payment verification failed.");
@@ -40,9 +39,12 @@ const VerifyPaymentPage = () => {
     };
 
     verifyPayment();
-    navigate("/dashboard");
   }, [searchParams]);
-  return <div>Verifying...</div>;
+  return (
+    <div className="flex items-center justify-center h-[100vh] w-[100vw] text-4xl">
+      Verifying Payment... Do not close page.
+    </div>
+  );
 };
 
 export default VerifyPaymentPage;

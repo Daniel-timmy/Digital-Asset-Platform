@@ -24,7 +24,7 @@ authRouter.get("/logout", async (req, res, next) => {
         await authController.logout(req, res, next);
 });
 
-authRouter.get("/refresh", async (req, res, next) => {
+authRouter.post("/refresh", async (req, res, next) => {
         await authController.refresh(req, res, next);
 });
 

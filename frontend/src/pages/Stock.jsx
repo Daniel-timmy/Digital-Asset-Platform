@@ -7,6 +7,7 @@ import LoadingIndicator from "../components/LoadingIndicator";
 import api from "../utils/api";
 import { add_to_cart } from "../utils/cart";
 import "../App.css";
+import { useCart } from "../context/CartContext";
 
 export default function StockPage() {
   const [cart, setCart] = useState([]);
@@ -20,6 +21,27 @@ export default function StockPage() {
   const [totalPages, setTotalPages] = useState(1); // Track total pages
   const observer = useRef(null); // Ref for Intersection Observer
   const loadMoreRef = useRef(null); // Ref for the sentinel element
+
+  const { scart, addToCart, inCart, removeFromCart, clearCart, getCart } =
+    useCart();
+
+  const handleAddToCart = (asset) => {
+    addToCart(asset);
+  };
+
+  const isItemInCart = (asset) => {
+    return inCart(asset);
+  };
+
+  const handleRemoveFromCart = (asset) => {
+    removeFromCart(asset);
+  };
+
+  const handleClearCart = () => {
+    clearCart();
+  };
+
+  const currentCart = getCart();
 
   const handleProductClick = (product) => {
     if (!selectedProduct) setSelectedProduct(product);
@@ -138,7 +160,7 @@ export default function StockPage() {
               <Card
                 key={asset.id}
                 product={asset}
-                onAddToCart={add_to_cart}
+                onAddToCart={handleAddToCart}
                 handleProductClick={handleProductClick}
               />
             ))

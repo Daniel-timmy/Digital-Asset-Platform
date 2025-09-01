@@ -68,7 +68,6 @@ export class MessageController {
     try {
       const { ticketId } = req.params;
       logger.info(`Fetching messages for ticket ID: ${ticketId} for user: ${req.user?.id || 'unknown'}`);
-
       if (!req.user) {
         logger.warn(`Messages retrieval failed: User not authenticated for ticket ID: ${ticketId}`);
         throw new HttpError("User not authenticated", 401);

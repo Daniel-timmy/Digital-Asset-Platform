@@ -30,7 +30,8 @@ export async function sendEmail(userId: string, subject: string, message: string
     }
 
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: "smtp.gmail.com",
+      port: 587,
       auth: {
         user: GOOGLE_MAIL_USER,
         pass: GOOGLE_MAIL_PASSWORD,
@@ -136,7 +137,8 @@ export async function sendVerificationEmail(toEmail: string, code: string) {
     }
 
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: "smtp.gmail.com",
+      port: 587,
       auth: {
         user: GOOGLE_MAIL_USER,
         pass: GOOGLE_MAIL_PASSWORD,

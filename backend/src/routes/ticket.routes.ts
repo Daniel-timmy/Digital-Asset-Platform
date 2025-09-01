@@ -12,12 +12,12 @@ ticketRouter.post("/", authentication, async (req, res, next) => {
 });
 
 // Get a ticket by ID
-ticketRouter.get("/:id", authentication, async (req, res, next) => {
-  await ticketController.getTicketById(req, res, next);
-});
+// ticketRouter.get("/:id", authentication, async (req, res, next) => {
+//   await ticketController.getTicketById(req, res, next);
+// });
 
 // Get all tickets for the authenticated user
-ticketRouter.get("/user",authentication, async (req, res, next) => {
+ticketRouter.get("/user/",authentication, async (req, res, next) => {
   await ticketController.getUserTickets(req, res, next);
 });
 

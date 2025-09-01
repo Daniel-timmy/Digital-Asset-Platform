@@ -8,6 +8,8 @@ interface TransactionFilter {
   status?: string;
   page?: number; // Add page number for pagination
   limit?: number;
+  orderBy?: string; 
+  orderDirection?: 'ASC' | 'DESC'; 
 }
 
 export async function applyTransactionsFilters(query: any, filter: TransactionFilter): Promise<IFitltered> {
@@ -24,6 +26,12 @@ export async function applyTransactionsFilters(query: any, filter: TransactionFi
     }
     if (filter.cId) {
         query = query.andWhere("transaction.custom_asset = :cId", { cId: filter.cId });
+    }
+    if (filter.orderBy) {
+    const direction = filter.orderDirection || 'ASC';
+    query = query.orderBy(`transaction.${filter.orderBy}`, direction);
+    } else {
+        query = query.orderBy('transaction.created_at', 'DESC');
     }
 
     const page = filter.page ?? 1; 

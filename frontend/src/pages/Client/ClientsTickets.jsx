@@ -104,7 +104,7 @@ const Tickets = () => {
   useEffect(() => {
     const getTickets = async () => {
       try {
-        const res = await api.get("/ticket/");
+        const res = await api.get("/ticket/user/");
         console.log(res.data.data);
         setTickets(res.data.data || []);
       } catch (error) {

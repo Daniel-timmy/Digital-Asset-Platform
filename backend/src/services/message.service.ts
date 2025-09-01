@@ -55,7 +55,7 @@ export class MessageService {
   }
 
   async getMessagesByTicket(ticketId: string, req: AuthRequest): Promise<Message[]> {
-    const ticket = await this.ticketRepository.findOne({ where: { id: ticketId } });
+    const ticket = await this.ticketRepository.findOne({ where: { id: ticketId }, relations: ['opened_by'] });
 
     if (!ticket) {
       throw new HttpError("Ticket not found", 404);
@@ -68,7 +68,9 @@ export class MessageService {
       });
     }
 
-    if (req.user !== ticket.opened_by)throw new Error("Unauthorized access");
+    if (!req.user) throw new Error("Unauthorized access");
+
+    if (req.user.id !== ticket.opened_by.id)throw new Error("Unauthorized access");
     return await this.messageRepository.find({
         where: { ticket: { id: ticketId }},
         relations: ["user", "ticket"],
