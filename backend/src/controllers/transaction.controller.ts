@@ -313,11 +313,9 @@ export class TransactionController {
           if (customasset.type === 'download'){
             const cdownload = this.downloadRepository.create({user: req.user, asset: customasset.asset, custom_asset: customasset})
             const download = await this.downloadRepository.save(cdownload)
-
           }
           if (customasset.type === 'bulk'){
             const downloads = await this.downloadService.batchCreate(assetData.assets, customasset, req.user)
-            console.log('DOWNLOADS', downloads)
           }
           message = "Payment processed successfully";
           status = "success";
