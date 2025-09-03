@@ -9,6 +9,8 @@ import logger from "../logger/app.logger";
 import { HttpError } from "../error/HttpError";
 import { IFitltered } from "../interfaces/asset.interface";
 import sendEmail from "../utils/sendEmail";
+import { redisClient } from "../database/redis_cache";
+
 
 
 interface ICustomAsset{
@@ -16,8 +18,9 @@ interface ICustomAsset{
     description: string,
     user: User,
     asset?: Asset,
-    type?: "custom" | "download",
+    type?: "custom" | "download" | "bulk",
     status?: "open" | "closed",
+    price: number,
 }
 
 export class CustomAssetService {
@@ -35,17 +38,51 @@ export class CustomAssetService {
 
       const asset = req.body ? await this.assetRepository.findOne({where: {id : req.body.asset }}) : null;
       if (!asset) throw new Error("Asset not found")
+      
+      let price: number = 0
+
+      if (req.body.type === "bulk"){
+
+        if (req.body.asset_ids.length === 0) {
+          throw new Error("At least one asset ID must be provided");
+        }
+
+        const result = await this.assetRepository.find({
+          where: { id: In(req.body.asset_ids) },
+          select: ["id", "price"], 
+        });
+        console.log(result)
+        price += result.reduce((sum, asset) => sum + (Number(asset.price) || 0), 0)
+
+      } else{
+        price += asset.price
+      }
+ 
               
       const customAssetData : ICustomAsset = {
         name: req.body.name,
         description: req.body.description,
         asset: asset,
         type: req.body.type,
-        status: req.body.type === "download" ? "closed" : "open",
+        status: req.body.type === "custom" ? "open" : "closed",
         user,
+        price
       }
+      console.log(customAssetData)
       const customasset = this.customAssetRepository.create(customAssetData)
-      return await this.customAssetRepository.save(customasset)
+      const savedCustomAsset = await this.customAssetRepository.save(customasset)
+
+      if (req.body.type === "bulk"){
+        await (await redisClient).set(
+          savedCustomAsset.id,
+          JSON.stringify({ assets: req.body.asset_ids }),
+          {
+            EX: 36000,
+            NX: true,
+          }
+        );
+      }
+      return savedCustomAsset
 
     }
 

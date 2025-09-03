@@ -1,8 +1,10 @@
 import { AppDataSource } from "../database/db";
-import { Repository } from "typeorm";
+import { Repository, In } from "typeorm";
 import { Download } from "../entities/download.entities";
 import { Asset } from "../entities/asset.entities";
 import { AuthRequest } from "../interfaces/auth.interface";
+import { User } from "../entities/user.entities";
+import { CustomAsset } from "../entities/customasset.entities";
 
 export class DownloadService {
   private downloadRepository: Repository<Download>;
@@ -28,6 +30,36 @@ export class DownloadService {
       asset
     });
     return await this.downloadRepository.save(download);
+  }
+
+  async batchCreate(asset_ids: Array<string>, custom_asset: CustomAsset, user?: User ) {
+    
+      console.log(asset_ids)
+      if (!Array.isArray(asset_ids) || asset_ids.length === 0) {
+        throw new Error("Asset IDs must be a non-empty array");
+      }
+    
+      // Find all assets in one query
+      const assets = await this.assetRepository.find({
+        where: { id: In(asset_ids) },
+      });
+    
+      // Verify all requested assets were found
+      if (assets.length !== asset_ids.length) {
+        throw new Error("One or more assets not found");
+      }
+    
+      // Create download entities
+      const downloads = assets.map(asset =>
+        this.downloadRepository.create({
+          user,
+          asset,
+          custom_asset,
+        })
+      );
+    
+      // Save all downloads in one transaction
+      return await this.downloadRepository.save(downloads);
   }
 
   async findAll(req: AuthRequest): Promise<Download[]> {

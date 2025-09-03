@@ -113,7 +113,11 @@ function Productdetails() {
     setCustomLoading(true);
 
     try {
-      const response = await api.post("/custom", { ...formData, asset: id });
+      const response = await api.post("/custom", {
+        ...formData,
+        asset: id,
+        type: "custom",
+      });
       console.log(response);
       if (response.status !== 201) {
         throw new Error("Failed to submit customization");
@@ -134,7 +138,7 @@ function Productdetails() {
     const token = localStorage.getItem(ACCESS_TOKEN);
     if (!token) {
       setIsAuthorized(false);
-      setErrors({ user: "You can't customize unless you Sign up or log in" });
+      setErrors({ user: "You can't download unless you Sign up or log in" });
       return;
     }
     const decoded = jwtDecode(token);
@@ -142,7 +146,7 @@ function Productdetails() {
     const now = Date.now() / 1000;
 
     if (tokenExpiration < now) {
-      setErrors({ user: "You can't customize unless you Sign up or log in" });
+      setErrors({ user: "You can't download unless you Sign up or log in" });
       return;
     }
     setBuyLoading(true);
@@ -155,7 +159,7 @@ function Productdetails() {
       });
       console.log(response);
       if (response.status !== 201) {
-        throw new Error("Failed to submit order");
+        throw new Error("Failed to initiate order");
       }
 
       setErrors({});

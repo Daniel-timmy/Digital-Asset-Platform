@@ -24,8 +24,8 @@ export class CustomAsset {
     @Column({ type: "enum", enum: ["open", "closed", "cancelled"], default: "open"})
     status!: "open" | "closed" | "cancelled";
 
-    @Column({ type: "enum", enum: ["custom", "download"], default: "custom"})
-    type!: "custom" | "download"
+    @Column({ type: "enum", enum: ["custom", "download", "bulk"], default: "custom"})
+    type!: "custom" | "download" | "bulk"
 
     @Column({ type: "enum", enum: ["paid", "pending", "cancelled", "processing"], default: "pending"})
     payment_status!: "paid" | "pending" | "processing";
@@ -36,7 +36,7 @@ export class CustomAsset {
     @Column({ type: "date", nullable: true })
     due_date: Date = new Date(new Date().setDate(new Date().getDate() + 2));
 
-    @Column({ type: "decimal", precision: 10, scale: 2, default: 2000 })
+    @Column({ type: "decimal", precision: 10, scale: 2 })
     price!: number ;
 
     @CreateDateColumn()

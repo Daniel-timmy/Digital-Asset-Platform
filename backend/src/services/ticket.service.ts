@@ -76,7 +76,7 @@ async getTicketById(id: string, req: AuthRequest): Promise<Ticket> {
     }
     if (req.user && req.user.role === "admin"){
       return await this.ticketRepository.find({
-        where: { opened_by: { id: req.body.userId } },
+        where: { opened_by: { id: req.user.id } },
         relations: ["opened_by", "custom_asset"],
       });
     }

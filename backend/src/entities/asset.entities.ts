@@ -31,8 +31,8 @@ export class Asset {
   @JoinColumn({ name: "category" })
   category!: Category;
 
-  @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
-  price!: number | null;
+  @Column({ type: "decimal", precision: 10, scale: 2 })
+  price!: number ;
        
   @Column({ type: "enum", enum: ["pending", "approved", "rejected"], default: 'pending' })
   status!: "pending" | "approved" | "rejected";

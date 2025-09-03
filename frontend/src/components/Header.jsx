@@ -38,7 +38,7 @@ export default function Header() {
   const [isAuthorized, setIsAuthorized] = useState(null);
 
   // Cart from context (this makes the badge update globally)
-  const { cart, getCount } = useCart();
+  const { getCount } = useCart();
   const cartCount = getCount();
 
   // toggle helpers

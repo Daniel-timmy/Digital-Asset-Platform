@@ -1,10 +1,11 @@
 import { Entity, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from "typeorm";
 import { User } from "./user.entities";
 import { Asset } from "./asset.entities";
+import { CustomAsset } from "./customasset.entities";
 
 @Entity("downloads")
 export class Download {
-   @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn("uuid")
   id!: string;
 
   @ManyToOne(() => User)
@@ -14,6 +15,10 @@ export class Download {
   @ManyToOne(() => Asset)
   @JoinColumn({ name: "asset_id" })
   asset!: Asset;
+
+  @ManyToOne(() => CustomAsset)
+  @JoinColumn({ name: "custom_asset_id" })
+  custom_asset!: CustomAsset;
 
   @CreateDateColumn()
   downloaded_at: Date = new Date();

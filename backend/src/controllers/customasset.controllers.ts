@@ -23,7 +23,6 @@ export class CustomAssetController {
 
             logger.info(`Creating new custom asset for user: ${req.user.id}`);
             const { name, description, asset } = req.body;
-
             if (!name) {
                 logger.warn(`Create asset failed: Missing name for user ${req.user.id}`);
                 throw new CustomAssetError(400, 'Name is required');

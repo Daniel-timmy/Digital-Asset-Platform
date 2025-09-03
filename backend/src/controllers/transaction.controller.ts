@@ -1,32 +1,36 @@
 import { NextFunction, Request, Response } from "express";
+import crypto from "crypto";
+import axios from 'axios';
+import { Repository, In } from "typeorm";
 import { TransactionService } from "../services/transaction.service";
 import { AuthRequest } from "../interfaces/auth.interface";
-import { Repository, In } from "typeorm";
 import { Transaction } from "../entities/transaction.entities";
-import axios from 'axios';
 import { FRONTEND_URL, PAYSTACK_SECRET_KEY } from "../config/env";
 import { User } from "../entities/user.entities";
 import { CustomAsset } from "../entities/customasset.entities";
 import { Download } from "../entities/download.entities";
 import { AppDataSource } from "../database/db";
 import { verifyPayment } from "../utils/payment";
-import crypto from "crypto";
 import logger from "../logger/app.logger";
 import { HttpError } from "../error/HttpError";
 import { applyTransactionsFilters } from "../filters/transactions.filter";
-import { DownloadController } from "./download.controller";
+import { redisClient } from "../database/redis_cache";
+import { DownloadService } from "../services/download.service";
+
 
 export class TransactionController {
   private customAssetRepository: Repository<CustomAsset>;
   private userRepository: Repository<User>;
   private transactionRepository: Repository<Transaction>;
   private downloadRepository: Repository<Download>
+  private downloadService: DownloadService;
 
   constructor(private transactionService: TransactionService) {
     this.customAssetRepository = AppDataSource.getRepository(CustomAsset);
     this.userRepository = AppDataSource.getRepository(User);
     this.transactionRepository = AppDataSource.getRepository(Transaction);
     this.downloadRepository = AppDataSource.getRepository(Download)
+    this.downloadService = new DownloadService()
   }
 
   async create(req: AuthRequest, res: Response, next: NextFunction) {
@@ -279,7 +283,17 @@ export class TransactionController {
         logger.warn(`Custom asset not found for transaction reference: ${ref}, asset ID: ${transaction.custom_asset.id}`);
         throw new Error("Custom asset not found");
       }
+      let assetData: any 
+      if (customasset.type === "bulk"){
+        const cachedData = await (await redisClient).get(customasset.id);
 
+        if (!cachedData || typeof cachedData !== 'string') {
+          logger.warn(` Invalid or expired key: ${customasset.id}`);
+          throw new HttpError("Invalid or expired verification code", 400);
+        }
+         assetData = JSON.parse(cachedData)
+      }
+      
       const response = await axios.get(`https://api.paystack.co/transaction/verify/${ref}`, {
         headers: {
           Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
@@ -297,9 +311,13 @@ export class TransactionController {
           transaction.payment_status = "completed";
           customasset.payment_status = "paid";
           if (customasset.type === 'download'){
-            const cdownload = this.downloadRepository.create({user: req.user, asset: customasset.asset})
+            const cdownload = this.downloadRepository.create({user: req.user, asset: customasset.asset, custom_asset: customasset})
             const download = await this.downloadRepository.save(cdownload)
 
+          }
+          if (customasset.type === 'bulk'){
+            const downloads = await this.downloadService.batchCreate(assetData.assets, customasset, req.user)
+            console.log('DOWNLOADS', downloads)
           }
           message = "Payment processed successfully";
           status = "success";

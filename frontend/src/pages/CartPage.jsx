@@ -1,16 +1,66 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FaEye, FaEyeSlash, FaTrash, FaTools } from "react-icons/fa";
-
+import api from "../utils/api";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useCart } from "../context/CartContext";
+import { ACCESS_TOKEN } from "../utils/constants";
+import { jwtDecode } from "jwt-decode";
+import LoadingIndicator from "../components/LoadingIndicator";
+import { initialize_payment } from "../utils/payment";
 
 export default function CartPage() {
   const [previewItem, setPreviewItem] = useState(null);
-  const { cart, getCart, removeFromCart } = useCart();
+  const { cart, removeFromCart } = useCart();
   const [scart, setCart] = useState([]);
   const [previewAsset, setPreviewAsset] = useState(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const handleCheckout = async () => {
+    const token = localStorage.getItem(ACCESS_TOKEN);
+    if (!token) {
+      setIsAuthorized(false);
+      setErrors({ user: "You can't checkout unless you Sign up or log in" });
+      return;
+    }
+    const decoded = jwtDecode(token);
+    const tokenExpiration = decoded.exp;
+    const now = Date.now() / 1000;
+
+    if (tokenExpiration < now) {
+      setErrors({ user: "You can't checkout unless you Sign up or log in" });
+      return;
+    }
+    setCheckoutLoading(true);
+    const storedCart = JSON.parse(localStorage.getItem("cart"));
+
+    if (storedCart) {
+      console.log("CHECKOUT", Object.keys(storedCart)[0]);
+      console.log("CHECKOUT", Object.keys(storedCart));
+      try {
+        const response = await api.post("/custom", {
+          name: "Uncustomized bulk assets download",
+          description: "Uncustomized bulk assets download",
+          type: "bulk",
+          asset: Object.keys(storedCart)[0],
+          asset_ids: Object.keys(storedCart),
+        });
+        console.log(response);
+        if (response.status !== 201) {
+          throw new Error("Failed to submit order");
+        }
+
+        setErrors({});
+        initialize_payment(response.data.data.id);
+        alert("Buy order succesful. Initializing payment...");
+      } catch (error) {
+        console.log(error);
+        setErrors({ name: "Failed to submit. Please try again." });
+      }
+    }
+  };
 
   const subtotal = scart.reduce(
     (sum, item) => sum + (Number(item.price) || 0),
@@ -135,9 +185,16 @@ export default function CartPage() {
               <span>Total</span>
               <span className="text-black">₦{total.toLocaleString()}</span>
             </div>
-            <button className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition shadow-md">
-              Proceed to Checkout
-            </button>
+            {checkoutLoading ? (
+              <LoadingIndicator />
+            ) : (
+              <button
+                onClick={() => handleCheckout()}
+                className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition shadow-md"
+              >
+                Proceed to Checkout
+              </button>
+            )}
           </div>
           {previewAsset && (
             <div

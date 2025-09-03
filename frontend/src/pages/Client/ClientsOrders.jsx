@@ -71,17 +71,19 @@ const Orders = () => {
     }
     try {
       setReportLoading(true);
-      await api.post("/ticket", {
+      const res = await api.post("/ticket", {
         name: issueToReport,
         custom_asset: selectedOrderId,
         description: description.trim() || undefined, // Include description if provided
       });
+      console.log(res.data);
       alert("Issue reported successfully");
       setModalOpen(false);
       setIssue("");
       setCustomIssue("");
       setDescription(""); // Reset description
     } catch (error) {
+      console.log(error);
       alert("Failed to report issue");
     } finally {
       setReportLoading(false);
@@ -202,7 +204,7 @@ const Orders = () => {
 
       {/* Report Issue Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-xl font-bold mb-4">Report an Issue</h3>
             <div className="space-y-4">
@@ -275,13 +277,17 @@ const Orders = () => {
                 >
                   Cancel
                 </button>
-                <button
-                  className="rounded-2xl bg-red-300 h-10 px-4 cursor-pointer hover:bg-red-400 transition-all duration-300 flex items-center"
-                  onClick={reportIssue}
-                  disabled={reportLoading}
-                >
-                  {reportLoading ? <LoadingIndicator /> : "Submit"}
-                </button>
+                {reportLoading ? (
+                  <LoadingIndicator />
+                ) : (
+                  <button
+                    className="rounded-2xl bg-red-300 h-10 px-4 cursor-pointer hover:bg-red-400 transition-all duration-300 flex items-center"
+                    onClick={reportIssue}
+                    disabled={reportLoading}
+                  >
+                    Submit
+                  </button>
+                )}
               </div>
             </div>
           </div>
