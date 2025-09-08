@@ -1,5 +1,6 @@
 import { DataSource } from "typeorm";
 import { DB_HOST, DB_NAME, DB_PASSWORD, DB_USERNAME, DB_TYPE, NODE_ENV } from "../config/env";
+import logger from "../logger/app.logger";
 
 export const AppDataSource = new DataSource({
   type: DB_TYPE || "postgres" as any, // Default to postgres if not set
@@ -30,6 +31,16 @@ export const AppDataSource = new DataSource({
       : "src/subscribers/**/*.ts",
   ],
 });
+
+export const initializeDatabase = async () => {
+    try {
+        await AppDataSource.initialize();
+        logger.info("Database connection established successfully");
+    } catch (error) {
+        logger.error("Error during database connection:", error);
+        throw error;
+    }
+};
   // logging: ["query", "error"],
 // import { DataSource } from "typeorm";
 // import { DB_HOST, DB_NAME, DB_PASSWORD, DB_USERNAME, DB_TYPE, NODE_ENV } from "../config/env";
