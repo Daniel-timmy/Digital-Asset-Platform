@@ -67,11 +67,11 @@ export class AssetController {
     }
   }
 
-  async update(req: Request, res: Response, next: NextFunction) {
+  async update(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const id = req.params.id;
       logger.info(`Updating asset with ID: ${id}`);
-      const asset = await this.assetService.update(id, req.body);
+      const asset = await this.assetService.update(id, req);
       if (!asset) {
         logger.warn(`Asset not found for update with ID: ${id}`);
         return res.status(404).json({ error: "Asset not found" });

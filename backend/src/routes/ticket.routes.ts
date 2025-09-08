@@ -2,8 +2,26 @@ import { Router } from "express";
 import { TicketController } from "../controllers/ticket.controller";
 import { TicketService } from "../services/ticket.service";
 import { authentication, isAdmin } from "../middlewares/auth.middleware";
+import { initializeSocket } from "../socket/socket.manager";
+// import { getServer } from "../index";
+import logger from "../logger/app.logger";
 
 const ticketRouter = Router();
+
+// Initialize socket.io when accessing ticket routes
+// ticketRouter.use((req, res, next) => {
+//     try {
+//         const server = getServer();
+//         if (server) {
+//             initializeSocket(server);
+//             logger.info('Socket.IO initialized for ticket routes');
+//         }
+//         next();
+//     } catch (error) {
+//         logger.error('Failed to initialize Socket.IO:', error);
+//         next();
+//     }
+// });
 const ticketController = new TicketController(new TicketService());
 
 // Create a new ticket

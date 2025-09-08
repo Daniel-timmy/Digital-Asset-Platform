@@ -93,9 +93,86 @@ async create(req: AuthRequest) {
   }
   }
 
-  async update(id: string, data: Partial<Asset>): Promise<Asset | null> {
-    await this.assetRepository.update(id, data);
-    return await this.assetRepository.findOne({ where: { id } });
+  async update(id: string, req: AuthRequest): Promise<Asset | null> {
+    try {
+      const data = req.body;
+      // Check if asset exists
+      const existingAsset = await this.assetRepository.findOne({ where: { id } });
+      if (!existingAsset) {
+        throw new HttpError("Asset not found", 404);
+      }
+
+
+      // Category validation if provided
+      if (data.category) {
+        const categoryId = typeof data.category === 'string' ? data.category : data.category.id;
+        const category = await this.categoryRepository.findOne({ where: { id: categoryId } });
+        if (!category) throw new HttpError("Category not found", 404);
+        data.category = category;
+      }
+
+
+      // Tags validation if provided
+      if (data.tagsId) {
+        const tagIds = data.tagsId ? JSON.parse(data.tagsId) : null;
+        const tags = await this.tagRepository.findBy({ id: In(tagIds) });
+        if (!tags || tags.length === 0) throw new HttpError("Tags not found", 404);
+        data.tags = tags;
+      }
+
+      // Handle thumbnail update if file is provided
+      if (req?.file) {
+        try {
+          // Delete old thumbnail if it exists
+          if (existingAsset.thumbnail_url) {
+            await deleteImage(existingAsset.thumbnail_url);
+          }
+
+          const thumbnail = await convertToWebP(req.file);
+          if (!thumbnail || !Buffer.isBuffer(thumbnail.buffer)) {
+            throw new Error("Invalid thumbnail format");
+          }
+
+          const assetName = uuidv4();
+          const thumbnailName = `${assetName}.webp`;
+          data.thumbnail_url = await uploadImage(thumbnailName, thumbnail.buffer, "asset");
+        } catch (error) {
+          logger.error(`Failed to process thumbnail: ${error}`);
+          throw new HttpError(`Failed to process thumbnail: ${error}`, 500);
+        }
+      }
+
+      // Load the existing asset with relations
+      const asset = await this.assetRepository.findOne({
+        where: { id },
+        relations: ["tags", "category"]
+      });
+
+      if (!asset) {
+        throw new HttpError("Asset not found", 404);
+      }
+
+      // Update the asset properties
+      Object.assign(asset, {
+        name: data.name !== undefined ? data.name : asset.name,
+        description: data.description !== undefined ? data.description : asset.description,
+        price: data.price !== undefined ? data.price : asset.price,
+        file_url: data.file_url !== undefined ? data.file_url : asset.file_url,
+        thumbnail_url: data.thumbnail_url !== undefined ? data.thumbnail_url : asset.thumbnail_url,
+        category: data.category !== undefined ? data.category : asset.category,
+        tags: data.tags !== undefined ? data.tags : asset.tags
+      });
+
+      // Save the updated asset
+      const savedAsset = await this.assetRepository.save(asset);
+      logger.info(`Successfully updated asset with id: ${id}`);
+      
+      return savedAsset;
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      logger.error(`Error updating asset: ${errorMessage}`);
+      throw error instanceof HttpError ? error : new HttpError(`Failed to update asset: ${errorMessage}`, 500);
+    }
   }
 
   async getCounts(): Promise<number> {

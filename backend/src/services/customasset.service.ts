@@ -3,6 +3,7 @@ import { Repository, In } from "typeorm";
 import { Asset } from "../entities/asset.entities";
 import { User } from "../entities/user.entities";
 import { CustomAsset } from "../entities/customasset.entities";
+import { Download } from "../entities/download.entities";
 import { applyCustomAssetFilters } from "../filters/customassets.filter";
 import { AuthRequest } from "interfaces/auth.interface";
 import logger from "../logger/app.logger";
@@ -26,10 +27,12 @@ interface ICustomAsset{
 export class CustomAssetService {
     private customAssetRepository: Repository<CustomAsset>
     private assetRepository: Repository<Asset>;
+    private downloadRepository: Repository<Download>;
 
       constructor() {
         this.assetRepository = AppDataSource.getRepository(Asset);
         this.customAssetRepository = AppDataSource.getRepository(CustomAsset);
+        this.downloadRepository = AppDataSource.getRepository(Download);
       }
 
     async create(req: AuthRequest){
@@ -156,6 +159,8 @@ async update(id: string, data: Partial<CustomAsset>): Promise<CustomAsset | null
 
     const updatedEntity = await this.customAssetRepository.findOne({ where: { id }, relations: ["user", "asset"], });
     if (updatedEntity && updatedEntity.type === 'custom'){
+            const cdownload = this.downloadRepository.create({user:   updatedEntity.user, asset:   updatedEntity.asset, custom_asset:   updatedEntity})
+            const download = await this.downloadRepository.save(cdownload)
             await sendEmail(
                updatedEntity.user.id,
                "Your customisation request is done!!!",

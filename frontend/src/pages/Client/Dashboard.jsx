@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import React, { useEffect, useState } from "react";
 import api from "../../utils/api";
+import Toast from "../../components/Toast";
 import { Link } from "react-router-dom";
 import { initialize_payment, verify_payment } from "../../utils/payment";
 import LoadingIndicator from "../../components/LoadingIndicator";
@@ -134,20 +135,23 @@ const Dashboard = () => {
   const [orderCounts, setOrderCounts] = useState({});
   const [orders, setOrders] = useState([]);
   const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
-  const [errors, setErrors] = useState({
-    count: "",
-    orders: "",
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "info",
   });
 
   useEffect(() => {
-    const newErrors = {};
     const getCounts = async () => {
       try {
         const res = await api.get("/custom/counts");
         setOrderCounts(res.data.data);
       } catch (error) {
-        newErrors.count = "Unable to get users stat. Network error.";
-        console.log(error);
+        setToast({
+          show: true,
+          message: "Unable to load dashboard statistics",
+          type: "error",
+        });
       }
     };
 
@@ -156,16 +160,26 @@ const Dashboard = () => {
         const res = await api.get("/custom?page=1&limit=5");
         setOrders(res.data.data.results);
       } catch (error) {
-        newErrors.orders = "Unable to get recent orders. Network error.";
+        setToast({
+          show: true,
+          message: "Unable to load recent orders",
+          type: "error",
+        });
       }
     };
 
     getCounts();
     getOrders();
-    setErrors(newErrors);
   }, []);
   return (
     <>
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast((prev) => ({ ...prev, show: false }))}
+        />
+      )}
       <div className="bg-gradient-to-tr from-black to-gray-800 text-white p-6 rounded-xl shadow-lg flex justify-between items-center mb-8 animate-fade-in-up">
         <div>
           <h2 className="text-3xl font-bold">Hello, {user.name}</h2>

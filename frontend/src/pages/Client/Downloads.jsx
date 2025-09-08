@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import api from "../../utils/api";
 import LoadingIndicator from "../../components/LoadingIndicator";
 
@@ -72,26 +72,60 @@ const DownloadCard = ({ download }) => {
 
 const Downloads = () => {
   const [errors, setErrors] = useState("");
-  const [downloads, setDownloads] = useState([]); // Fixed typo: setDownload → setDownloads
+  const [downloads, setDownloads] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const observer = useRef(null);
+  const loadMoreRef = useRef(null);
+
+  const getDownloads = async (pageNum = 1, append = false) => {
+    if (pageNum > totalPages && append) return;
+    setLoading(true);
+    try {
+      const res = await api.get(`/downloads?page=${pageNum}&limit=${limit}`);
+      const newDownloads = res.data.results || [];
+      const newTotalPages = res.data.totalPages || 1;
+
+      setDownloads((prev) =>
+        append ? [...prev, ...newDownloads] : newDownloads
+      );
+      setTotalPages(newTotalPages);
+    } catch (error) {
+      setErrors(
+        error.response?.data?.message ||
+          "Failed to load downloads. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const getDownloads = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get("/downloads");
-        setDownloads(res.data); // Fixed typo: setDownload → setDownloads
-      } catch (error) {
-        setErrors(
-          error.response?.data?.message ||
-            "Failed to load downloads. Please try again."
-        );
-      } finally {
-        setLoading(false); // Fixed: Set loading to false when done
+    getDownloads(page, page > 1);
+  }, [page]);
+
+  useEffect(() => {
+    observer.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loading && page < totalPages) {
+          setPage((prev) => prev + 1);
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.current.observe(loadMoreRef.current);
+    }
+
+    return () => {
+      if (loadMoreRef.current && observer.current) {
+        observer.current.unobserve(loadMoreRef.current);
       }
     };
-    getDownloads();
-  }, []);
+  }, [loading, page, totalPages]);
 
   return (
     <div style={{ padding: "20px", maxWidth: "1200px", margin: "0 auto" }}>
@@ -126,6 +160,21 @@ const Downloads = () => {
           <DownloadCard key={download.id} download={download} />
         ))}
       </div>
+
+      {/* Sentinel for Infinite Scrolling */}
+      {page < totalPages && (
+        <div
+          ref={loadMoreRef}
+          style={{
+            height: "40px",
+            display: "flex",
+            justifyContent: "center",
+            padding: "16px 0",
+          }}
+        >
+          {loading && <LoadingIndicator />}
+        </div>
+      )}
     </div>
   );
 };

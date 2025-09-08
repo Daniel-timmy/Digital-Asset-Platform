@@ -1,6 +1,7 @@
 import { EntitySubscriberInterface, EventSubscriber, InsertEvent } from "typeorm";
 import { sendEmailGeneric } from "../utils/sendEmail";
 import { Website } from "../entities/website.entities";
+import logger from "../logger/app.logger";
 
 @EventSubscriber()
 export class WebsitesiteSubscriber implements EntitySubscriberInterface<Website>{
@@ -9,8 +10,8 @@ export class WebsitesiteSubscriber implements EntitySubscriberInterface<Website>
     }
 
     async afterInsert(event: InsertEvent<Website>):  Promise<void> {
-        sendEmailGeneric(event.entity.contact_email, "New Website Booking Created", `A new website booking has been created with ID: ${event.entity.id}.`)
-            .then(() => console.log("Email sent successfully"))
-            .catch(error => console.error("Error sending email:", error));
+        sendEmailGeneric(event.entity.contact_email, "Website Development Project Confirmation", `Thank you for choosing us for your website development needs! Your project has been registered with reference ID: ${event.entity.id}. Our web development team will review your requirements and contact you soon to discuss the next steps.`)
+            .then(() => logger.info("Website development confirmation email sent successfully"))
+            .catch(error => logger.error("Error sending website development confirmation email:", error));
     }
 }

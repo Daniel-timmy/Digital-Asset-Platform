@@ -154,7 +154,7 @@ const UpdateAssetModal = ({
 
     setIsLoading(true);
     try {
-      const res = await api.put(`/assets/${asset.id}`, formDataToSend, {
+      const res = await api.patch(`/assets/${asset.id}`, formDataToSend, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       onUpdate(res.data);

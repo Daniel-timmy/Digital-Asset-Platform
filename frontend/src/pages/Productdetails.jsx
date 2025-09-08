@@ -9,6 +9,7 @@ import { ACCESS_TOKEN, IMAGE_URL } from "../utils/constants";
 import { jwtDecode } from "jwt-decode";
 import LoadingIndicator from "../components/LoadingIndicator";
 import { initialize_payment } from "../utils/payment";
+import Toast from "../components/Toast";
 
 function Productdetails() {
   const [isVisible, setIsVisible] = useState(true);
@@ -23,6 +24,11 @@ function Productdetails() {
   const [errors, setErrors] = useState({});
   const [loadAssetError, setLoadAssetError] = useState({});
   const [isAuthorized, setIsAuthorized] = useState(true);
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "info"
+  });
 
   const [formData, setFormData] = useState({
     name: "",
@@ -99,7 +105,11 @@ function Productdetails() {
     const token = localStorage.getItem(ACCESS_TOKEN);
     if (!token) {
       setIsAuthorized(false);
-      setErrors({ user: "You can't customize unless you Sign up or log in" });
+      setToast({
+        show: true,
+        message: "Please sign in or create an account to customize",
+        type: "error"
+      });
       return;
     }
     const decoded = jwtDecode(token);
@@ -107,7 +117,11 @@ function Productdetails() {
     const now = Date.now() / 1000;
 
     if (tokenExpiration < now) {
-      setErrors({ user: "You can't customize unless you Sign up or log in" });
+      setToast({
+        show: true,
+        message: "Your session has expired. Please sign in again",
+        type: "error"
+      });
       return;
     }
     setCustomLoading(true);
@@ -125,11 +139,18 @@ function Productdetails() {
 
       setFormData({ name: "", description: "" });
       setErrors({});
+      setToast({
+        show: true,
+        message: "Customization order successful. Initializing payment...",
+        type: "success"
+      });
       initialize_payment(response.data.data.id);
-      alert("Customization order succesful. Initializing payment...");
     } catch (error) {
-      console.error("Error submitting form:", error);
-      setErrors({ name: "Failed to submit. Please try again." });
+      setToast({
+        show: true,
+        message: "Failed to submit customization. Please try again.",
+        type: "error"
+      });
       setCustomLoading(false);
     }
   };
@@ -174,6 +195,13 @@ function Productdetails() {
   return (
     <div className="w-full min-h-screen bg-gray-100 font-sans text-gray-800">
       <Header />
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(prev => ({ ...prev, show: false }))}
+        />
+      )}
 
       <div className="w-full px-4 py-10 flex flex-col items-center justify-center">
         <div

@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import api from "../utils/api";
+import Toast from "../components/Toast";
 
 const VerifyPaymentPage = () => {
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState("Verifying payment...");
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "info",
+  });
 
   useEffect(() => {
     const ref = searchParams.get("reference");
@@ -32,9 +38,13 @@ const VerifyPaymentPage = () => {
           setError(message || "Unknown error.");
         }
       } catch (err) {
-        console.error("Error verifying payment:", err);
         setStatus("Error verifying payment.");
         setError("Failed to verify payment. Please try again.");
+        setToast({
+          show: true,
+          message: "Failed to verify payment. Please try again.",
+          type: "error",
+        });
       }
     };
 
@@ -43,6 +53,13 @@ const VerifyPaymentPage = () => {
   return (
     <div className="flex items-center justify-center h-[100vh] w-[100vw] text-4xl">
       Verifying Payment... Do not close page.
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast((prev) => ({ ...prev, show: false }))}
+        />
+      )}
     </div>
   );
 };

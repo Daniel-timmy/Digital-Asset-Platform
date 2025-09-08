@@ -9,6 +9,7 @@ import { ACCESS_TOKEN } from "../utils/constants";
 import { jwtDecode } from "jwt-decode";
 import LoadingIndicator from "../components/LoadingIndicator";
 import { initialize_payment } from "../utils/payment";
+import Toast from "../components/Toast";
 
 export default function CartPage() {
   const [previewItem, setPreviewItem] = useState(null);
@@ -17,12 +18,21 @@ export default function CartPage() {
   const [previewAsset, setPreviewAsset] = useState(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "info",
+  });
 
   const handleCheckout = async () => {
     const token = localStorage.getItem(ACCESS_TOKEN);
     if (!token) {
       setIsAuthorized(false);
-      setErrors({ user: "You can't checkout unless you Sign up or log in" });
+      setToast({
+        show: true,
+        message: "Please sign in or create an account to checkout",
+        type: "error",
+      });
       return;
     }
     const decoded = jwtDecode(token);
@@ -30,15 +40,17 @@ export default function CartPage() {
     const now = Date.now() / 1000;
 
     if (tokenExpiration < now) {
-      setErrors({ user: "You can't checkout unless you Sign up or log in" });
+      setToast({
+        show: true,
+        message: "Your session has expired. Please sign in again to checkout",
+        type: "error",
+      });
       return;
     }
     setCheckoutLoading(true);
     const storedCart = JSON.parse(localStorage.getItem("cart"));
 
     if (storedCart) {
-      console.log("CHECKOUT", Object.keys(storedCart)[0]);
-      console.log("CHECKOUT", Object.keys(storedCart));
       try {
         const response = await api.post("/custom", {
           name: "Uncustomized bulk assets download",
@@ -47,17 +59,22 @@ export default function CartPage() {
           asset: Object.keys(storedCart)[0],
           asset_ids: Object.keys(storedCart),
         });
-        console.log(response);
         if (response.status !== 201) {
           throw new Error("Failed to submit order");
         }
 
-        setErrors({});
+        setToast({
+          show: true,
+          message: "Order successful. Initializing payment...",
+          type: "success",
+        });
         initialize_payment(response.data.data.id);
-        alert("Buy order succesful. Initializing payment...");
       } catch (error) {
-        console.log(error);
-        setErrors({ name: "Failed to submit. Please try again." });
+        setToast({
+          show: true,
+          message: "Failed to submit order. Please try again.",
+          type: "error",
+        });
       }
     }
   };
@@ -79,7 +96,11 @@ export default function CartPage() {
         setCart(arr);
         // setPreviewAsset(arr[0]);
       } catch (error) {
-        console.error("Error parsing cart:", error);
+        setToast({
+          show: true,
+          message: "Error loading cart items",
+          type: "error",
+        });
       }
     }
   }, []);
@@ -100,7 +121,13 @@ export default function CartPage() {
   return (
     <div className="min-h-screen flex flex-col bg-white text-black">
       <Header />
-
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast((prev) => ({ ...prev, show: false }))}
+        />
+      )}
       <div className="flex-1 container mx-auto px-4 py-10 flex flex-col lg:flex-row gap-8">
         {/* Cart Table */}
         <div className="lg:w-2/3 bg-white rounded-2xl shadow-lg border border-gray-200 p-6">

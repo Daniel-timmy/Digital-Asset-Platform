@@ -18,7 +18,7 @@ const CustomRequest = () => {
   const [selectedRequestId, setSelectedRequestId] = useState(null);
   const [customUrl, setCustomUrl] = useState("");
 
-  const CACHE_DURATION = 1 * 60 * 60 * 1000; // 1 hour
+  const CACHE_DURATION = 0.2 * 60 * 60 * 1000; // 12 minutes in milliseconds
 
   // Fetch customization requests
   const getCustomRequest = async (pageNum = 1, append = false) => {

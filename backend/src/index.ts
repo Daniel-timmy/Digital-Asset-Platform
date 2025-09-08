@@ -4,6 +4,8 @@ import cookieParser from "cookie-parser";
 import cors from "cors"
 import path from "path";
 import rateLimit from 'express-rate-limit';
+import http from 'http';
+import { Server } from 'socket.io';
 import logger from "./logger/app.logger";
 import { morganMiddleware } from "./logger/http.logger";
 import authRouter from "./routes/auth.routes";
@@ -21,10 +23,12 @@ import websiteRouter from "./routes/website.routes";
 import brandingRouter from "./routes/branding.routes";
 import { redisClient } from "./database/redis_cache";
 import { FRONTEND_URL } from "./config/env";
-import { AppDataSource } from "./database/db";
+import { AppDataSource, initializeDatabase } from "./database/db";
 import { errorMiddleware } from "./middlewares/error.middleware";
+import { MessageService } from "./services/message.service";
 import messageRouter from "./routes/message.routes";
 import socialMediaRouter from "./routes/socialMedia.routes";
+import { MessageSocketController } from "controllers/message.socket.ontroller";
 
 
 const app = express();
@@ -54,13 +58,23 @@ const apiLimiter = rateLimit({
 });
 
 app.use(apiLimiter);
-app.set('trust proxy', 1); 
+app.set('trust proxy', 1);
+
+// const server = http.createServer(app);
+
+// // Export server for socket initialization
+// let httpServer: http.Server | null = null;
+// export const getServer = () => {
+//     if (!httpServer) {
+//         httpServer = server;
+//     }
+//     return httpServer;
+// };
 
 app.get('/health', (req: Request, res: Response) => {
-  logger.debug('Health check endpoint accessed');
-  res.status(200).json({ status: 'OK' });
+    logger.debug('Health check endpoint accessed');
+    res.status(200).json({ status: 'OK' });
 });
-
 app.use("/api/assets", assetRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/branding", brandingRouter)
@@ -89,10 +103,14 @@ const startServer = async () => {
     // console.log("Node environment variables:", process.env);
     console.log("PORT from config/env:", PORT);
 
-    await AppDataSource.initialize();
-    console.log(`Database connected`);
-    app.listen(PORT , "0.0.0.0", async () => {
-      console.log(`Server is running on port ${PORT}`);
+    // await AppDataSource.initialize();
+     await initializeDatabase();
+    logger.info('Database connected successfully');
+    
+    // server.listen(PORT, "0.0.0.0", async () => {
+    app.listen(PORT, "0.0.0.0", async () => {
+      logger.info(`Server is running on port ${PORT}`);
+      
     });
   } catch(error) {
     

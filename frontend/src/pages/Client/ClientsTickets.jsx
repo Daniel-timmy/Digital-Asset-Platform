@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaComments } from "react-icons/fa";
 import api from "../../utils/api";
+import Toast from "../../components/Toast";
 
 // Define Chat component outside of Tickets
 const Chat = ({ selectedTicketId, tickets, chatInput, setChatInput }) => {

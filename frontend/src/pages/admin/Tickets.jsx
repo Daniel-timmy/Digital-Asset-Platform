@@ -2,10 +2,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaComments } from "react-icons/fa";
 import api from "../../utils/api";
+import Toast from "../../components/Toast";
 
 // Define Chat component outside of Tickets
 const Chat = ({ selectedTicketId, tickets, chatInput, setChatInput }) => {
   const [messages, setMessages] = useState([]);
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "info"
+  });
 
   const selectedTicket = tickets.find(
     (ticket) => ticket.id === selectedTicketId
@@ -17,10 +23,13 @@ const Chat = ({ selectedTicketId, tickets, chatInput, setChatInput }) => {
     const getMessages = async () => {
       try {
         const res = await api.get(`/messages/ticket/${selectedTicketId}`);
-        console.log(res.data);
         setMessages(res.data.data || []);
       } catch (error) {
-        console.error("Error fetching messages:", error);
+        setToast({
+          show: true,
+          message: "Failed to load messages. Please try again.",
+          type: "error"
+        });
       }
     };
     getMessages();
@@ -38,8 +47,17 @@ const Chat = ({ selectedTicketId, tickets, chatInput, setChatInput }) => {
       setMessages((prevMessages) => [...prevMessages, res.data.data]);
       setChatInput("");
       inputRef.current.focus(); // Restore focus after sending
+      setToast({
+        show: true,
+        message: "Message sent successfully",
+        type: "success"
+      });
     } catch (error) {
-      console.error("Error sending message:", error);
+      setToast({
+        show: true,
+        message: "Failed to send message. Please try again.",
+        type: "error"
+      });
     }
   };
 
@@ -53,6 +71,13 @@ const Chat = ({ selectedTicketId, tickets, chatInput, setChatInput }) => {
 
   return (
     <div className="mt-6 flex flex-col h-full">
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(prev => ({ ...prev, show: false }))}
+        />
+      )}
       <h3 className="text-lg font-semibold text-gray-800 mb-4">
         {selectedTicket?.name} ({selectedTicket?.status})
       </h3>
@@ -100,15 +125,23 @@ const Tickets = () => {
   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const [chatInput, setChatInput] = useState("");
   const [tickets, setTickets] = useState([]);
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "info"
+  });
 
   useEffect(() => {
     const getTickets = async () => {
       try {
         const res = await api.get("/ticket/");
-        console.log(res.data.data);
         setTickets(res.data.data || []);
       } catch (error) {
-        console.error("Error fetching tickets:", error);
+        setToast({
+          show: true,
+          message: "Failed to load tickets. Please try again.",
+          type: "error"
+        });
       }
     };
     getTickets();
@@ -116,6 +149,13 @@ const Tickets = () => {
 
   return (
     <div className="p-6">
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(prev => ({ ...prev, show: false }))}
+        />
+      )}
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-gray-800">
         <FaComments /> Support Tickets
       </h2>

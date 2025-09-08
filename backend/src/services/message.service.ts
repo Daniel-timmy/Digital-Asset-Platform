@@ -41,6 +41,25 @@ export class MessageService {
 
     return await this.messageRepository.save(message);
   }
+  
+  async newMessage(user: any, ticketId: string, messageContent: string): Promise<Message> {
+
+    const ticket = await this.ticketRepository.findOne({ where: { id: ticketId } });
+    if (!ticket) {
+      throw new HttpError("Ticket not found", 404);
+    }
+
+    if (ticket.status === "closed") {
+      throw new HttpError("Cannot add message to a closed ticket", 400);
+    }
+
+    const message = new Message();
+    message.user = user;
+    message.ticket = ticket;
+    message.message = messageContent;
+
+    return await this.messageRepository.save(message);
+  }
 
   async getMessageById(id: string, req: AuthRequest): Promise<Message> {
     if (!req.user) throw new Error("User not found");

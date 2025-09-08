@@ -34,7 +34,7 @@ customAssetRouter.post("/", authentication, upload.none(), async (req, res, next
   await customAssetController.create(req, res, next);
 });
 
-customAssetRouter.put("/:id", authentication, async (req, res, next) => {
+customAssetRouter.put("/:id", authentication, isAdmin, async (req, res, next) => {
   await customAssetController.update(req, res, next);
 });
 

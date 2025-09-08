@@ -17,7 +17,7 @@ const Toast = ({ message, type = "info", onClose }) => {
 
   return (
     <div
-      className={`fixed top-5 right-5 max-w-sm w-full px-4 py-3 rounded-lg shadow-lg border-l-4 transition-all duration-300 ${typeStyles[type]}`}
+      className={`fixed top-5 right-5 max-w-sm w-full mt-12 px-4 py-3 rounded-lg shadow-lg border-l-4 transition-all duration-300 ${typeStyles[type]}`}
     >
       <p className="text-sm font-medium">{message}</p>
     </div>

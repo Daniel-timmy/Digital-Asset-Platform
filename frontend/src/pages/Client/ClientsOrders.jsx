@@ -3,6 +3,8 @@ import api from "../../utils/api";
 import { initialize_payment } from "../../utils/payment";
 import LoadingIndicator from "../../components/LoadingIndicator";
 
+import Toast from "../../components/Toast";
+
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [page, setPage] = useState(1);
@@ -12,6 +14,11 @@ const Orders = () => {
   const [paymentLoading, setPaymentLoading] = useState({});
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "info",
+  });
   const [issue, setIssue] = useState("");
   const [customIssue, setCustomIssue] = useState("");
   const [description, setDescription] = useState(""); // New state for description
@@ -37,8 +44,17 @@ const Orders = () => {
     try {
       setPaymentLoading((prev) => ({ ...prev, [orderId]: true }));
       await initialize_payment(orderId);
+      setToast({
+        show: true,
+        message: "Payment initialized successfully",
+        type: "success",
+      });
     } catch (error) {
-      console.error("Error initializing payment:", error);
+      setToast({
+        show: true,
+        message: "Failed to initialize payment. Please try again.",
+        type: "error",
+      });
     } finally {
       setPaymentLoading((prev) => ({ ...prev, [orderId]: false }));
     }
@@ -57,7 +73,11 @@ const Orders = () => {
       setOrders((prev) => (append ? [...prev, ...newOrders] : newOrders));
       setTotalPages(newTotalPages);
     } catch (error) {
-      console.error("Error fetching orders:", error);
+      setToast({
+        show: true,
+        message: "Failed to fetch orders. Please try again.",
+        type: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -66,25 +86,35 @@ const Orders = () => {
   const reportIssue = async () => {
     const issueToReport = issue === "Other" ? customIssue : issue;
     if (!issueToReport.trim()) {
-      alert("Please select or enter a valid issue");
+      setToast({
+        show: true,
+        message: "Please select or enter a valid issue",
+        type: "error",
+      });
       return;
     }
     try {
       setReportLoading(true);
-      const res = await api.post("/ticket", {
+      await api.post("/ticket", {
         name: issueToReport,
         custom_asset: selectedOrderId,
-        description: description.trim() || undefined, // Include description if provided
+        description: description.trim() || undefined,
       });
-      console.log(res.data);
-      alert("Issue reported successfully");
+      setToast({
+        show: true,
+        message: "Issue reported successfully",
+        type: "success",
+      });
       setModalOpen(false);
       setIssue("");
       setCustomIssue("");
-      setDescription(""); // Reset description
+      setDescription("");
     } catch (error) {
-      console.log(error);
-      alert("Failed to report issue");
+      setToast({
+        show: true,
+        message: "Failed to report issue. Please try again.",
+        type: "error",
+      });
     } finally {
       setReportLoading(false);
     }
@@ -122,6 +152,13 @@ const Orders = () => {
 
   return (
     <div className="animate-fade-in-up space-y-6 px-4 sm:px-6 md:px-8">
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast((prev) => ({ ...prev, show: false }))}
+        />
+      )}
       <h2 className="text-3xl font-bold text-black">Your Orders</h2>
       <div className="overflow-x-auto rounded-lg shadow-md bg-white">
         {loading && orders.length === 0 ? (

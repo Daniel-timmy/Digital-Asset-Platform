@@ -5,7 +5,7 @@ import Select from "react-select";
 import api from "../../utils/api";
 import LoadingIndicator from "../../components/LoadingIndicator";
 
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+const CACHE_DURATION = 0.2 * 60 * 60 * 1000; //  12 minutes in milliseconds
 
 const PhotographyTable = ({ bookings }) => (
   <div className="bg-white rounded-lg shadow overflow-x-auto mb-6">

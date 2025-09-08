@@ -24,11 +24,11 @@ const Transactions = () => {
       const res = await api.get(`/transactions?page=${page}&limit=${limit}`);
       const txns = res.data.results || [];
       const newTotalPages = res.data.totalPages || 1;
+
       setTransactions((prev) => (append ? [...prev, ...txns] : txns));
       setInitialTransactions((prev) => (append ? [...prev, ...txns] : txns));
       setTotalPages(newTotalPages);
 
-      console.log("Transactions fetched successfully:", res.data);
       setError("");
     } catch (error) {
       console.error("Error fetching transactions:", error);

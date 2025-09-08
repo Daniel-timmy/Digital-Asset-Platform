@@ -137,20 +137,20 @@ export class CustomAssetController {
             }
             if (custom_url){
                 updateData.custom_url = custom_url
+
                 logger.debug(`Updating custom_url for custom asset ID: ${id}`);
             }
             if (status){
                 updateData.status = status
                 logger.debug(`Updating status for custom asset ID: ${id}`);
-
             }
 
             const customAsset = await this.customAssetService.update(id, updateData);
             if (!customAsset) {
+
                 logger.warn(`Custom asset not found for update with ID: ${id} for user: ${user.id}`);
                 throw new CustomAssetError(404, 'Custom asset not found');
-            }
-        
+            }     
 
             logger.info(`Successfully updated custom asset with ID: ${id}`);
             return res.status(200).json({

@@ -5,6 +5,8 @@ import { Asset } from "../entities/asset.entities";
 import { AuthRequest } from "../interfaces/auth.interface";
 import { User } from "../entities/user.entities";
 import { CustomAsset } from "../entities/customasset.entities";
+import { applyDownloadFilters } from "../filters/download.filter";
+import { IFitltered } from "../interfaces/asset.interface";
 
 export class DownloadService {
   private downloadRepository: Repository<Download>;
@@ -62,15 +64,40 @@ export class DownloadService {
       return await this.downloadRepository.save(downloads);
   }
 
-  async findAll(req: AuthRequest): Promise<Download[]> {
+  async findAll(req: AuthRequest): Promise<IFitltered> {
     const user = req.user;
-    if (!user) throw new Error("User not unauthenticated")
+    if (!user) throw new Error("User not authenticated");
 
-    if (user.role === "admin") {
-      return await this.downloadRepository.find({ where: { user: { id: user.id } }, relations: ['asset', ] });
+    const {
+      page,
+      limit,
+      orderBy,
+      orderDirection,
+      startDate,
+      endDate,
+      asset_id,
+      custom_asset_id
+    } = req.query;
 
-      }
-      return await this.downloadRepository.find({ where: { user: { id: user.id } }, relations: ['asset', ] });
+    let query = this.downloadRepository
+      .createQueryBuilder("download")
+      .leftJoinAndSelect("download.asset", "asset")
+      .leftJoinAndSelect("download.custom_asset", "custom_asset")
+      .leftJoinAndSelect("download.user", "user");
+
+    const filters = {
+      user: user.role === "admin" ? undefined : user,
+      page: page ? parseInt(page as string) : undefined,
+      limit: limit ? parseInt(limit as string) : undefined,
+      orderBy: orderBy as string | undefined,
+      orderDirection: (orderDirection as string)?.toUpperCase() as 'ASC' | 'DESC' | undefined,
+      startDate: startDate ? new Date(startDate as string) : undefined,
+      endDate: endDate ? new Date(endDate as string) : undefined,
+      asset: asset_id ? { id: asset_id as string } : undefined,
+      custom_asset: custom_asset_id ? { id: custom_asset_id as string } : undefined
+    };
+
+    return await applyDownloadFilters(query, filters);
   }
 
   async findOne(id: string): Promise<Download | null> {

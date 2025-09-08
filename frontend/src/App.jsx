@@ -25,9 +25,9 @@ import Bookings from "./pages/admin/Bookings";
 import Transactions from "./pages/admin/Transactions";
 import VerifyCode from "./pages/VerifyCode";
 import ProtectedAdminRoutes from "./components/ProtectedAdminRoutes";
-import NotFound from "./NotFound";
 import Downloads from "./pages/Client/Downloads";
 import ClientsLayout from "./pages/Client/ClientsLayout";
+import NotFound from "./pages/NotFound";
 
 function Logout() {
   localStorage.clear();
