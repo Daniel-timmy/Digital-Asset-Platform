@@ -1,68 +1,78 @@
 import { GOOGLE_MAIL_USER, GOOGLE_MAIL_PASSWORD } from "../config/env";
-import { UserService } from "../services/user.service";
 import nodemailer from 'nodemailer';
 import logger from "../logger/app.logger";
 
 // For other email providers, use their SMTP settings (host, port, auth).
+function createTransporter() {
+  return nodemailer.createTransport({
+    // host: "smtp.gmail.com",
+    // port: 587,
+    service: 'gmail',
+    secure: false, // use STARTTLS
+    requireTLS: true,
+    auth: {
+      user: GOOGLE_MAIL_USER,
+      pass: GOOGLE_MAIL_PASSWORD,
+    },
+    // timeouts to fail faster and give clearer errors
+    connectionTimeout: 10000,
+    greetingTimeout: 5000,
+    socketTimeout: 10000,
+    tls: {
+      // allow modern TLS; set rejectUnauthorized=false only for debugging if necessary
+      ciphers: "TLSv1.2",
+      rejectUnauthorized: false,
+    },
+  });
+}
 
-export async function sendEmail(userId: string, subject: string, message: string) {
+export async function sendEmail(email: string, subject: string, message: string) {
   try {
-    logger.info(`Sending email to user ID: ${userId}, subject: ${subject}`);
+    logger.info(`Sending email to user ID: ${email}`);
 
-    if (!userId) {
-      logger.warn(`Email sending failed: Missing userId`);
-      throw new Error("User ID required");
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+      logger.warn(`Email sending failed: Missing email`);
+      throw new Error("email required");
     }
 
     if (!subject || typeof subject !== "string" || subject.trim() === "") {
-      logger.warn(`Email sending failed for user ID: ${userId}: Invalid or missing subject`);
+      logger.warn(`Email sending failed for user ID: ${email}: Invalid or missing subject`);
       throw new Error("Subject is required");
     }
 
     if (!message || typeof message !== "string" || message.trim() === "") {
-      logger.warn(`Email sending failed for user ID: ${userId}: Invalid or missing message`);
+      logger.warn(`Email sending failed for user ID: ${email}: Invalid or missing message`);
       throw new Error("Message content is required");
     }
 
     if (!GOOGLE_MAIL_USER || !GOOGLE_MAIL_PASSWORD) {
-      logger.error(`Email sending failed for user ID: ${userId}: Missing GOOGLE_MAIL_USER or GOOGLE_MAIL_PASSWORD`);
+      logger.error(`Email sending failed for user ID: ${email}: Missing GOOGLE_MAIL_USER or GOOGLE_MAIL_PASSWORD`);
       throw new Error("Email configuration is missing");
     }
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      auth: {
-        user: GOOGLE_MAIL_USER,
-        pass: GOOGLE_MAIL_PASSWORD,
-      },
-    });
-
-    const userService = new UserService();
-    const user = await userService.findOne(userId);
-    if (!user) {
-      logger.warn(`Email sending failed: User not found for ID: ${userId}`);
-      throw new Error("User not found");
-    }
-
-    if (!user.email || !/\S+@\S+\.\S+/.test(user.email)) {
-      logger.warn(`Email sending failed: Invalid or missing email for user ID: ${userId}`);
-      throw new Error("Valid user email required");
-    }
+    // const transporter = nodemailer.createTransport({
+    //   host: "smtp.gmail.com",
+    //   port: 587,
+    //   auth: {
+    //     user: GOOGLE_MAIL_USER,
+    //     pass: GOOGLE_MAIL_PASSWORD,
+    //   },
+    // });
+    const transporter = createTransporter();
 
     const mailOptions = {
       from: GOOGLE_MAIL_USER,
-      to: user.email,
+      to: email,
       subject: subject,
       text: message,
       // html: `<p>${message}</p>`, // Optional: HTML body
     };
 
     const info = await transporter.sendMail(mailOptions);
-    logger.info(`Email sent successfully to ${user.email} for user ID: ${userId}, message ID: ${info.messageId}`);
+    logger.info(`Email sent successfully to ${email}, message ID: ${info.messageId}`);
     return info;
   } catch (error) {
-    logger.error(`Error sending email to user ID: ${userId}: ${error}`);
+    logger.error(`Error sending email to: ${email}: ${error}`);
     throw new Error('Failed to send email');
   }
 }

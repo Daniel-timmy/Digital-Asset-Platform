@@ -1,41 +1,37 @@
 import { Repository, In } from "typeorm";
-import fs from "fs"
-import path from "path"
-import { v4 as uuidv4} from 'uuid'
+import { v4 as uuidv4 } from 'uuid'
 import { AppDataSource } from "../database/db";
 import { Asset } from "../entities/asset.entities";
-import { User } from "../entities/user.entities";
 import { Category } from "../entities/category.entities";
 import { Tag } from "../entities/tag.entities";
 import { AuthRequest } from "interfaces/auth.interface";
 import convertToWebP from "../utils/convertToWebP.utils";
-import uploadImage, {deleteImage} from "../utils/imageVercel";
-import { uploadImageLocal, deleteImageLocal } from "../utils/imageLocal";
+import uploadImage, { deleteImage } from "../utils/imageVercel";
 import { HttpError } from "../error/HttpError";
 import logger from "../logger/app.logger";
 
 
 export class AssetService {
   private assetRepository: Repository<Asset>;
-  private userRepository: Repository<User>;
   private categoryRepository: Repository<Category>;
   private tagRepository: Repository<Tag>;
 
   constructor() {
     this.assetRepository = AppDataSource.getRepository(Asset);
-    this.userRepository = AppDataSource.getRepository(User);
     this.categoryRepository = AppDataSource.getRepository(Category);
     this.tagRepository = AppDataSource.getRepository(Tag);
   }
 async create(req: AuthRequest) {
-  const user = req.user ? await this.userRepository.findOne({ where: { id: req.user.id } }) : null;
+  const user = req.user;
   if (!user) throw new Error("User not found");
-
-  if (user.role !== "admin") throw new Error("User not an admin");
-
   const data = req.body;
-  const file = req?.file;
+  const files = req.files as { file?: Express.Multer.File[]; thumbnail?: Express.Multer.File[] };
+  const file = files.file?.[0];        // main file
+  const thumbnail = files.thumbnail?.[0]; // thumbnail file
+  
   if (!file) throw new Error("File not found");
+  if (!file) throw new Error("File not found");
+
 
   const category = data.category ? await this.categoryRepository.findOne({ where: { id: data.category } }) : null;
   if (!category) throw new Error("Category not found");
@@ -44,33 +40,53 @@ async create(req: AuthRequest) {
   const tags = tagsId ? await this.tagRepository.findBy({ id: In(tagsId) }) : null;
   if (!tags || tags.length === 0) throw new Error("Tags not found");
 
+  let file_url = "";
+  let thumbnail_url = "";
+
+  // Handle main file upload (image/video/pdf/svg/template)
+  if (file) {
+    const fileExt = file.originalname.split('.').pop();
+    const fileName = `${uuidv4()}.${fileExt}`;
+    file_url = await uploadImage(fileName, file.buffer, "asset");
+  }
+
+  // Handle thumbnail upload
+  if (thumbnail) {
+    let thumbBuffer = thumbnail.buffer;
+    let thumbName = `${uuidv4()}`;
+    if (thumbnail.mimetype.startsWith("image/")) {
+      // Convert to webp
+      const webpThumb = await convertToWebP(thumbnail);
+      if (!webpThumb || !Buffer.isBuffer(webpThumb.buffer)) {
+        throw new Error("Invalid thumbnail format");
+      }
+      thumbName += ".webp";
+      thumbnail_url = await uploadImage(thumbName, webpThumb.buffer, "asset");
+    } else if (thumbnail.mimetype.startsWith("video/")) {
+      // Upload as-is
+      const ext = thumbnail.originalname.split('.').pop();
+      thumbName += `.${ext}`;
+      thumbnail_url = await uploadImage(thumbName, thumbBuffer, "asset");
+    } else {
+      throw new Error("Thumbnail must be image or video");
+    }
+  } else if (data.thumbnail_url) {
+    thumbnail_url = data.thumbnail_url;
+  }
+
   const assetData = {
     name: data.name,
     description: data.description,
     price: data.price,
-    file_url: data.file_url,
+    file_url: file_url,
+    file_type: data.file_type,
     user,
     category,
     tags,
+    thumbnail_url: thumbnail_url,
   };
 
   const asset = this.assetRepository.create(assetData);
-  const assetName = uuidv4();
-  const thumbnailName = `${assetName}.webp`;
-
-  // Handle thumbnail generation and storage
-  try {
-    const thumbnail = await convertToWebP(file);
-    if (!thumbnail || !Buffer.isBuffer(thumbnail.buffer)) {
-      throw new Error("Invalid thumbnail format");
-    }
-    // asset.thumbnail_url = await uploadImageLocal(thumbnailName, thumbnail.buffer, 'thumbnail')
-
-    asset.thumbnail_url = await uploadImage(thumbnailName, thumbnail.buffer, "asset"); // Store relative URL
-  } catch (error) {
-    throw new Error(`Failed to process thumbnail: ${error}`);
-  }
-
   const savedAsset = await this.assetRepository.save(asset);
   return savedAsset;
 }
@@ -86,22 +102,23 @@ async create(req: AuthRequest) {
         .leftJoinAndSelect("asset.tags", "tags") 
         .where("asset.id = :id", { id: id }) 
         .getOne(); 
-    return asset; 
-  } catch (error) {
-    console.error("Error fetching asset with tags:", error);
-    throw error; 
-  }
+      return asset; 
+    } catch (error) {
+      console.error("Error fetching asset with tags:", error);
+      throw error; 
+    }
   }
 
   async update(id: string, req: AuthRequest): Promise<Asset | null> {
     try {
       const data = req.body;
-      // Check if asset exists
-      const existingAsset = await this.assetRepository.findOne({ where: { id } });
+      if (req.user === undefined) {
+        throw new HttpError("You are not authorized to update this asset", 403);
+      }
+      const existingAsset = await this.assetRepository.findOne({ where: { id: id, user: { id: req.user.id } } });
       if (!existingAsset) {
         throw new HttpError("Asset not found", 404);
       }
-
 
       // Category validation if provided
       if (data.category) {
@@ -111,7 +128,6 @@ async create(req: AuthRequest) {
         data.category = category;
       }
 
-
       // Tags validation if provided
       if (data.tagsId) {
         const tagIds = data.tagsId ? JSON.parse(data.tagsId) : null;
@@ -120,26 +136,54 @@ async create(req: AuthRequest) {
         data.tags = tags;
       }
 
-      // Handle thumbnail update if file is provided
-      if (req?.file) {
-        try {
-          // Delete old thumbnail if it exists
-          if (existingAsset.thumbnail_url) {
-            await deleteImage(existingAsset.thumbnail_url);
-          }
+      // Handle file and thumbnail updates
+      let file_url = existingAsset.file_url;
+      let thumbnail_url = existingAsset.thumbnail_url;
+      const files = req.files as { file?: Express.Multer.File[]; thumbnail?: Express.Multer.File[] };
+      const file = files.file?.[0];        // main file
+      const thumbnail = files.thumbnail?.[0]; // thumbnail file
+        
+      if (!file) throw new Error("File not found");
+      if (!file) throw new Error("File not found");
 
-          const thumbnail = await convertToWebP(req.file);
-          if (!thumbnail || !Buffer.isBuffer(thumbnail.buffer)) {
+
+      // Main file update
+      if (file) {
+        if (existingAsset.file_url) {
+          await deleteImage(existingAsset.file_url);
+        }
+        const fileExt = file.originalname.split('.').pop();
+        const fileName = `${uuidv4()}.${fileExt}`;
+        file_url = await uploadImage(fileName, file.buffer, "asset");
+      } else {
+        
+        file_url = existingAsset.file_url;
+      }
+
+      // Thumbnail update
+      if (thumbnail) {
+        if (existingAsset.thumbnail_url) {
+          await deleteImage(existingAsset.thumbnail_url);
+        }
+        let thumbBuffer = thumbnail.buffer;
+        let thumbName = `${uuidv4()}`;
+        if (thumbnail.mimetype.startsWith("image/")) {
+          const webpThumb = await convertToWebP(thumbnail);
+          if (!webpThumb || !Buffer.isBuffer(webpThumb.buffer)) {
             throw new Error("Invalid thumbnail format");
           }
-
-          const assetName = uuidv4();
-          const thumbnailName = `${assetName}.webp`;
-          data.thumbnail_url = await uploadImage(thumbnailName, thumbnail.buffer, "asset");
-        } catch (error) {
-          logger.error(`Failed to process thumbnail: ${error}`);
-          throw new HttpError(`Failed to process thumbnail: ${error}`, 500);
+          thumbName += ".webp";
+          thumbnail_url = await uploadImage(thumbName, webpThumb.buffer, "asset");
+        } else if (thumbnail.mimetype.startsWith("video/")) {
+          const ext = thumbnail.originalname.split('.').pop();
+          thumbName += `.${ext}`;
+          thumbnail_url = await uploadImage(thumbName, thumbBuffer, "asset");
+        } else {
+          throw new Error("Thumbnail must be image or video");
         }
+      } else {
+        
+        thumbnail_url = existingAsset.thumbnail_url;
       }
 
       // Load the existing asset with relations
@@ -157,8 +201,8 @@ async create(req: AuthRequest) {
         name: data.name !== undefined ? data.name : asset.name,
         description: data.description !== undefined ? data.description : asset.description,
         price: data.price !== undefined ? data.price : asset.price,
-        file_url: data.file_url !== undefined ? data.file_url : asset.file_url,
-        thumbnail_url: data.thumbnail_url !== undefined ? data.thumbnail_url : asset.thumbnail_url,
+        file_url,
+        thumbnail_url,
         category: data.category !== undefined ? data.category : asset.category,
         tags: data.tags !== undefined ? data.tags : asset.tags
       });
@@ -175,10 +219,19 @@ async create(req: AuthRequest) {
     }
   }
 
-  async getCounts(): Promise<number> {
+  async getCounts(req: AuthRequest): Promise<number> {
     try {
       logger.info(`Fetching count of all assets`);
-      const count = await this.assetRepository.count();
+      let count: number = 0;
+      if (req.user === undefined) {
+        count = await this.assetRepository.count();
+      }
+      else if (req.user.role === 'admin') {
+        count = await this.assetRepository.count();
+      }
+      else {
+        count = await this.assetRepository.count({ where: { user: { id: req.user.id } } });
+      }
       logger.info(`Successfully retrieved asset count: ${count}`);
       return count;
     } catch (error) {
@@ -187,14 +240,22 @@ async create(req: AuthRequest) {
     }
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, req: AuthRequest): Promise<void> {
     try {
     const asset = await this.assetRepository.findOne({ where: { id } });
     if (!asset) {
       throw new HttpError("Asset not found", 404)
     }
+    const user = req.user;
+    if (!user) {
+      throw new HttpError("User not found", 404)
+    }
+    if (asset.user.id !== user.id && user.role !== 'admin') {
+      throw new HttpError("You are not authorized to delete this asset", 403)
+    }
     // await deleteImageLocal(asset.thumbnail_url)
     await deleteImage(asset.thumbnail_url)
+    await deleteImage(asset.file_url)
     await this.assetRepository.delete(id);
 
     } catch(error){

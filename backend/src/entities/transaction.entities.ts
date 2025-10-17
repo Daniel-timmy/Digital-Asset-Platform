@@ -11,15 +11,15 @@ export class Transaction {
   @JoinColumn({ name: "user_id" })
   user!: User;
 
-  @ManyToOne(() => CustomAsset)
-  @JoinColumn({ name: "custom_asset" })
-  custom_asset!: CustomAsset;
+  // @ManyToOne(() => CustomAsset)
+  // @JoinColumn({ name: "custom_asset" })
+  // custom_asset!: CustomAsset;
 
   @Column({ type: "decimal", precision: 10, scale: 2 })
   amount!: number;
 
-  @Column({ type: "enum", enum: ["pending", "completed", "cancelled", "failed"], default: "pending" })
-  payment_status!: "pending" | "completed" | "failed";
+  @Column({ type: "enum", enum: ["pending", "completed", "cancelled", "failed", "processing"], default: "pending" })
+  payment_status!: "pending" | "completed" | "failed" | "cancelled" | "processing";
 
   @CreateDateColumn()
   created_at: Date = new Date();

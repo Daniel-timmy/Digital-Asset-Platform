@@ -1,7 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn, Column } from "typeorm";
 import { User } from "./user.entities";
 import { Asset } from "./asset.entities";
-import { CustomAsset } from "./customasset.entities";
+import { Transaction } from "./transaction.entities";
 
 @Entity("downloads")
 export class Download {
@@ -16,9 +16,20 @@ export class Download {
   @JoinColumn({ name: "asset_id" })
   asset!: Asset;
 
-  @ManyToOne(() => CustomAsset)
-  @JoinColumn({ name: "custom_asset_id" })
-  custom_asset!: CustomAsset;
+  @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+  price!: number ;
+
+  @ManyToOne(() => Transaction)
+  @JoinColumn({ name: "transaction_id" })
+  transaction!: Transaction;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: "creator_id" })
+  creator!: User;
+
+  // @ManyToOne(() => CustomAsset)
+  // @JoinColumn({ name: "custom_asset_id" })
+  // custom_asset!: CustomAsset;
 
   @CreateDateColumn()
   downloaded_at: Date = new Date();

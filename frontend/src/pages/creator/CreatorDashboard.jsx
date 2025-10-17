@@ -477,7 +477,7 @@ const UpdateAssetModal = ({
   );
 };
 
-const AdminDashboard = () => {
+const CreatorDashboard = () => {
   const [counts, setCounts] = useState([]);
   const [assets, setAssets] = useState([]);
   const [tagOptions, setTagOptions] = useState([]);
@@ -491,7 +491,7 @@ const AdminDashboard = () => {
   const observer = useRef(null); // Ref for Intersection Observer
   const loadMoreRef = useRef(null); // Ref for the sentinel element
   const [countLoading, setCountLoading] = useState(false);
-
+  const creator = JSON.parse(localStorage.getItem(USER) || "{}");
   const CACHE_DURATION = 1 * 60 * 60 * 1000; // 1 hour
 
   const fileTypeOptions = [
@@ -516,22 +516,18 @@ const AdminDashboard = () => {
         return;
       }
 
-      const [resAset, resUsers, resCustom, resTran] = await Promise.all([
+      const [resAset, resTran] = await Promise.all([
         api.get("/assets/s/count/"),
-        api.get("/users/s/count/"),
-        api.get("/custom/s/count/"),
-        api.get("/transactions/s/count/"),
+
+        api.get("/downloads/s/count/"),
       ]);
 
       const totalAssests =
         typeof resAset.data.count === "number" ? resAset.data.count : 0;
-      const activeUsers =
-        typeof resUsers.data.count === "number" ? resUsers.data.count : 0;
-      const requests =
-        typeof resCustom.data.count === "number" ? resCustom.data.count : 0;
+
       const sales = typeof resTran.data === "number" ? resTran.data : 0;
 
-      const newCounts = [totalAssests, activeUsers, requests, sales];
+      const newCounts = [totalAssests, sales];
       setCounts(newCounts);
       localStorage.setItem("dashboardCounts", JSON.stringify(newCounts));
       localStorage.setItem("countsTimestamp", Date.now().toString());
@@ -597,7 +593,9 @@ const AdminDashboard = () => {
         }
       }
 
-      const resAssets = await api.get(`/assets?page=${pageNum}&limit=${limit}`);
+      const resAssets = await api.get(
+        `/assets?userId=${creator.id}page=${pageNum}&limit=${limit}`
+      );
       const fetchedAssets = resAssets.data.results || [];
       const newTotalPages = resAssets.data.totalPages || 1;
 
@@ -756,16 +754,7 @@ const AdminDashboard = () => {
                 value: counts[0] ?? "0",
                 icon: <FaBoxOpen className="text-2xl" />,
               },
-              {
-                title: "Active Users",
-                value: counts[1] ?? "0",
-                icon: <FaUsers className="text-2xl" />,
-              },
-              {
-                title: "Custom Requests",
-                value: counts[2] ?? "0",
-                icon: <FaClipboardList className="text-2xl" />,
-              },
+
               {
                 title: `Today’s Sales (${new Date().toLocaleDateString(
                   "en-US",
@@ -830,4 +819,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard;
+export default CreatorDashboard;

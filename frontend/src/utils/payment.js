@@ -1,9 +1,10 @@
 import api from "./api";
 
-export const initialize_payment = async (id) => {
+export const initialize_payment = async (assetIds) => {
   try {
-    console.log(`iddddddd: ${id}`);
-    const res = await api.post("/transactions/initialize-payment", { id });
+    const res = await api.post("/transactions/initialize-payment", {
+      assetIds,
+    });
     const authorizationUrl = res.data.authorization_url;
     if (authorizationUrl) {
       window.location.href = authorizationUrl;

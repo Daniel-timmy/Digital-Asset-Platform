@@ -3,7 +3,7 @@ import Select from "react-select";
 import api from "../../utils/api";
 import LoadingIndicator from "../../components/LoadingIndicator";
 
-const UploadProduct = () => {
+const CreatorUploadProduct = () => {
   const [loading, setLoading] = useState(false);
   const [tagLoading, setTagLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -252,7 +252,7 @@ const UploadProduct = () => {
       console.error("Error uploading product:", error);
       setApiError(
         error.response?.data?.message ||
-        "Failed to upload product. Please try again."
+          "Failed to upload product. Please try again."
       );
     } finally {
       setLoading(false);
@@ -649,4 +649,4 @@ const UploadProduct = () => {
   );
 };
 
-export default UploadProduct;
+export default CreatorUploadProduct;

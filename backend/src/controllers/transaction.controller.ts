@@ -7,7 +7,7 @@ import { AuthRequest } from "../interfaces/auth.interface";
 import { Transaction } from "../entities/transaction.entities";
 import { FRONTEND_URL, PAYSTACK_SECRET_KEY } from "../config/env";
 import { User } from "../entities/user.entities";
-import { CustomAsset } from "../entities/customasset.entities";
+import { Asset } from "../entities/asset.entities";
 import { Download } from "../entities/download.entities";
 import { AppDataSource } from "../database/db";
 import { verifyPayment } from "../utils/payment";
@@ -19,18 +19,18 @@ import { DownloadService } from "../services/download.service";
 
 
 export class TransactionController {
-  private customAssetRepository: Repository<CustomAsset>;
   private userRepository: Repository<User>;
   private transactionRepository: Repository<Transaction>;
   private downloadRepository: Repository<Download>
   private downloadService: DownloadService;
+  private assetRepository: Repository<Asset>;
 
   constructor(private transactionService: TransactionService) {
-    this.customAssetRepository = AppDataSource.getRepository(CustomAsset);
     this.userRepository = AppDataSource.getRepository(User);
     this.transactionRepository = AppDataSource.getRepository(Transaction);
     this.downloadRepository = AppDataSource.getRepository(Download)
     this.downloadService = new DownloadService()
+    this.assetRepository = AppDataSource.getRepository(Asset);
   }
 
   async create(req: AuthRequest, res: Response, next: NextFunction) {
@@ -41,12 +41,6 @@ export class TransactionController {
       if (!user) {
         logger.warn(`Transaction creation failed: User not found for ID: ${req.user?.id || 'unknown'}`);
         throw new Error("User not found");
-      }
-
-      const customAsset = data.asset ? await this.customAssetRepository.findOne({ where: { id: data.asset } }) : null;
-      if (!customAsset) {
-        logger.warn(`Transaction creation failed: Custom asset not found for ID: ${data.asset}`);
-        throw new Error("Asset not found");
       }
 
       const transaction = await this.transactionService.create(data);
@@ -70,7 +64,6 @@ export class TransactionController {
       let query = AppDataSource.getRepository(Transaction)
           .createQueryBuilder("transaction")
           .leftJoinAndSelect("transaction.user", "user")
-          .leftJoinAndSelect("transaction.custom_asset", "custom_asset");    
             
       if (req.user && req.user.role !== 'admin') {
           filters.userId = { userId: req.user.id };
@@ -148,39 +141,52 @@ export class TransactionController {
 
  async initialize(req: AuthRequest, res: Response, next: NextFunction) {
     try {
+      // take in all the assets to be bought and cache them with redis
       logger.info(`Initializing payment for user: ${req.user?.id || 'unknown'}`);
       const user = req.user;
       if (!user) {
         logger.warn(`Payment initialization failed: User unauthenticated`);
         throw new Error("User unauthenticated");
       }
-
-      const { id } = req.body;
-      if (!id) {
-        logger.warn(`Payment initialization failed: Missing custom asset ID for user: ${user.id}`);
-        throw new Error("Custom asset ID required");
+      const { assetIds } = req.body;
+      if (!assetIds || !Array.isArray(assetIds) || assetIds.length === 0) {
+        logger.warn(`Payment initialization failed: No assets provided by user: ${user.id}`);
+        throw new Error("No assets provided");
       }
 
-      const custom_asset = await this.customAssetRepository.findOne({ where: { id } });
-      if (!custom_asset) {
-        logger.warn(`Payment initialization failed: Custom asset not found for ID: ${id}`);
-        throw new Error("Invalid custom asset id");
+      const assetRecords = await this.assetRepository.find({
+        where: { id: In(assetIds) },
+        select: ["id", "price"],
+      });
+      if (assetRecords.length !== assetIds.length) {
+        logger.warn(`Payment initialization failed: One or more assets not found for user: ${user.id}`);
+        throw new Error("One or more assets not found");
       }
+      const totalAmount = assetRecords.reduce((sum, asset) => sum + (Number(asset.price) || 0), 0);
 
       const transactionData = {
-        custom_asset,
         user,
-        amount: custom_asset.price,
+        amount: totalAmount,
       };
+      
       const transaction = this.transactionRepository.create(transactionData);
       const savedTransaction = await this.transactionRepository.save(transaction);
-      logger.info(`Created transaction with ID: ${savedTransaction.id} for custom asset ID: ${id}`);
+      // improve on this
+      await (await redisClient).set(
+        savedTransaction.id,
+        JSON.stringify({ assets: assetIds }),
+        {
+          EX: 36000,
+          NX: true,
+        }
+      );
+      logger.info(`Created transaction with ID: ${savedTransaction.id} for user: ${user.id}, total amount: ${totalAmount}`);
 
       const response = await axios.post(
         'https://api.paystack.co/transaction/initialize',
         {
           email: user.email,
-          amount: custom_asset.price * 100,
+          amount: totalAmount * 100,
           reference: savedTransaction.id,
           callback_url: `${FRONTEND_URL}/verify-payment`,
         },
@@ -194,8 +200,8 @@ export class TransactionController {
       logger.info(`Initialized Paystack payment for transaction ID: ${savedTransaction.id}, user: ${user.id}`);
 
       if (response.status){
-        custom_asset.payment_status = "processing"
-        await this.customAssetRepository.save(custom_asset)
+        savedTransaction.payment_status = "processing"
+        await this.transactionRepository.save(savedTransaction)
       }
         res.status(200).json({
         authorization_url: response.data.data.authorization_url,
@@ -278,21 +284,13 @@ export class TransactionController {
         });
       }
 
-      const customasset = await this.customAssetRepository.findOne({ where: { id: transaction.custom_asset.id }, relations: ["asset"], });
-      if (!customasset) {
-        logger.warn(`Custom asset not found for transaction reference: ${ref}, asset ID: ${transaction.custom_asset.id}`);
-        throw new Error("Custom asset not found");
-      }
       let assetData: any 
-      if (customasset.type === "bulk"){
-        const cachedData = await (await redisClient).get(customasset.id);
-
-        if (!cachedData || typeof cachedData !== 'string') {
-          logger.warn(` Invalid or expired key: ${customasset.id}`);
-          throw new HttpError("Invalid or expired verification code", 400);
-        }
-         assetData = JSON.parse(cachedData)
+      const cachedData = await (await redisClient).get(transaction.id);
+      if (!cachedData || typeof cachedData !== 'string') {
+        logger.warn(` Invalid or expired key: ${transaction.id}`);
+        throw new HttpError("Invalid or expired verification code", 400);
       }
+      assetData = JSON.parse(cachedData)
       
       const response = await axios.get(`https://api.paystack.co/transaction/verify/${ref}`, {
         headers: {
@@ -309,14 +307,7 @@ export class TransactionController {
 
         if (data.status === "success") {
           transaction.payment_status = "completed";
-          customasset.payment_status = "paid";
-          if (customasset.type === 'download'){
-            const cdownload = this.downloadRepository.create({user: req.user, asset: customasset.asset, custom_asset: customasset})
-            const download = await this.downloadRepository.save(cdownload)
-          }
-          if (customasset.type === 'bulk'){
-            const downloads = await this.downloadService.batchCreate(assetData.assets, customasset, req.user)
-          }
+          const downloads = await this.downloadService.batchCreate(assetData.assets, transaction, req.user)
           message = "Payment processed successfully";
           status = "success";
           logger.info(`Payment verified as successful for reference: ${ref}`);
@@ -326,27 +317,24 @@ export class TransactionController {
           status = "failed";
           logger.warn(`Payment failed for reference: ${ref}`);
         } else if (data.status === "processing") {
-          transaction.payment_status = "pending";
+          transaction.payment_status = "processing";
           status = "processing";
           message = "Payment is still processing";
           logger.info(`Payment still processing for reference: ${ref}`);
         } else if (data.status === "abandoned") {
           transaction.payment_status = "failed";
-          customasset.payment_status = "pending";
           message = "Payment was abandoned";
           status = "failed";
           logger.warn(`Payment abandoned for reference: ${ref}`);
         } else {
           transaction.payment_status = "pending";
-          customasset.payment_status = "pending";
           message = "Payment still pending";
           status = "failed";
           logger.info(`Payment pending for reference: ${ref}`);
         }
 
         const savedTransaction = await this.transactionRepository.save(transaction);
-        const savedCustomAsset = await this.customAssetRepository.save(customasset);
-        logger.info(`Updated transaction and custom asset for reference: ${ref}, transaction status: ${transaction.payment_status}, asset status: ${customasset.payment_status}`);
+        logger.info(`Updated transaction reference: ${ref}, transaction status: ${transaction.payment_status}`);
 
         return res.status(200).json({
           message,

@@ -1,20 +1,16 @@
 import { AppDataSource } from "../database/db";
 import { Repository } from "typeorm";
 import { Transaction } from "../entities/transaction.entities";
-import { User } from "../entities/user.entities";
-import { Asset } from "../entities/asset.entities";
 import logger from "../logger/app.logger";
 import { HttpError } from "../error/HttpError";
 
 export class TransactionService {
   private transactionRepository: Repository<Transaction>;
-  private userRepository: Repository<User>;
-  private assetRepository: Repository<Asset>;
+
 
   constructor() {
     this.transactionRepository = AppDataSource.getRepository(Transaction);
-    this.userRepository = AppDataSource.getRepository(User);
-    this.assetRepository = AppDataSource.getRepository(Asset);
+   
   }
 
   async create(data: any) {

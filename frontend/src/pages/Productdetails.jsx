@@ -5,7 +5,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import "../App.css";
 import api from "../utils/api";
-import { ACCESS_TOKEN, IMAGE_URL } from "../utils/constants";
+import { ACCESS_TOKEN } from "../utils/constants";
 import { jwtDecode } from "jwt-decode";
 import LoadingIndicator from "../components/LoadingIndicator";
 import { initialize_payment } from "../utils/payment";
@@ -27,7 +27,7 @@ function Productdetails() {
   const [toast, setToast] = useState({
     show: false,
     message: "",
-    type: "info"
+    type: "info",
   });
 
   const [formData, setFormData] = useState({
@@ -108,7 +108,7 @@ function Productdetails() {
       setToast({
         show: true,
         message: "Please sign in or create an account to customize",
-        type: "error"
+        type: "error",
       });
       return;
     }
@@ -120,7 +120,7 @@ function Productdetails() {
       setToast({
         show: true,
         message: "Your session has expired. Please sign in again",
-        type: "error"
+        type: "error",
       });
       return;
     }
@@ -142,14 +142,14 @@ function Productdetails() {
       setToast({
         show: true,
         message: "Customization order successful. Initializing payment...",
-        type: "success"
+        type: "success",
       });
       initialize_payment(response.data.data.id);
     } catch (error) {
       setToast({
         show: true,
         message: "Failed to submit customization. Please try again.",
-        type: "error"
+        type: "error",
       });
       setCustomLoading(false);
     }
@@ -172,19 +172,19 @@ function Productdetails() {
     }
     setBuyLoading(true);
     try {
-      const response = await api.post("/custom", {
-        name: product.name,
-        description: "Uncustomized asset download",
-        type: "download",
-        asset: id,
-      });
-      console.log(response);
-      if (response.status !== 201) {
-        throw new Error("Failed to initiate order");
-      }
+      // const response = await api.post("/custom", {
+      //   name: product.name,
+      //   description: "Uncustomized asset download",
+      //   type: "download",
+      //   asset: id,
+      // });
+      // console.log(response);
+      // if (response.status !== 201) {
+      //   throw new Error("Failed to initiate order");
+      // }
 
       setErrors({});
-      initialize_payment(response.data.data.id);
+      initialize_payment([id]);
       alert("Buy order succesful. Initializing payment...");
     } catch (error) {
       setErrors({ name: "Failed to submit. Please try again." });
@@ -199,7 +199,7 @@ function Productdetails() {
         <Toast
           message={toast.message}
           type={toast.type}
-          onClose={() => setToast(prev => ({ ...prev, show: false }))}
+          onClose={() => setToast((prev) => ({ ...prev, show: false }))}
         />
       )}
 
@@ -233,7 +233,7 @@ function Productdetails() {
             </div>
 
             {/* Product Customization Form */}
-            <div className="bg-gray-50 p-6 rounded-lg shadow-inner w-full">
+            {/* <div className="bg-gray-50 p-6 rounded-lg shadow-inner w-full">
               <h3 className="text-2xl font-bold text-black mb-4">
                 Customize Your Product
               </h3>
@@ -306,7 +306,7 @@ function Productdetails() {
                   Buy Now
                 </button>
               )}
-            </div>
+            </div> */}
           </div>
         )}
 

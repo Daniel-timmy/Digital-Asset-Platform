@@ -10,9 +10,9 @@ export const AppDataSource = new DataSource({
   username: DB_USERNAME,
   password: DB_PASSWORD,
   database: DB_NAME,
-     ssl: {
-    rejectUnauthorized:   false, 
-  },
+  //    ssl: {
+  //   rejectUnauthorized:   false, 
+  // },
   synchronize: true, // Set to false in production
   logging: false,
    entities: [

@@ -43,6 +43,16 @@ export class DownloadController {
     }
   }
 
+  async count(req: AuthRequest, res: Response, next: NextFunction){
+    try{
+      const creatorId = req.query.creator as string;
+      const count = await this.downloadService.getCount(creatorId);
+      res.status(200).json({count})
+    } catch (error){
+      next(error)
+    }
+  }
+
   async remove(req: Request, res: Response, next: NextFunction) {
     try {
       await this.downloadService.remove(req.params.id);

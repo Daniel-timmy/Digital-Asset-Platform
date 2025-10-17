@@ -54,7 +54,6 @@ export class CustomAssetService {
           where: { id: In(req.body.asset_ids) },
           select: ["id", "price"], 
         });
-        console.log(result)
         price += result.reduce((sum, asset) => sum + (Number(asset.price) || 0), 0)
 
       } else{
@@ -71,7 +70,6 @@ export class CustomAssetService {
         user,
         price
       }
-      console.log(customAssetData)
       const customasset = this.customAssetRepository.create(customAssetData)
       const savedCustomAsset = await this.customAssetRepository.save(customasset)
 
@@ -158,9 +156,16 @@ async update(id: string, data: Partial<CustomAsset>): Promise<CustomAsset | null
     const result = await this.customAssetRepository.update(id, data);
 
     const updatedEntity = await this.customAssetRepository.findOne({ where: { id }, relations: ["user", "asset"], });
+    console.log("Updated entity at customassetSERVICE:", updatedEntity);
     if (updatedEntity && updatedEntity.type === 'custom'){
-            const cdownload = this.downloadRepository.create({user:   updatedEntity.user, asset:   updatedEntity.asset, custom_asset:   updatedEntity})
+            const cdownload = this.downloadRepository.create({user:   updatedEntity.user, asset:   updatedEntity.asset})
             const download = await this.downloadRepository.save(cdownload)
+            // await sendToQueue({
+            //   to: updatedEntity.user.id,
+            //   subject: "Your customisation request is done!!!",
+            //   text: `Here is the link to download your custom request: http://localhost:3000/download/${download.id}`
+            // });
+
             await sendEmail(
                updatedEntity.user.id,
                "Your customisation request is done!!!",

@@ -28,6 +28,12 @@ import ProtectedAdminRoutes from "./components/ProtectedAdminRoutes";
 import Downloads from "./pages/Client/Downloads";
 import ClientsLayout from "./pages/Client/ClientsLayout";
 import NotFound from "./pages/NotFound";
+import CreatorDashboard from "./pages/creator/CreatorDashboard";
+import CreatorTickets from "./pages/creator/CreatorTickets";
+import CreatorUploadProduct from "./pages/creator/CreatorUploadProduct";
+import CreatorProfile from "./pages/creator/CreatorProfile";
+import CreatorTransactions from "./pages/creator/CreatorTransactions";
+import ProtectedCreatorRoutes from "./components/ProtectedCreatorRoutes";
 
 function Logout() {
   localStorage.clear();
@@ -60,6 +66,21 @@ function App() {
           <Route path="upload" element={<UploadProduct />} />
           <Route path="bookings/:service" element={<Bookings />} />
           <Route path="transactions" element={<Transactions />} />
+        </Route>
+        <Route
+          path="/Creator"
+          element={
+            <ProtectedCreatorRoutes>
+              <Layout />
+            </ProtectedCreatorRoutes>
+          }
+        >
+          <Route index element={<CreatorDashboard />} />
+          <Route path="dashboard" element={<CreatorDashboard />} />
+          <Route path="tickets" element={<CreatorTickets />} />
+          <Route path="upload" element={<CreatorUploadProduct />} />
+          <Route path="transactions" element={<CreatorTransactions />} />
+          <Route path="profile" element={<CreatorProfile />} />
         </Route>
 
         <Route path="/login" element={<AuthPage />} />

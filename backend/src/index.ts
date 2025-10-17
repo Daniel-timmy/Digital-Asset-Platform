@@ -18,17 +18,17 @@ import tagRouter from "./routes/tag.routes";
 import categoryRouter from "./routes/category.routes";
 import customAssetRouter from "./routes/customassets.routes";
 import ticketRouter from "./routes/ticket.routes";
-import photographyRouter from "./routes/photography.routes";
-import websiteRouter from "./routes/website.routes";
-import brandingRouter from "./routes/branding.routes";
+
 import { redisClient } from "./database/redis_cache";
 import { FRONTEND_URL } from "./config/env";
-import { AppDataSource, initializeDatabase } from "./database/db";
+import { initializeDatabase } from "./database/db";
 import { errorMiddleware } from "./middlewares/error.middleware";
-import { MessageService } from "./services/message.service";
 import messageRouter from "./routes/message.routes";
-import socialMediaRouter from "./routes/socialMedia.routes";
-import { MessageSocketController } from "controllers/message.socket.ontroller";
+import sendEmail from "./utils/sendEmail";
+// import { initRabbitMQ } from "queue/rabbitMq";
+// import { consumeQueue } from "queue/consumer";
+import rabbitMq from "./queue/rabbitMq";
+// import { MessageSocketController } from "controllers/message.socket.ontroller";
 
 
 const app = express();
@@ -60,16 +60,6 @@ const apiLimiter = rateLimit({
 app.use(apiLimiter);
 app.set('trust proxy', 1);
 
-// const server = http.createServer(app);
-
-// // Export server for socket initialization
-// let httpServer: http.Server | null = null;
-// export const getServer = () => {
-//     if (!httpServer) {
-//         httpServer = server;
-//     }
-//     return httpServer;
-// };
 
 app.get('/health', (req: Request, res: Response) => {
     logger.debug('Health check endpoint accessed');
@@ -77,19 +67,15 @@ app.get('/health', (req: Request, res: Response) => {
 });
 app.use("/api/assets", assetRouter);
 app.use("/api/auth", authRouter);
-app.use("/api/branding", brandingRouter)
 app.use('/api/category', categoryRouter)
 app.use("/api/custom", customAssetRouter)
 app.use("/api/downloads", downloadRouter);
 app.use("/api/licenses", licenseRouter);
 app.use("/api/messages", messageRouter)
-app.use("/api/photography", photographyRouter)
-app.use("/api/social-media", socialMediaRouter)
 app.use("/api/tags", tagRouter);
 app.use("/api/ticket", ticketRouter)
 app.use("/api/transactions", transactionRouter);
 app.use("/api/users", userRouter);
-app.use("/api/website", websiteRouter)
 app.use(errorMiddleware)
 
 if (process.env.PORT === undefined) {
@@ -100,14 +86,16 @@ const PORT = parseInt(process.env.PORT) || 3000;
 
 const startServer = async () => {
   try {
-    // console.log("Node environment variables:", process.env);
     console.log("PORT from config/env:", PORT);
 
-    // await AppDataSource.initialize();
-     await initializeDatabase();
+    await initializeDatabase();
+    await rabbitMq.connect();
+    await rabbitMq.consume(rabbitMq.getQueueName(), (to: string, subject: string, text: string) => {
+      sendEmail(to, subject, text);
+    });
+  
     logger.info('Database connected successfully');
     
-    // server.listen(PORT, "0.0.0.0", async () => {
     app.listen(PORT, "0.0.0.0", async () => {
       logger.info(`Server is running on port ${PORT}`);
       

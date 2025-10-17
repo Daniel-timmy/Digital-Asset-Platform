@@ -21,9 +21,9 @@ export class AssetController {
     }
   }
 
-  async count(req:Request, res: Response, next: NextFunction){
+  async count(req: AuthRequest, res: Response, next: NextFunction){
     try{
-      const count = await this.assetService.getCounts()
+      const count = await this.assetService.getCounts(req)
       res.status(200).json({count})
     } catch (error){
       next(error)
@@ -37,7 +37,6 @@ export class AssetController {
 
       const query = AppDataSource.getRepository(Asset)
         .createQueryBuilder("asset")
-        .leftJoinAndSelect("asset.user", "user")
         .leftJoinAndSelect("asset.category", "category")
         .leftJoinAndSelect("asset.tags", "tags");
 
@@ -88,7 +87,7 @@ export class AssetController {
     try {
       const id = req.params.id;
       logger.info(`Deleting asset with ID: ${id}`);
-      await this.assetService.remove(id);
+      await this.assetService.remove(id, req);
       logger.info(`Successfully deleted asset with ID: ${id}`);
       res.status(204).send();
     } catch (error) {

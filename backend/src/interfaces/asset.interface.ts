@@ -10,7 +10,7 @@ export interface IAsset {
     tags_id?: string;
     price?: number;
     status?: string;
-    file: any
+    files: any
 }
 
 export interface IFitltered {

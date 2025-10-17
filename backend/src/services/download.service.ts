@@ -7,6 +7,7 @@ import { User } from "../entities/user.entities";
 import { CustomAsset } from "../entities/customasset.entities";
 import { applyDownloadFilters } from "../filters/download.filter";
 import { IFitltered } from "../interfaces/asset.interface";
+import { Transaction } from "../entities/transaction.entities";
 
 export class DownloadService {
   private downloadRepository: Repository<Download>;
@@ -29,12 +30,15 @@ export class DownloadService {
 
     const download = this.downloadRepository.create({
       user,
-      asset
+      asset,
+      price: asset.price,
+      creator: asset.user,
+      transaction: req.body.transaction
     });
     return await this.downloadRepository.save(download);
   }
 
-  async batchCreate(asset_ids: Array<string>, custom_asset: CustomAsset, user?: User ) {
+  async batchCreate(asset_ids: Array<string>, transaction: Transaction, user?: User ) {
     
       console.log(asset_ids)
       if (!Array.isArray(asset_ids) || asset_ids.length === 0) {
@@ -56,7 +60,9 @@ export class DownloadService {
         this.downloadRepository.create({
           user,
           asset,
-          custom_asset,
+          transaction,
+          creator: asset.user,
+          price: asset.price
         })
       );
     
@@ -76,25 +82,25 @@ export class DownloadService {
       startDate,
       endDate,
       asset_id,
-      custom_asset_id
+      creator
     } = req.query;
 
     let query = this.downloadRepository
       .createQueryBuilder("download")
       .leftJoinAndSelect("download.asset", "asset")
-      .leftJoinAndSelect("download.custom_asset", "custom_asset")
       .leftJoinAndSelect("download.user", "user");
 
     const filters = {
       user: user.role === "admin" ? undefined : user,
+
       page: page ? parseInt(page as string) : undefined,
       limit: limit ? parseInt(limit as string) : undefined,
+      creator: creator ? { id: creator as string } : undefined,
       orderBy: orderBy as string | undefined,
       orderDirection: (orderDirection as string)?.toUpperCase() as 'ASC' | 'DESC' | undefined,
       startDate: startDate ? new Date(startDate as string) : undefined,
       endDate: endDate ? new Date(endDate as string) : undefined,
       asset: asset_id ? { id: asset_id as string } : undefined,
-      custom_asset: custom_asset_id ? { id: custom_asset_id as string } : undefined
     };
 
     return await applyDownloadFilters(query, filters);
@@ -111,5 +117,13 @@ export class DownloadService {
 
   async remove(id: string): Promise<void> {
     await this.downloadRepository.delete(id);
+  }
+
+  async getCount(creatorId: string): Promise<number> {
+    return await this.downloadRepository.count({
+      where: {
+        creator: { id: creatorId }
+      }
+    });
   }
 }

@@ -59,3 +59,12 @@ export const isAdmin = async (req: AuthRequest, res: Response, next: NextFunctio
 
     }
 }
+
+export const isCreatorOrAdmin = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    if (req?.user && req.user.role === 'creator' || req?.user && req.user.role === 'admin'){
+        next()
+    } else {
+    res.status(401).json({ message: 'You are not allowed to acces this route' });
+
+    }
+}

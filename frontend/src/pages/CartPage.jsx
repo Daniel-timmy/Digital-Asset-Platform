@@ -52,23 +52,23 @@ export default function CartPage() {
 
     if (storedCart) {
       try {
-        const response = await api.post("/custom", {
-          name: "Uncustomized bulk assets download",
-          description: "Uncustomized bulk assets download",
-          type: "bulk",
-          asset: Object.keys(storedCart)[0],
-          asset_ids: Object.keys(storedCart),
-        });
-        if (response.status !== 201) {
-          throw new Error("Failed to submit order");
-        }
+        // const response = await api.post("/custom", {
+        //   name: "Uncustomized bulk assets download",
+        //   description: "Uncustomized bulk assets download",
+        //   type: "bulk",
+        //   asset: Object.keys(storedCart)[0],
+        //   asset_ids: Object.keys(storedCart),
+        // });
+        // if (response.status !== 201) {
+        //   throw new Error("Failed to submit order");
+        // }
 
         setToast({
           show: true,
-          message: "Order successful. Initializing payment...",
+          message: "Initializing payment...",
           type: "success",
         });
-        initialize_payment(response.data.data.id);
+        initialize_payment(Object.keys(storedCart));
       } catch (error) {
         setToast({
           show: true,

@@ -22,6 +22,10 @@ downloadRouter.put("/:id", authentication, isAdmin, async (req, res, next) => {
   await downloadController.update(req, res, next);
 });
 
+downloadRouter.get("/s/count", authentication, async (req, res, next) => {
+  await downloadController.count(req, res, next);
+});
+
 downloadRouter.delete("/:id", authentication, isAdmin, async (req, res, next) => {
   await downloadController.remove(req, res, next);
 });
