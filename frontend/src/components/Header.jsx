@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { refreshToken } from "./ProtectedRoutes";
 import { ACCESS_TOKEN } from "../../src/utils/constants";
 import { jwtDecode } from "jwt-decode";
-import logo from "../assets/OIP.webp";
+import logo from "../assets/OIP.png";
 import {
   Bars3Icon,
   BellIcon,
@@ -103,9 +103,9 @@ export default function Header() {
   }, []);
 
   return (
-    <nav className="bg-white/95 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-100">
-      <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
-        <div className="relative flex h-20 items-center justify-between">
+    <nav className="bg-white/95 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-100 overflow-visible">
+      <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8 overflow-visible">
+        <div className="relative flex h-20 items-center justify-between overflow-visible">
           {/* Mobile menu button (left) */}
           <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
             <button
@@ -120,7 +120,11 @@ export default function Header() {
           {/* Logo + Desktop nav */}
           <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
             <div className="flex shrink-0 items-center">
-              <Link to="/" onClick={() => setMobileMenuOpen(false)} className="hover:opacity-80 transition-opacity">
+              <Link
+                to="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className="hover:opacity-80 transition-opacity"
+              >
                 <img alt="BASELINKS" src={logo} className="h-10 w-auto" />
               </Link>
             </div>
@@ -148,10 +152,7 @@ export default function Header() {
           </div>
 
           {/* Right side: cart, notifications, user */}
-          <div
-            className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0"
-            ref={dropdownRef}
-          >
+          <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0 overflow-visible">
             {/* Cart */}
             <Link
               to="/cart"
@@ -175,7 +176,10 @@ export default function Header() {
             </button>
 
             {/* User dropdown (desktop only) */}
-            <div className="hidden sm:block relative ml-4">
+            <div
+              className="hidden sm:block relative ml-4 overflow-visible"
+              ref={dropdownRef}
+            >
               <button
                 onClick={toggleUser}
                 aria-expanded={userOpen}
@@ -185,7 +189,7 @@ export default function Header() {
               </button>
 
               {userOpen && (
-                <div className="absolute right-0 mt-3 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-50 py-2 animate-fade-in">
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-50 py-2 animate-fade-in">
                   {!isAuthorized ? (
                     <Link
                       to="/login"
@@ -222,7 +226,7 @@ export default function Header() {
       {/* Mobile sidebar */}
       <div
         ref={mobileMenuRef}
-        className={`fixed inset-y-0 left-0 w-72 bg-white shadow-2xl z-50 p-6 overflow-y-auto transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 w-72 h-screen bg-white shadow-2xl z-50 p-6 overflow-y-auto transform transition-transform duration-300 ease-in-out sm:hidden ${
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -259,50 +263,6 @@ export default function Header() {
               </Link>
             );
           })}
-
-          {/* Mobile services accordion */}
-          <div className="mt-2">
-            <button
-              onClick={toggleMobileServices}
-              className="w-full text-left block rounded-xl px-4 py-3 text-base font-medium text-gray-700 hover:text-black hover:bg-gray-50 transition-all duration-200"
-            >
-              Services
-            </button>
-
-            {mobileServicesOpen && (
-              <div className="mt-1 space-y-1 pl-4 animate-fade-in">
-                <Link
-                  to="/photography"
-                  className="block px-4 py-2 text-sm text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Photography and video editing
-                </Link>
-                <Link
-                  to="/branding"
-                  className="block px-4 py-2 text-sm text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Design and branding
-                </Link>
-                <Link
-                  to="/webdev"
-                  className="block px-4 py-2 text-sm text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Website and development
-                </Link>
-                <Link
-                  to="/socialmedia"
-                  className="block px-4 py-2 text-sm text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Social media
-                </Link>
-              </div>
-            )}
-          </div>
-
           {/* Login/Signup (mobile) */}
           <div className="mt-8 pt-6 border-t border-gray-200">
             {!isAuthorized ? (

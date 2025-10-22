@@ -284,7 +284,7 @@ const AuthPage = ({ state = true }) => {
                 className="w-32 h-32 mb-8 rounded-full border-4 border-white/20 shadow-2xl mx-auto"
               />
               <h2 className="text-4xl font-black mb-4">
-                Welcome to BASELINKS
+                Welcome to Brush
               </h2>
               <p className="text-lg text-gray-300 leading-relaxed max-w-sm mx-auto">
                 Your premier Digital Assets Marketplace. Discover, create, and share amazing digital content.

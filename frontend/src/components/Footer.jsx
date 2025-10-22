@@ -10,13 +10,13 @@ export default function Footer() {
           {/* About Section */}
           <div className="space-y-4">
             <h4 className="text-xl font-bold text-gray-900 mb-4 relative inline-block">
-              About BASELINKS
+              About Brush
               <span className="absolute bottom-0 left-0 w-12 h-1 bg-black rounded-full"></span>
             </h4>
             <p className="text-gray-600 leading-relaxed text-sm">
-              BASELINKS is a digital solutions company empowering businesses
-              through innovation, design, and strategy. We help you brand, build,
-              and grow.
+              Brush is a digital solutions company empowering businesses through
+              innovation, design, and strategy. We help you brand, build, and
+              grow.
             </p>
           </div>
 
@@ -28,10 +28,10 @@ export default function Footer() {
             </h4>
             <div className="space-y-3 text-sm">
               <p className="text-gray-600 hover:text-black transition-colors cursor-pointer flex items-center gap-2">
-                <span className="text-black">✉</span> info@baselinks.com
+                <span className="text-black">✉</span> info@brush.com
               </p>
               <p className="text-gray-600 hover:text-black transition-colors cursor-pointer flex items-center gap-2">
-                <span className="text-black">📞</span> +234 907 484 2677
+                <span className="text-black">📞</span> +234 8125754326
               </p>
             </div>
           </div>
@@ -42,9 +42,7 @@ export default function Footer() {
               Address
               <span className="absolute bottom-0 left-0 w-12 h-1 bg-black rounded-full"></span>
             </h4>
-            <p className="text-gray-600 leading-relaxed text-sm">
-              6A, D-sha Street, Lekki Palm City Estate, Addo Road, Ajah.
-            </p>
+            <p className="text-gray-600 leading-relaxed text-sm"></p>
           </div>
 
           {/* Social Media */}
@@ -89,13 +87,19 @@ export default function Footer() {
         <div className="pt-8 border-t border-gray-200">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-gray-600 text-sm">
-              © 2025 BASELINKS. All rights reserved.
+              © 2025 Brush. All rights reserved.
             </p>
             <div className="flex gap-6 text-sm">
-              <a href="#" className="text-gray-600 hover:text-black transition-colors">
+              <a
+                href="#"
+                className="text-gray-600 hover:text-black transition-colors"
+              >
                 Privacy Policy
               </a>
-              <a href="#" className="text-gray-600 hover:text-black transition-colors">
+              <a
+                href="#"
+                className="text-gray-600 hover:text-black transition-colors"
+              >
                 Terms of Service
               </a>
             </div>

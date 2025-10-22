@@ -8,6 +8,7 @@ import {
   ArrowRightOnRectangleIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
 
 const Sidebar = () => {
@@ -80,6 +81,22 @@ const Sidebar = () => {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2">
+        {/* Back to Home Button */}
+        <NavLink
+          to="/"
+          className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 border border-gray-200"
+        >
+          <ArrowLeftIcon className="w-5 h-5 text-gray-600 group-hover:text-gray-900 group-hover:-translate-x-1 transition-all" />
+          {!isCollapsed && (
+            <span className="font-medium text-sm text-gray-700 group-hover:text-gray-900">
+              Back to Home
+            </span>
+          )}
+        </NavLink>
+
+        {/* Divider */}
+        <div className="border-t border-gray-200 my-4"></div>
+
         {navItems.map((item) => (
           <NavLink
             to={item.path}
@@ -123,9 +140,7 @@ const Sidebar = () => {
           className="flex items-center gap-3 w-full px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 group"
         >
           <ArrowRightOnRectangleIcon className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          {!isCollapsed && (
-            <span className="font-medium text-sm">Logout</span>
-          )}
+          {!isCollapsed && <span className="font-medium text-sm">Logout</span>}
         </button>
       </div>
     </aside>
