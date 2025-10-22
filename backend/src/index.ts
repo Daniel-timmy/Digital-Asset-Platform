@@ -25,10 +25,8 @@ import { initializeDatabase } from "./database/db";
 import { errorMiddleware } from "./middlewares/error.middleware";
 import messageRouter from "./routes/message.routes";
 import sendEmail from "./utils/sendEmail";
-// import { initRabbitMQ } from "queue/rabbitMq";
-// import { consumeQueue } from "queue/consumer";
-import rabbitMq from "./queue/rabbitMq";
-// import { MessageSocketController } from "controllers/message.socket.ontroller";
+// import rabbitMq from "./queue/rabbitMq";
+import { initializeQueues } from "./queue/rabbitMq";
 
 
 const app = express();
@@ -89,10 +87,11 @@ const startServer = async () => {
     console.log("PORT from config/env:", PORT);
 
     await initializeDatabase();
-    await rabbitMq.connect();
-    await rabbitMq.consume(rabbitMq.getQueueName(), (to: string, subject: string, text: string) => {
-      sendEmail(to, subject, text);
-    });
+    // await rabbitMq.connect();
+    // await rabbitMq.consume(rabbitMq.getQueueName(), (to: string, subject: string, text: string) => {
+    //   sendEmail(to, subject, text);
+    // });
+    initializeQueues()
   
     logger.info('Database connected successfully');
     

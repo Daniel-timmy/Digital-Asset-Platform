@@ -10,38 +10,22 @@ import { jwtDecode } from "jwt-decode";
 import LoadingIndicator from "../components/LoadingIndicator";
 import { initialize_payment } from "../utils/payment";
 import Toast from "../components/Toast";
+import { useCart } from "../context/CartContext";
 
 function Productdetails() {
-  const [isVisible, setIsVisible] = useState(true);
-  const [selectedProduct, setSelectedProduct] = useState({});
   const [product, setProduct] = useState({});
   const [relatedProduct, setRelatedProduct] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [customLoading, setCustomLoading] = useState(false);
   const [buyLoading, setBuyLoading] = useState(false);
   const [relatedLoading, setRelatedLoading] = useState(false);
   const { id } = useParams();
   const [errors, setErrors] = useState({});
-  const [loadAssetError, setLoadAssetError] = useState({});
-  const [isAuthorized, setIsAuthorized] = useState(true);
   const [toast, setToast] = useState({
     show: false,
     message: "",
     type: "info",
   });
-
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-  });
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  const { addToCart } = useCart();
 
   useEffect(() => {
     const fetchAsset = async () => {
@@ -49,11 +33,12 @@ function Productdetails() {
       try {
         const res = await api.get(`/assets/${id}`);
         setProduct(res.data);
+        console.log(res.data);
         return await res.data;
       } catch (error) {
         console.error(error);
-        setLoadAssetError({
-          error:
+        setErrors({
+          asset:
             error.data.message || "Failed to load related assets. Try again.",
         });
       } finally {
@@ -70,10 +55,11 @@ function Productdetails() {
         const res = await api.get(
           `/assets?tagIds=${product.tags[0].id}&page=1&limit=5`
         );
+        console.log(res.data.results);
         setRelatedProduct(res.data.results);
       } catch (error) {
-        setLoadAssetError({
-          error: "Failed to load related assets. Try again.",
+        setErrors({
+          asset: "Failed to load related assets. Try again.",
         });
       } finally {
         setRelatedLoading(false);
@@ -82,83 +68,9 @@ function Productdetails() {
     getRelatedAssets(id);
   }, [product]);
 
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = "Name is required";
-    }
-    if (!formData.description.trim()) {
-      newErrors.description = "Description is required";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-    const token = localStorage.getItem(ACCESS_TOKEN);
-    if (!token) {
-      setIsAuthorized(false);
-      setToast({
-        show: true,
-        message: "Please sign in or create an account to customize",
-        type: "error",
-      });
-      return;
-    }
-    const decoded = jwtDecode(token);
-    const tokenExpiration = decoded.exp;
-    const now = Date.now() / 1000;
-
-    if (tokenExpiration < now) {
-      setToast({
-        show: true,
-        message: "Your session has expired. Please sign in again",
-        type: "error",
-      });
-      return;
-    }
-    setCustomLoading(true);
-
-    try {
-      const response = await api.post("/custom", {
-        ...formData,
-        asset: id,
-        type: "custom",
-      });
-      console.log(response);
-      if (response.status !== 201) {
-        throw new Error("Failed to submit customization");
-      }
-
-      setFormData({ name: "", description: "" });
-      setErrors({});
-      setToast({
-        show: true,
-        message: "Customization order successful. Initializing payment...",
-        type: "success",
-      });
-      initialize_payment(response.data.data.id);
-    } catch (error) {
-      setToast({
-        show: true,
-        message: "Failed to submit customization. Please try again.",
-        type: "error",
-      });
-      setCustomLoading(false);
-    }
-  };
-
   const handleBuyNow = async () => {
     const token = localStorage.getItem(ACCESS_TOKEN);
     if (!token) {
-      setIsAuthorized(false);
       setErrors({ user: "You can't download unless you Sign up or log in" });
       return;
     }
@@ -172,28 +84,17 @@ function Productdetails() {
     }
     setBuyLoading(true);
     try {
-      // const response = await api.post("/custom", {
-      //   name: product.name,
-      //   description: "Uncustomized asset download",
-      //   type: "download",
-      //   asset: id,
-      // });
-      // console.log(response);
-      // if (response.status !== 201) {
-      //   throw new Error("Failed to initiate order");
-      // }
-
       setErrors({});
       initialize_payment([id]);
       alert("Buy order succesful. Initializing payment...");
     } catch (error) {
       setErrors({ name: "Failed to submit. Please try again." });
-      setCustomLoading(false);
+      setBuyLoading(false);
     }
   };
 
   return (
-    <div className="w-full min-h-screen bg-gray-100 font-sans text-gray-800">
+    <div className="w-full min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 font-sans">
       <Header />
       {toast.show && (
         <Toast
@@ -203,153 +104,196 @@ function Productdetails() {
         />
       )}
 
-      <div className="w-full px-4 py-10 flex flex-col items-center justify-center">
-        <div
-          className={`text-black text-xl font-bold mb-8 ${
-            isVisible ? "animate-fade-in-up" : ""
-          }`}
-        >
-          PRODUCT DETAILS{selectedProduct.name}
+      <div className="w-full px-4 py-16">
+        {/* Breadcrumb */}
+        <div className="max-w-7xl mx-auto mb-8">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Link to="/" className="hover:text-black transition-colors">Home</Link>
+            <span>/</span>
+            <Link to="/stock" className="hover:text-black transition-colors">Products</Link>
+            <span>/</span>
+            <span className="text-black font-semibold">{product.name}</span>
+          </div>
         </div>
 
-        {product && (
-          <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-6 bg-white rounded-xl shadow-2xl p-8">
-            {/* Product Preview */}
-            <div className="flex flex-col items-center">
-              <img
-                src={product.thumbnail_url}
-                alt={product.name}
-                className="w-full max-w-md rounded-xl shadow-md mb-4"
-              />
-              <h2 className="text-3xl font-bold text-black mb-2">
-                {product.name}
-              </h2>
-              <p className="text-lg text-gray-600 mb-3">
-                {product.description}
-              </p>
-              <p className="text-2xl font-semibold text-black">
-                Price: ${product.price}
-              </p>
-            </div>
-
-            {/* Product Customization Form */}
-            {/* <div className="bg-gray-50 p-6 rounded-lg shadow-inner w-full">
-              <h3 className="text-2xl font-bold text-black mb-4">
-                Customize Your Product
-              </h3>
-              {errors.user && (
-                <p className="text-red-500 text-sm mb-4">{errors.user}</p>
-              )}
-              <form className="space-y-4" onSubmit={handleSubmit}>
-                <div>
-                  <label className="block text-sm font-medium text-black">
-                    Name
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 mt-1 border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                    placeholder="Enter name"
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <LoadingIndicator />
+            <p className="text-gray-600 mt-6 font-medium">Loading product details...</p>
+          </div>
+        ) : product && (
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 bg-white rounded-3xl shadow-2xl p-8 lg:p-12 border border-gray-100">
+              {/* Product Preview */}
+              <div className="space-y-6">
+                <div className="relative group">
+                  <img
+                    src={product.thumbnail_url}
+                    alt={product.name}
+                    className="w-full rounded-2xl shadow-lg"
                   />
-                  {errors.name && (
-                    <p className="text-red-500 text-sm mt-1">{errors.name}</p>
-                  )}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 rounded-2xl"></div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-black">
-                    Description
-                  </label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 mt-1 border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                    placeholder="Enter description"
-                    rows="4"
-                  />
-                  {errors.description && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.description}
-                    </p>
-                  )}
-                </div>
-                {customLoading ? (
-                  <div className="col-span-4 flex justify-center items-center">
-                    <LoadingIndicator />
+                
+                {/* Creator Info */}
+                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                    {product.user?.name?.charAt(0) || 'U'}
                   </div>
-                ) : (
-                  <button
-                    type="submit"
-                    disabled={buyLoading}
-                    className={`w-full bg-black  text-white py-3 rounded-md font-semibold shadow-md transition duration-300 ${
-                      buyLoading ? "opacity-50" : "hover:bg-gray-700"
-                    }`}
-                  >
-                    Submit Customization
-                  </button>
-                )}
-              </form>
-              {buyLoading ? (
-                <div className="col-span-4 flex justify-center mt-4 items-center">
-                  <LoadingIndicator />
+                  <div>
+                    <p className="text-sm text-gray-600">Created by</p>
+                    <p className="font-bold text-gray-900">{product.user?.name || 'Unknown'}</p>
+                  </div>
                 </div>
-              ) : (
-                <button
-                  disabled={customLoading}
-                  className={`w-full bg-blue-500 mt-4  text-white py-3 rounded-md font-semibold shadow-md transition duration-300 ${
-                    customLoading ? "opacity-50" : "hover:bg-blue-800"
-                  }`}
-                  onClick={() => handleBuyNow()}
-                >
-                  Buy Now
-                </button>
-              )}
-            </div> */}
+              </div>
+
+              {/* Product Info */}
+              <div className="flex flex-col">
+                <div className="mb-6">
+                  <h1 className="text-4xl font-black text-gray-900 mb-4">
+                    {product.name}
+                  </h1>
+                  
+                  <div className="flex items-center gap-4 mb-6">
+                    <span className="text-4xl font-black text-black">
+                      ${product.price}
+                    </span>
+                    {product.license === "free" && (
+                      <span className="px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-bold">
+                        FREE
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="mb-8 p-6 bg-gray-50 rounded-2xl border border-gray-200">
+                  <h3 className="text-lg font-bold text-gray-900 mb-3">Description</h3>
+                  <p className="text-gray-700 leading-relaxed">
+                    {product.description || 'No description available'}
+                  </p>
+                </div>
+
+                {/* Tags */}
+                {product.tags && product.tags.length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="text-sm font-bold text-gray-600 mb-3 uppercase tracking-wider">Tags</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {product.tags.map((tag) => (
+                        <span
+                          key={tag.id}
+                          className="px-4 py-2 bg-white border-2 border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:border-black transition-colors"
+                        >
+                          {tag.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 mt-auto">
+                  {product.license === "free" ? (
+                    <a
+                      href={`${product.file_url}`}
+                      download={product.name}
+                      className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-green-700 text-white py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Download Free
+                    </a>
+                  ) : buyLoading ? (
+                    <div className="flex-1 flex justify-center py-4">
+                      <LoadingIndicator />
+                    </div>
+                  ) : (
+                    <button
+                      disabled={buyLoading}
+                      className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-black to-gray-800 text-white py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => handleBuyNow()}
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                      Buy Now
+                    </button>
+                  )}
+                  
+                  <button
+                    onClick={() => {
+                      addToCart(product);
+                      setToast({
+                        show: true,
+                        message: "Added to cart successfully!",
+                        type: "success",
+                      });
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 bg-white text-gray-900 py-4 rounded-xl font-bold border-2 border-gray-200 hover:border-black transition-all duration-300 transform hover:scale-105"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                    Add to Cart
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
         {/* Related Assets */}
-        {selectedProduct && (
-          <div className="w-full max-w-6xl mt-12">
-            <h3 className="text-xl font-bold text-black mb-4">
-              Related Assets
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {relatedLoading ? (
-                <div className="col-span-4 flex justify-center items-center h-64">
-                  <LoadingIndicator />
-                </div>
-              ) : (
-                relatedProduct.map((related) => (
-                  <Link to={`/product-details/${related.id}`} key={related.id}>
-                    <div
-                      key={related.id}
-                      onClick={() => setProduct(related)}
-                      className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition duration-300"
-                    >
-                      <img
-                        src={product.thumbnail_url}
-                        alt={related.name}
-                        className="w-full h-40 object-cover rounded-md mb-3"
-                      />
-                      <p className="text-lg font-semibold text-black">
-                        {related.name}
-                      </p>
-                      <p className="text-black">${related.price}</p>
-                    </div>
-                  </Link>
-                ))
-              )}
-            </div>
+        <div className="max-w-7xl mx-auto mt-20">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-3xl font-black text-gray-900">You May Also Like</h2>
+            <Link to="/stock" className="text-sm font-semibold text-gray-600 hover:text-black transition-colors">
+              View All →
+            </Link>
           </div>
-        )}
+          
+          {relatedLoading ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <LoadingIndicator />
+              <p className="text-gray-600 mt-6 font-medium">Loading related products...</p>
+            </div>
+          ) : relatedProduct.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-2xl">
+              <p className="text-gray-600">No related products found</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {relatedProduct.map((related) => (
+                <Link to={`/product-details/${related.id}`} key={related.id}>
+                  <div className="group bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100">
+                    <div className="relative overflow-hidden">
+                      <img
+                        src={related.thumbnail_url}
+                        alt={related.name}
+                        className="w-full h-48 object-cover transform group-hover:scale-110 transition-transform duration-700"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    </div>
+                    <div className="p-5">
+                      <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-1 group-hover:text-black transition-colors">
+                        {related.name}
+                      </h3>
+                      <p className="text-xl font-black text-black">${related.price}</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Back Button */}
-        <div className="mt-10">
+        <div className="max-w-7xl mx-auto mt-12 text-center">
           <Link to="/stock">
-            <button className="bg-black text-white px-6 py-3 rounded-md font-semibold shadow hover:bg-gray-800 transition-all duration-300">
+            <button className="inline-flex items-center gap-2 bg-white text-gray-900 px-8 py-4 rounded-xl font-bold border-2 border-gray-200 hover:border-black transition-all duration-300 transform hover:scale-105 shadow-md">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
               Back to Products
             </button>
           </Link>

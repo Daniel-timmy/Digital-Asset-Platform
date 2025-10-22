@@ -15,8 +15,22 @@ export class LicenseType {
 id!: string;
 
 @Index({ unique: true })
-@Column({ type: 'enum', enum: ['free', 'premium'], default: 'free' })
-name!: 'free' | 'premium';
+@Column({ type: 'varchar', length: 100 })
+name!: string;
+
+@Column({ type: 'text', nullable: true })
+description?: string;
+
+// Duration of the license in months
+@Column({ type: 'int', default: 12 })
+durationMonths!: number;
+
+// Price stored as numeric/decimal; some drivers return string for decimals
+@Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+price?: number | string;
+
+@Column({ type: 'boolean', default: true })
+isActive!: boolean;
 
 @CreateDateColumn({ type: 'timestamptz' })
 createdAt!: Date;

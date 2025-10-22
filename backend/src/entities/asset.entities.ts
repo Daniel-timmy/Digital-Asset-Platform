@@ -18,7 +18,7 @@ export class Asset {
   @Column({ type: "text" })
   description!: string;
 
-  @Column({ type: "varchar", length: 255 })
+  @Column({ type: "varchar", length: 255, nullable: true })
   file_url!: string;
 
   @Column({ type: "varchar", length: 255 })
@@ -30,6 +30,9 @@ export class Asset {
   @ManyToOne(() => Category)
   @JoinColumn({ name: "category" })
   category!: Category;
+
+  @Column({ type: "int", default: 0 })
+  size!: number;
 
   @Column({ type: "decimal", precision: 10, scale: 2 })
   price!: number ;

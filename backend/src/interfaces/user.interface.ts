@@ -3,6 +3,7 @@ export interface IUser {
   email?: string;
   password?: string;
   name?: string;
+  role?: "creator";
 }
 export interface IUserAdmin {
   email?: string;

@@ -2,22 +2,21 @@ import { AppDataSource } from "../database/db";
 import { Repository } from "typeorm";
 import { AuthRequest } from "interfaces/auth.interface";
 import { HttpError } from "../error/HttpError";
-import { CustomAsset } from "../entities/customasset.entities";
 import { Ticket } from "../entities/ticket.entities";
+import { Transaction } from "../entities/transaction.entities";
 
 export class TicketService {
   private ticketRepository: Repository<Ticket>;
-  private customAssetRepository: Repository<CustomAsset>;
-
+  private transactionRepository: Repository<Transaction>; 
   constructor() {
     this.ticketRepository = AppDataSource.getRepository(Ticket);
-    this.customAssetRepository = AppDataSource.getRepository(CustomAsset);
+    this.transactionRepository = AppDataSource.getRepository(Transaction);
   }
 
   // Create a new ticket
   async createTicket(
     req: AuthRequest,
-    customAssetId?: string
+    transactionId?: string
   ): Promise<Ticket> {
   
     if (!req.user) {
@@ -29,14 +28,14 @@ export class TicketService {
     ticket.name = req.body.name
     ticket.description = req.body.description
 
-    if (customAssetId) {
-      const customAsset = await this.customAssetRepository.findOne({
-        where: { id: customAssetId },
+    if (transactionId) {
+      const transaction = await this.transactionRepository.findOne({
+        where: { id: transactionId },
       });
-      if (!customAsset) {
+      if (!transaction) {
         throw new HttpError( "Custom asset not found", 404);
       }
-      ticket.custom_asset = customAsset;
+      ticket.transaction = transaction;
     }
 
     return await this.ticketRepository.save(ticket);
@@ -77,12 +76,14 @@ async getTicketById(id: string, req: AuthRequest): Promise<Ticket> {
     if (req.user && req.user.role === "admin"){
       return await this.ticketRepository.find({
         where: { opened_by: { id: req.user.id } },
-        relations: ["opened_by", "custom_asset"],
+        relations: ["opened_by", "transaction"],
       });
     }
     return await this.ticketRepository.find({
       where: { opened_by: { id: req.user.id } },
-      relations: ["opened_by", "custom_asset"],
+      relations: ["opened_by", "transaction"],
+        order: { created_at: "DESC" },
+
     });
   }
 
@@ -94,7 +95,7 @@ async getTicketById(id: string, req: AuthRequest): Promise<Ticket> {
     }
     return await this.ticketRepository.find({
       where: query,
-      relations: ["opened_by", "custom_asset"],
+      relations: ["opened_by", "transaction"],
     });
   }
 

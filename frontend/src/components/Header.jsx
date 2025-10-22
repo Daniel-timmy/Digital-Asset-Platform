@@ -15,8 +15,10 @@ import {
 import { useCart } from "../context/CartContext";
 
 const navigation = [
-  { name: "HOME", href: "/" },
-  { name: "PRODUCTS", href: "/stock" },
+  { name: "DESIGNS", href: "/stock" },
+  { name: "CATEGORIES", href: "/categories" },
+  { name: "ABOUT", href: "/#about" },
+  { name: "CONTACT", href: "/#contact" },
 ];
 
 function classNames(...classes) {
@@ -101,15 +103,15 @@ export default function Header() {
   }, []);
 
   return (
-    <nav className="bg-white shadow-md sticky top-0 z-50">
+    <nav className="bg-white/95 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-100">
       <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
-        <div className="relative flex h-16 items-center justify-between">
+        <div className="relative flex h-20 items-center justify-between">
           {/* Mobile menu button (left) */}
           <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
             <button
               onClick={() => setMobileMenuOpen(true)}
               aria-label="Open menu"
-              className="inline-flex items-center justify-center rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-black focus:outline-none focus:ring-2 focus:ring-black"
+              className="inline-flex items-center justify-center rounded-lg p-2.5 text-gray-700 hover:bg-gray-100 hover:text-black focus:outline-none focus:ring-2 focus:ring-black transition-all duration-200"
             >
               <Bars3Icon className="h-6 w-6" />
             </button>
@@ -118,13 +120,13 @@ export default function Header() {
           {/* Logo + Desktop nav */}
           <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
             <div className="flex shrink-0 items-center">
-              <Link to="/" onClick={() => setMobileMenuOpen(false)}>
-                <img alt="BASELINKS" src={logo} className="h-8 w-auto" />
+              <Link to="/" onClick={() => setMobileMenuOpen(false)} className="hover:opacity-80 transition-opacity">
+                <img alt="BASELINKS" src={logo} className="h-10 w-auto" />
               </Link>
             </div>
 
             {/* Desktop nav */}
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-6">
+            <div className="hidden sm:ml-8 sm:flex sm:space-x-1">
               {navigation.map((item) => {
                 const isActive = location.pathname === item.href;
                 return (
@@ -133,59 +135,15 @@ export default function Header() {
                     to={item.href}
                     className={classNames(
                       isActive
-                        ? "text-black border-b-2 border-black"
-                        : "text-gray-600 hover:text-black hover:border-b-2 hover:border-black",
-                      "px-3 py-2 text-sm font-medium transition-all duration-200"
+                        ? "text-black bg-gray-100"
+                        : "text-gray-700 hover:text-black hover:bg-gray-50",
+                      "px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200"
                     )}
                   >
                     {item.name}
                   </Link>
                 );
               })}
-
-              {/* SERVICES dropdown (desktop) */}
-              <div className="relative" ref={servicesRef}>
-                <button
-                  onClick={toggleDesktopServices}
-                  aria-expanded={desktopServicesOpen}
-                  className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium transition"
-                >
-                  SERVICES
-                </button>
-
-                {desktopServicesOpen && (
-                  <div className="absolute left-0 mt-2 w-56 bg-white border rounded-lg shadow-lg z-50">
-                    <Link
-                      to="/photography"
-                      onClick={() => setDesktopServicesOpen(false)}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Photography and video editing
-                    </Link>
-                    <Link
-                      to="/branding"
-                      onClick={() => setDesktopServicesOpen(false)}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Design and branding
-                    </Link>
-                    <Link
-                      to="/webdev"
-                      onClick={() => setDesktopServicesOpen(false)}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Website and development
-                    </Link>
-                    <Link
-                      to="/socialmedia"
-                      onClick={() => setDesktopServicesOpen(false)}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Social media
-                    </Link>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
 
@@ -197,11 +155,11 @@ export default function Header() {
             {/* Cart */}
             <Link
               to="/cart"
-              className="relative rounded-full bg-gray-100 p-2 text-gray-600 hover:text-black hover:bg-gray-200 focus:ring-2 focus:ring-black"
+              className="relative rounded-xl bg-gray-100 p-2.5 text-gray-700 hover:text-black hover:bg-gray-200 focus:ring-2 focus:ring-black transition-all duration-200 hover:scale-105"
             >
               <ShoppingCartIcon className="h-6 w-6" />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 w-4 rounded-full bg-red-600 text-white text-xs">
+                <span className="absolute -top-1 -right-1 flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-white text-xs font-bold shadow-lg animate-pulse">
                   {cartCount}
                 </span>
               )}
@@ -210,7 +168,7 @@ export default function Header() {
             {/* Notifications */}
             <button
               type="button"
-              className="ml-3 relative rounded-full bg-gray-100 p-2 text-gray-600 hover:text-black hover:bg-gray-200 focus:ring-2 focus:ring-black"
+              className="ml-3 relative rounded-xl bg-gray-100 p-2.5 text-gray-700 hover:text-black hover:bg-gray-200 focus:ring-2 focus:ring-black transition-all duration-200 hover:scale-105"
               aria-label="Notifications"
             >
               <BellIcon className="h-6 w-6" />
@@ -221,17 +179,17 @@ export default function Header() {
               <button
                 onClick={toggleUser}
                 aria-expanded={userOpen}
-                className="flex items-center rounded-full bg-gray-100 p-2 text-gray-600 hover:text-black hover:bg-gray-200 focus:ring-2 focus:ring-black"
+                className="flex items-center rounded-xl bg-gray-100 p-2.5 text-gray-700 hover:text-black hover:bg-gray-200 focus:ring-2 focus:ring-black transition-all duration-200 hover:scale-105"
               >
                 <UserIcon className="h-6 w-6" />
               </button>
 
               {userOpen && (
-                <div className="absolute right-0 mt-2 w-44 bg-white border rounded-md shadow-lg z-50 py-2">
+                <div className="absolute right-0 mt-3 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-50 py-2 animate-fade-in">
                   {!isAuthorized ? (
                     <Link
                       to="/login"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="block px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg mx-2 transition-colors"
                       onClick={() => setUserOpen(false)}
                     >
                       Login / Signup
@@ -240,14 +198,14 @@ export default function Header() {
                     <>
                       <Link
                         to="/dashboard"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        className="block px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg mx-2 transition-colors"
                         onClick={() => setUserOpen(false)}
                       >
                         Dashboard
                       </Link>
                       <Link
                         to="/logout"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        className="block px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg mx-2 transition-colors"
                         onClick={() => setUserOpen(false)}
                       >
                         Logout
@@ -264,25 +222,25 @@ export default function Header() {
       {/* Mobile sidebar */}
       <div
         ref={mobileMenuRef}
-        className={`fixed inset-y-0 left-0 w-64 bg-white shadow-lg z-50 p-4 overflow-y-auto transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 w-72 bg-white shadow-2xl z-50 p-6 overflow-y-auto transform transition-transform duration-300 ease-in-out ${
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-8">
           <Link to="/" onClick={() => setMobileMenuOpen(false)}>
-            <img src={logo} alt="BASELINKS" className="h-8 w-auto" />
+            <img src={logo} alt="BASELINKS" className="h-10 w-auto" />
           </Link>
           <button
             onClick={() => setMobileMenuOpen(false)}
             aria-label="Close menu"
-            className="p-2 text-gray-600 hover:bg-gray-100 rounded-md"
+            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <XMarkIcon className="h-6 w-6" />
+            <XMarkIcon className="h-7 w-7" />
           </button>
         </div>
 
         {/* Mobile nav links */}
-        <div className="space-y-2">
+        <div className="space-y-1">
           {navigation.map((item) => {
             const isActive = location.pathname === item.href;
             return (
@@ -292,9 +250,9 @@ export default function Header() {
                 onClick={() => setMobileMenuOpen(false)}
                 className={classNames(
                   isActive
-                    ? "text-black bg-gray-100"
-                    : "text-gray-600 hover:text-black hover:bg-gray-50",
-                  "block rounded-md px-3 py-2 text-base font-medium"
+                    ? "text-black bg-gray-100 font-semibold"
+                    : "text-gray-700 hover:text-black hover:bg-gray-50",
+                  "block rounded-xl px-4 py-3 text-base font-medium transition-all duration-200"
                 )}
               >
                 {item.name}
@@ -303,40 +261,40 @@ export default function Header() {
           })}
 
           {/* Mobile services accordion */}
-          <div>
+          <div className="mt-2">
             <button
               onClick={toggleMobileServices}
-              className="w-full text-left block rounded-md px-3 py-2 text-base text-gray-600 hover:text-black hover:bg-gray-50"
+              className="w-full text-left block rounded-xl px-4 py-3 text-base font-medium text-gray-700 hover:text-black hover:bg-gray-50 transition-all duration-200"
             >
               Services
             </button>
 
             {mobileServicesOpen && (
-              <div className="mt-1 space-y-1 pl-4">
+              <div className="mt-1 space-y-1 pl-4 animate-fade-in">
                 <Link
                   to="/photography"
-                  className="block px-3 py-1 text-sm text-gray-600 hover:text-black hover:bg-gray-100"
+                  className="block px-4 py-2 text-sm text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Photography and video editing
                 </Link>
                 <Link
                   to="/branding"
-                  className="block px-3 py-1 text-sm text-gray-600 hover:text-black hover:bg-gray-100"
+                  className="block px-4 py-2 text-sm text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Design and branding
                 </Link>
                 <Link
                   to="/webdev"
-                  className="block px-3 py-1 text-sm text-gray-600 hover:text-black hover:bg-gray-100"
+                  className="block px-4 py-2 text-sm text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Website and development
                 </Link>
                 <Link
                   to="/socialmedia"
-                  className="block px-3 py-1 text-sm text-gray-600 hover:text-black hover:bg-gray-100"
+                  className="block px-4 py-2 text-sm text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Social media
@@ -346,12 +304,12 @@ export default function Header() {
           </div>
 
           {/* Login/Signup (mobile) */}
-          <div className="mt-6 border-t pt-4">
+          <div className="mt-8 pt-6 border-t border-gray-200">
             {!isAuthorized ? (
               <Link
                 to="/login"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block w-full text-center bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800"
+                className="block w-full text-center bg-black text-white px-4 py-3 rounded-xl hover:bg-gray-800 font-semibold transition-colors shadow-md"
               >
                 Login / Signup
               </Link>
@@ -360,14 +318,14 @@ export default function Header() {
                 <Link
                   to="/dashboard"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block w-full text-left px-3 py-2 text-gray-600 hover:text-black hover:bg-gray-50 rounded-md"
+                  className="block w-full text-left px-4 py-3 text-gray-700 hover:text-black hover:bg-gray-50 rounded-xl font-medium transition-colors mb-2"
                 >
                   Dashboard
                 </Link>
                 <Link
                   to="/logout"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block w-full text-left px-3 py-2 text-gray-600 hover:text-black hover:bg-gray-50 rounded-md"
+                  className="block w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl font-medium transition-colors"
                 >
                   Logout
                 </Link>

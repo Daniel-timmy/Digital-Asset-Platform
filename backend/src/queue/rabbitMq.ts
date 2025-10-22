@@ -1,32 +1,12 @@
-// import { connect, Connection, Channel } from 'amqplib';
-// import * as amqp from 'amqplib';
-// import { RABBITMQ_URL } from '../config/env';
-
-// let connection: Connection;
-// let channel: Channel;
-
-// const QUEUE_NAME = 'email_queue';
-
-// export const initRabbitMQ = async () => {
-//   if (RABBITMQ_URL === undefined) {
-//     throw new Error('RABBITMQ_URL is not defined in environment variables');
-//   }
-//   connection = await amqp.connect(RABBITMQ_URL);
-//   channel = await connection.createChannel();
-//   await channel.assertQueue(QUEUE_NAME, { durable: true });
-
-//   console.log('RabbitMQ connection ready');
-// };
-
-// export const getChannel = (): Channel => {
-//   if (!channel) throw new Error('RabbitMQ channel not initialized');
-//   return channel;
-// };
-
-// export const getQueueName = () => QUEUE_NAME;
-
 import * as amqp from 'amqplib';
 import { Channel, ChannelModel } from 'amqplib';
+import sendEmail from '../utils/sendEmail';
+import { LicenseService } from '../services/license.service';
+import { AssetService } from '../services/asset.service';
+import uploadImage from '../utils/imageVercel';
+import { ASSET_QUEUE, EMAIL_QUEUE } from '../config/env';
+import { redisClient } from "../database/redis_cache";
+
 
 interface RabbitMQConfig {
   url: string;
@@ -55,7 +35,11 @@ class RabbitMQService {
       }
       
       this.channel = await this.connection.createChannel();
-      await this.channel.assertQueue('email_queue', { durable: true });
+      if (!ASSET_QUEUE) throw new Error("Asset queue environment variable not set")
+      if (!EMAIL_QUEUE) throw new Error("Email queue environment variable not set")
+
+      await this.channel.assertQueue(ASSET_QUEUE, { durable: true });
+      await this.channel.assertQueue(EMAIL_QUEUE, { durable: true });
       
     } catch (error) {
       console.error('RabbitMQ connection error:', error);
@@ -74,22 +58,152 @@ class RabbitMQService {
     console.log(`Queue ${queue} is ready. Max messages: ${q.messageCount}`);
   }
 
-  async publish(queue: string, message: any): Promise<boolean> {
+  async publish(queue: string, content: Buffer, ): Promise<boolean> {
     if (!this.channel) {
       throw new Error('RabbitMQ channel not initialized. Call connect() first.');
     }
-
-    const content = Buffer.from(JSON.stringify(message));
+    if (!content || !Buffer.isBuffer(content)){
+      throw new Error('Invalid content format')
+    }
+    // const content = Buffer.from(JSON.stringify(message));
     
     return this.channel.sendToQueue(queue, content, {
       persistent: true
     });
   }
 
+  async publishImages(queue: string, content: Buffer ): Promise<boolean> {
+    if (!this.channel) {
+      throw new Error('RabbitMQ channel not initialized. Call connect() first.');
+    }
+    if (!content || !Buffer.isBuffer(content)){
+      throw new Error('Invalid content format')
+    }
+    
+    return this.channel.sendToQueue(queue, content, {
+      persistent: true,
+     
+    });
+  }
+  // async publishImages(queue: string, content: Buffer, headers: any, correlationId: string ): Promise<boolean> {
+  //   if (!this.channel) {
+  //     throw new Error('RabbitMQ channel not initialized. Call connect() first.');
+  //   }
+  //   if (!content || !Buffer.isBuffer(content)){
+  //     throw new Error('Invalid content format')
+  //   }
+    
+  //   return this.channel.sendToQueue(queue, content, {
+  //     persistent: true,
+  //     correlationId,
+  //     headers
+  //   });
+  // }
+
+
   getQueueName(): string {
     return 'email_queue';
   }
 
+
+
+async consumerLicenseCreator(queue: string, assetObj: AssetService, licenseObj: LicenseService): Promise<void> {
+  if (!this.channel) throw new Error('RabbitMQ channel not initialized');
+
+  await this.channel.consume(
+    queue,
+    async (msg) => {
+      if (!msg) return;
+      const nullIndex = msg.content.indexOf(0);
+      const headerStr = msg.content.slice(0, nullIndex).toString();
+      const data = msg.content.slice(nullIndex + 1);
+
+      const { files, assetId } = JSON.parse(headerStr);
+      let offset = 0;
+      const original = data.slice(offset, offset + files[0].size);
+      offset += files[0].size;
+      const thumbnail = data.slice(offset, offset + files[1].size);
+
+      try {
+        // 1. Upload
+        const blob = await uploadImage(files[0].filename, original, 'asset');
+        const tblob = await uploadImage(files[1].filename, thumbnail, 'asset');
+
+        const savedAsset = await assetObj.findOne(assetId);
+        if (!savedAsset) throw new Error('Invalid asset ID');
+
+        savedAsset.thumbnail_url = tblob.url;
+        if (savedAsset.license === 'free') {
+          savedAsset.file_url = blob.downloadUrl;
+        } else {
+          await licenseObj.create({
+            asset: savedAsset,
+            downloadUrl: blob.downloadUrl,
+          });
+        }
+
+        await assetObj.save(savedAsset);
+        this.channel!.ack(msg);
+      } catch (err) {
+        console.error('Processing failed:', err);
+        this.channel!.nack(msg, false, false); // don't requeue forever
+      }
+    },
+    { noAck: false }
+  );
+}
+// async consumerLicenseCreator(queue: string, assetObj: AssetService, licenseObj: LicenseService): Promise<void> {
+//   if (!this.channel) throw new Error('RabbitMQ channel not initialized');
+
+//   await this.channel.consume(
+//     queue,
+//     async (msg) => {
+//       if (!msg) return;
+
+//       const buffer = msg.content;
+//       const headers = msg.properties.headers;
+//       const {
+//         type,          // 'file' | 'thumbnail'
+//         assetId,
+//         correlationId,
+//         filename,
+//       } = headers as {
+//         type: 'file' | 'thumbnail';
+//         assetId: string;
+//         correlationId: string;
+//         filename: string;
+//       };
+
+//       try {
+//         // 1. Upload
+//         const blob = await uploadImage(filename, buffer, 'asset');
+
+//         const savedAsset = await assetObj.findOne(assetId);
+//         if (!savedAsset) throw new Error('Invalid asset ID');
+
+//         if (type === "thumbnail"){
+//           savedAsset.thumbnail_url = blob.url;
+//         } else{
+//           if (savedAsset.license === 'free') {
+//             savedAsset.file_url = blob.downloadUrl;
+//           } else {
+//             await licenseObj.create({
+//               asset: savedAsset,
+//               downloadUrl: blob.downloadUrl,
+//             });
+//           }
+//         }
+
+//         await assetObj.save(savedAsset);
+//         this.channel!.ack(msg);
+//       } catch (err) {
+//         console.error('Processing failed:', err);
+//         this.channel!.nack(msg, false, false); // don't requeue forever
+//       }
+//     },
+//     { noAck: false }
+//   );
+// }
   async consume(queue: string, sendEmail: Function): Promise<void> {
     if (!this.channel) {
       throw new Error('RabbitMQ channel not initialized');
@@ -99,11 +213,8 @@ class RabbitMQService {
       try {
         if (msg) {
           const content = JSON.parse(msg.content.toString());
-          console.log('Received message:', content);
-          
           // Process message
           sendEmail(content.to, content.subject, content.text);
-          
           // Acknowledge message
           this.channel!.ack(msg);
         }
@@ -134,5 +245,26 @@ class RabbitMQService {
 const rabbitMq = new RabbitMQService({
   url: process.env.RABBITMQ_URL || 'amqp://localhost'
 });
+
+export const initializeQueues = async () => {
+  await rabbitMq.connect()
+
+  if (EMAIL_QUEUE){
+    await rabbitMq.consume(EMAIL_QUEUE, (to: string, subject: string, text: string) => {
+         sendEmail(to, subject, text);
+       });
+  } else {
+    throw new Error("Email queue environment variable is not set")
+  }
+
+  if (ASSET_QUEUE) {
+    const assetObj = new AssetService();
+    const licenseObj = new LicenseService();
+    await rabbitMq.consumerLicenseCreator(ASSET_QUEUE, assetObj, licenseObj)
+  } else {
+    throw new Error("Asset queue environment variable is not set")
+
+  }
+}
 
 export default rabbitMq;

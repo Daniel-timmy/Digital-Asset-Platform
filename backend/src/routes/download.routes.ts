@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authentication, isAdmin } from "../middlewares/auth.middleware";
+import { authentication, isAdmin, isCreatorOrAdmin } from "../middlewares/auth.middleware";
 import { DownloadService } from "../services/download.service";
 import { DownloadController } from "../controllers/download.controller";
 
@@ -22,8 +22,8 @@ downloadRouter.put("/:id", authentication, isAdmin, async (req, res, next) => {
   await downloadController.update(req, res, next);
 });
 
-downloadRouter.get("/s/count", authentication, async (req, res, next) => {
-  await downloadController.count(req, res, next);
+downloadRouter.get("/s/count", authentication, isCreatorOrAdmin, async (req, res, next) => {
+  await downloadController.totalSales(req, res, next);
 });
 
 downloadRouter.delete("/:id", authentication, isAdmin, async (req, res, next) => {

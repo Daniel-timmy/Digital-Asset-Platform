@@ -12,6 +12,9 @@ authRouter.post("/register", async (req, res, next) => {
 authRouter.post("/register-admin", async (req, res, next) => {
 		await authController.registerAdmin(req, res, next);
 });
+authRouter.post("/creator", async (req, res, next) => {
+		await authController.registerCreator(req, res, next);
+});
 
 authRouter.post("/verify", async (req, res, next) => {
 		await authController.verify(req, res, next);

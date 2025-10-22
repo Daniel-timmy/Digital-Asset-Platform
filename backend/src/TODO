@@ -1,4 +1,4 @@
-Rework the asset routes to cater for creators
-Rework the customassets routes to cater for creators
+
 Rework the messages routes to cater for creators
 Rework the tickets routes to cater for creators
+make sure the download url for free is instantly available and create a license(which controls the download url) and licensetype to and also control the acces on vercel if it is paid

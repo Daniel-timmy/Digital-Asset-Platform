@@ -126,6 +126,46 @@ export class AuthController {
       return next(error);
     }
   }
+  async registerCreator(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+    try {
+      logger.info(`Initiating email verification for user with email: ${req.body.email}`);
+      const {name, email, password} = req.body;
+      const userData: IUser = {name, email, password, role: 'creator'}
+
+      if (!userData.name || !userData.email || !userData.password) {
+        logger.warn(`Email verification failed: Missing required parameters for email ${req.body.email}`);
+        throw new HttpError("Missing required parameter", 400);
+      }
+
+      const existingUser = await this.userService.findByEmail(userData.email);
+      if (existingUser) {
+        logger.warn(`Email verification failed: User with email ${userData.email} already exists`);
+        throw new HttpError("User with email already exists", 409);
+      }
+
+      const code: string = generateVerificationCode()
+      await (await redisClient).set(
+        code,
+        JSON.stringify({ user: userData }),
+        {
+          EX: 3600,
+          NX: true,
+        }
+      );
+      logger.info(`Stored verification code in Redis for email: ${userData.email}`);
+      
+      await sendVerificationEmail(userData.email, code);
+      logger.info(`Sent verification email to: ${userData.email}`);
+
+      return res.status(201).json({
+        success: true,
+        message: 'Code sent to users email',
+      });
+    } catch (error) {
+      logger.error(`Error during email verification for email ${req.body.email || 'unknown'}: ${error}`);
+      return next(error);
+    }
+  }
 
   async verify(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
@@ -262,7 +302,7 @@ export class AuthController {
     try {
       const { email, password } = req.body;
       logger.info(`Login attempt for email: ${email}`);
-
+      
       const isValidEmail = /\S+@\S+\.\S+/.test(email);
       if (!email || !isValidEmail) {
         logger.warn(`Login failed: Invalid email format for email ${email}`);
@@ -282,7 +322,7 @@ export class AuthController {
           },
         });
       }
-
+      console.log(user);
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
         logger.warn(`Login failed: Invalid password for email ${email}`);
@@ -296,6 +336,7 @@ export class AuthController {
           },
         });
       }
+      console.log(`Login attempt for PASSWORD: ${password}`);
 
       const access = jwt.sign(
         { userId: user.id, email: user.email },

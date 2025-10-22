@@ -10,20 +10,20 @@ export class TicketController {
   // Create a new ticket
   async createTicket(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      logger.info(`Creating new ticket for user: ${req.user?.id || 'unknown'}, customAssetId: ${req.body.custom_asset}`);
-      const { custom_asset } = req.body;
+      logger.info(`Creating new ticket for user: ${req.user?.id || 'unknown'}, transactionId: ${req.body.transaction || 'none'}`);
+      const { transaction } = req.body;
 
       if (!req.user) {
         logger.warn(`Ticket creation failed: User not authenticated`);
         throw new HttpError("User not authenticated", 401);
       }
 
-      if (!custom_asset) {
+      if (!transaction) {
         logger.warn(`Ticket creation failed: Missing customAssetId for user: ${req.user.id}`);
         throw new HttpError("Custom asset ID required", 400);
       }
 
-      const ticket = await this.ticketService.createTicket(req, custom_asset);
+      const ticket = await this.ticketService.createTicket(req, transaction);
       logger.info(`Successfully created ticket with ID: ${ticket.id} for user: ${req.user.id}`);
       res.status(201).json({ message: "Ticket created successfully", data: ticket });
     } catch (error) {

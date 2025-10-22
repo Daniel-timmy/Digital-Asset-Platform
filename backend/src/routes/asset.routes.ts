@@ -10,6 +10,7 @@ const storage = multer.memoryStorage();
 // Accept any file type for both 'file' and 'thumbnail'
 const upload = multer({
   storage,
+  // No fileFilter needed, accepts all types including figma, psd, svg, gif, png, jpeg, jpg, pdf
 });
 
 const assetRouter = Router();

@@ -49,6 +49,7 @@ const ProtectedCreatorRoutes = ({ children }) => {
     if (!user) {
       return <Navigate to="/login" />;
     }
+    console.log(user.role);
     if (user.role !== "creator") {
       return <Navigate to="/login" />;
     }

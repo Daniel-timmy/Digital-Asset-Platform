@@ -33,7 +33,6 @@ export class TransactionService {
 
   async findOne(id: string): Promise<Transaction | null> {
     return await this.transactionRepository.createQueryBuilder("transaction")
-      .leftJoinAndSelect("transaction.custom_asset", "asset")
       .where("transaction.id = :id", { id })
       .getOne();
   }

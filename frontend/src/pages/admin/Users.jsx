@@ -1,7 +1,33 @@
 import React, { useState, useEffect } from "react";
-import { FaEdit } from "react-icons/fa";
+import {
+  PencilSquareIcon,
+  MagnifyingGlassIcon,
+  UsersIcon,
+  XMarkIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  XCircleIcon,
+} from "@heroicons/react/24/outline";
 import api from "../../utils/api";
 import LoadingIndicator from "../../components/LoadingIndicator";
+
+const getStatusConfig = (status) => {
+  const configs = {
+    active: {
+      color: "text-emerald-600 bg-emerald-50",
+      icon: <CheckCircleIcon className="w-4 h-4" />,
+    },
+    pending: {
+      color: "text-amber-600 bg-amber-50",
+      icon: <ClockIcon className="w-4 h-4" />,
+    },
+    inactive: {
+      color: "text-red-600 bg-red-50",
+      icon: <XCircleIcon className="w-4 h-4" />,
+    },
+  };
+  return configs[status] || configs.inactive;
+};
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -17,7 +43,6 @@ const Users = () => {
   });
   const [error, setError] = useState("");
 
-  // Fetch users on component mount
   useEffect(() => {
     const getUsers = async () => {
       setLoading(true);
@@ -37,7 +62,6 @@ const Users = () => {
     getUsers();
   }, []);
 
-  // Handle search filtering
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
@@ -53,7 +77,6 @@ const Users = () => {
     }
   };
 
-  // Open modal with user data
   const openEditModal = (user) => {
     setEditingUser(user.id);
     setFormData({
@@ -65,16 +88,13 @@ const Users = () => {
     setError("");
   };
 
-  // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle form submission with API call
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Basic validation
     if (!formData.name.trim() || !formData.email.trim()) {
       setError("Name and Email are required.");
       return;
@@ -85,10 +105,8 @@ const Users = () => {
     }
 
     try {
-      // Make API call to update user
       const res = await api.put(`/users/${editingUser}`, formData);
       console.log(res.data);
-      // Update the users state with the updated user data
       setUsers((prev) =>
         prev.map((user) =>
           user.id === editingUser
@@ -103,7 +121,7 @@ const Users = () => {
             : user
         )
       );
-      setEditingUser(null); // Close modal
+      setEditingUser(null);
       setError("");
     } catch (error) {
       console.error("Error updating user:", error);
@@ -114,7 +132,6 @@ const Users = () => {
     }
   };
 
-  // Close modal
   const closeModal = () => {
     setEditingUser(null);
     setError("");
@@ -122,179 +139,240 @@ const Users = () => {
   };
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">
-        All Registered Users
-      </h2>
-      {/* Search Input */}
-      <div className="mb-6">
-        <input
-          type="text"
-          className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-          placeholder="Search by name or email..."
-          value={searchQuery}
-          onChange={handleSearch}
-          aria-label="Search users by name or email"
-        />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="animate-fade-in">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg">
+            <UsersIcon className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">
+              User Management
+            </h2>
+            <p className="text-gray-500 text-sm mt-1">
+              View and manage all registered users
+            </p>
+          </div>
+        </div>
       </div>
+
+      {/* Search Bar */}
+      <div className="animate-fade-in" style={{ animationDelay: "100ms" }}>
+        <div className="relative max-w-md">
+          <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all shadow-sm"
+            placeholder="Search by name or email..."
+            value={searchQuery}
+            onChange={handleSearch}
+          />
+        </div>
+      </div>
+
       {/* Users Table */}
-      <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <table className="min-w-full text-sm text-left text-gray-800">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="px-4 py-3 font-semibold">Name</th>
-              <th className="px-4 py-3 font-semibold">Email</th>
-              <th className="px-4 py-3 font-semibold">Role</th>
-              <th className="px-4 py-3 font-semibold">Status</th>
-              <th className="px-4 py-3 font-semibold">Created At</th>
-              <th className="px-4 py-3 font-semibold">Actions</th>
-            </tr>
-          </thead>
-          {loading ? (
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden animate-fade-in" style={{ animationDelay: "200ms" }}>
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
             <LoadingIndicator />
-          ) : (
-            <tbody>
-              {users.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="6"
-                    className="px-4 py-3 text-center text-gray-600"
-                  >
-                    No users found.
-                  </td>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Email
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Role
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Joined
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
-              ) : (
-                users.map((user) => (
-                  <tr
-                    key={user.id}
-                    className="border-t hover:bg-gray-50 transition"
-                  >
-                    <td className="px-4 py-3">{user.name}</td>
-                    <td className="px-4 py-3">{user.email}</td>
-                    <td className="px-4 py-3">{user.role}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`px-2 py-1 text-xs rounded-full ${
-                          user.status === "active"
-                            ? "bg-green-100 text-green-700"
-                            : user.status === "pending"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {user.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {user.created_at
-                        ? new Date(user.created_at).toLocaleString("en-US", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            hour12: true,
-                          })
-                        : "N/A"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => openEditModal(user)}
-                        className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                        aria-label={`Edit user ${user.name}`}
-                      >
-                        <FaEdit /> Edit
-                      </button>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {users.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan="6"
+                      className="px-6 py-12 text-center text-gray-500"
+                    >
+                      No users found
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          )}
-        </table>
+                ) : (
+                  users.map((user) => {
+                    const statusConfig = getStatusConfig(user.status);
+                    return (
+                      <tr
+                        key={user.id}
+                        className="hover:bg-gray-50 transition-colors duration-200"
+                      >
+                        <td className="px-6 py-4">
+                          <span className="text-sm font-medium text-gray-900">
+                            {user.name}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-gray-600">
+                            {user.email}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm font-medium text-gray-900 capitalize">
+                            {user.role}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${statusConfig.color}`}
+                          >
+                            {statusConfig.icon}
+                            {user.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                          {user.created_at
+                            ? new Date(user.created_at).toLocaleString(
+                                "en-US",
+                                {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                }
+                              )
+                            : "N/A"}
+                        </td>
+                        <td className="px-6 py-4">
+                          <button
+                            onClick={() => openEditModal(user)}
+                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-300 text-sm font-medium shadow-md hover:shadow-lg"
+                          >
+                            <PencilSquareIcon className="w-4 h-4" />
+                            Edit
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Edit Modal */}
       {editingUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">
-              Edit User
-            </h3>
-            {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Role
-                </label>
-                <select
-                  name="role"
-                  value={formData.role}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                >
-                  <option value="consumer">Consumer</option>
-                  <option value="creator">Creator</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status
-                </label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                >
-                  <option value="active">Active</option>
-                  <option value="pending">Pending</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 rounded-md"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm bg-black text-white rounded-md hover:bg-gray-800 transition"
-                >
-                  Save
-                </button>
-              </div>
-            </form>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-4 rounded-t-2xl flex items-center justify-between">
+              <h3 className="text-xl font-bold">Edit User</h3>
+              <button
+                onClick={closeModal}
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              {error && (
+                <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
+                  <p className="text-red-800 text-sm">{error}</p>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Role
+                  </label>
+                  <select
+                    name="role"
+                    value={formData.role}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  >
+                    <option value="consumer">Consumer</option>
+                    <option value="creator">Creator</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Status
+                  </label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  >
+                    <option value="active">Active</option>
+                    <option value="pending">Pending</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="submit"
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl"
+                  >
+                    Save Changes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-300 font-medium"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

@@ -25,3 +25,5 @@ export const GOOGLE_MAIL_PASSWORD = process.env.GOOGLE_MAIL_PASSWORD;
 export const GOOGLE_MAIL_USER = process.env.GOOGLE_MAIL_USER;
 export const REDIS_URL = process.env.REDIS_URL
 export const RABBITMQ_URL = process.env.RABBITMQ_URL
+export const ASSET_QUEUE = process.env.ASSET_QUEUE
+export const EMAIL_QUEUE = process.env.EMAIL_QUEUE

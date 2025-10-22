@@ -2,6 +2,14 @@ import React, { useState, useEffect } from "react";
 import Select from "react-select";
 import api from "../../utils/api";
 import LoadingIndicator from "../../components/LoadingIndicator";
+import {
+  CloudArrowUpIcon,
+  PhotoIcon,
+  DocumentIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  PlusCircleIcon,
+} from "@heroicons/react/24/outline";
 
 const UploadProduct = () => {
   const [loading, setLoading] = useState(false);
@@ -24,7 +32,6 @@ const UploadProduct = () => {
   const [apiError, setApiError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  // New form state for creating tag/category
   const [newItemForm, setNewItemForm] = useState({
     type: "tag",
     name: "",
@@ -32,7 +39,6 @@ const UploadProduct = () => {
   const [newItemErrors, setNewItemErrors] = useState({});
   const [newItemSuccessMessage, setNewItemSuccessMessage] = useState("");
 
-  // Static file type options
   const fileTypeOptions = [
     { value: "image", label: "Image" },
     { value: "vector", label: "Vector" },
@@ -40,17 +46,14 @@ const UploadProduct = () => {
     { value: "video", label: "Video" },
   ];
 
-  // Options for tag/category creation type
   const itemTypeOptions = [
     { value: "tag", label: "Tag" },
     { value: "category", label: "Category" },
   ];
 
-  // Fetch tags and categories or load from localStorage
   useEffect(() => {
     const getTagsandCategories = async () => {
       try {
-        // Check localStorage for cached data
         const cachedTags = localStorage.getItem("tags");
         const cachedCategories = localStorage.getItem("categories");
 
@@ -60,7 +63,6 @@ const UploadProduct = () => {
           return;
         }
 
-        // Fetch tags if not cached
         if (!cachedTags) {
           const tagRes = await api.get("/tags");
           const tags = (tagRes.data || []).map((tag) => ({
@@ -71,7 +73,6 @@ const UploadProduct = () => {
           localStorage.setItem("tags", JSON.stringify(tags));
         }
 
-        // Fetch categories if not cached
         if (!cachedCategories) {
           const catRes = await api.get("/category");
           const categories = (catRes.data || []).map((category) => ({
@@ -89,21 +90,18 @@ const UploadProduct = () => {
     getTagsandCategories();
   }, []);
 
-  // Handle input changes for product form
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  // Determine file type based on MIME type
   const determineFileType = (mimeType) => {
     if (mimeType.startsWith("image/")) return "image";
     if (mimeType.startsWith("video/")) return "video";
     return "";
   };
 
-  // Handle file input
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -117,7 +115,6 @@ const UploadProduct = () => {
     setErrors((prev) => ({ ...prev, file: "" }));
   };
 
-  // Handle select changes for product form
   const handleSelectChange = (name) => (selected) => {
     setFormData((prev) => ({
       ...prev,
@@ -126,7 +123,6 @@ const UploadProduct = () => {
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  // Handle multi-select for tags
   const handleTagsChange = (selected) => {
     setFormData((prev) => ({
       ...prev,
@@ -135,14 +131,12 @@ const UploadProduct = () => {
     setErrors((prev) => ({ ...prev, tags: "" }));
   };
 
-  // Handle input changes for new tag/category form
   const handleNewItemInputChange = (e) => {
     const { name, value } = e.target;
     setNewItemForm((prev) => ({ ...prev, [name]: value }));
     setNewItemErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  // Handle select changes for new tag/category form
   const handleNewItemTypeChange = (selected) => {
     setNewItemForm((prev) => ({
       ...prev,
@@ -151,7 +145,6 @@ const UploadProduct = () => {
     setNewItemErrors((prev) => ({ ...prev, type: "" }));
   };
 
-  // Handle thumbnail input
   const handleThumbnailChange = (e) => {
     const file = e.target.files[0];
     let error = "";
@@ -185,7 +178,6 @@ const UploadProduct = () => {
     }
   };
 
-  // Validate and submit product form
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
@@ -213,7 +205,6 @@ const UploadProduct = () => {
     setSuccessMessage("");
 
     try {
-      // Step 1: Submit to backend with files as multipart/form-data
       const formDataToSend = new FormData();
       formDataToSend.append("name", formData.name);
       formDataToSend.append("description", formData.description);
@@ -232,7 +223,6 @@ const UploadProduct = () => {
 
       console.log("Product uploaded:", res.data);
 
-      // Reset form after successful submission
       setFormData({
         name: "",
         description: "",
@@ -259,7 +249,6 @@ const UploadProduct = () => {
     }
   };
 
-  // Validate and submit new tag/category form
   const handleNewItemSubmit = async (e) => {
     e.preventDefault();
     setTagLoading(true);
@@ -280,7 +269,6 @@ const UploadProduct = () => {
       const res = await api.post(endpoint, { name: newItemForm.name });
       const newItem = res.data.data || res.data;
 
-      // Update state and localStorage
       if (newItemForm.type === "tag") {
         const newTag = { value: newItem.id, label: newItem.name };
         const updatedTags = [...tagOptions, newTag];
@@ -293,7 +281,6 @@ const UploadProduct = () => {
         localStorage.setItem("categories", JSON.stringify(updatedCategories));
       }
 
-      // Reset form after successful submission
       setNewItemForm({ type: "tag", name: "" });
       setNewItemErrors({});
       setApiError("");
@@ -316,335 +303,359 @@ const UploadProduct = () => {
   };
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">
-        Upload New Product
-      </h2>
-      {apiError && <p className="text-red-500 text-sm mb-4">{apiError}</p>}
-      {successMessage && (
-        <p className="text-green-500 text-sm mb-4">{successMessage}</p>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="animate-fade-in">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg">
+            <CloudArrowUpIcon className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">
+              Upload New Product
+            </h2>
+            <p className="text-gray-500 text-sm mt-1">
+              Add digital products to the marketplace
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Messages */}
+      {apiError && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg animate-fade-in">
+          <div className="flex items-start gap-3">
+            <XCircleIcon className="w-5 h-5 text-red-500 mt-0.5" />
+            <p className="text-red-800 text-sm">{apiError}</p>
+          </div>
+        </div>
       )}
+      {successMessage && (
+        <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg animate-fade-in">
+          <div className="flex items-start gap-3">
+            <CheckCircleIcon className="w-5 h-5 text-green-500 mt-0.5" />
+            <p className="text-green-800 text-sm">{successMessage}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Form */}
       <form
         onSubmit={handleSubmit}
-        className="space-y-6 bg-white p-6 rounded-lg shadow-md max-w-xl mb-8"
+        className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 space-y-6 animate-fade-in"
+        style={{ animationDelay: "100ms" }}
       >
-        {/* Product Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Product Name
-          </label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleInputChange}
-            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${
-              errors.name ? "border-red-500" : "border-gray-300"
-            }`}
-            placeholder="Product Name"
-            aria-invalid={errors.name ? "true" : "false"}
-            aria-describedby={errors.name ? "name-error" : undefined}
-          />
-          {errors.name && (
-            <p id="name-error" className="text-red-500 text-sm mt-1">
-              {errors.name}
-            </p>
-          )}
-        </div>
-
-        {/* Description */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Description
-          </label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${
-              errors.description ? "border-red-500" : "border-gray-300"
-            }`}
-            rows="4"
-            placeholder="Description"
-            aria-invalid={errors.description ? "true" : "false"}
-            aria-describedby={
-              errors.description ? "description-error" : undefined
-            }
-          />
-          {errors.description && (
-            <p id="description-error" className="text-red-500 text-sm mt-1">
-              {errors.description}
-            </p>
-          )}
-        </div>
-
-        {/* File Type */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            File Type
-          </label>
-          <Select
-            options={fileTypeOptions}
-            value={fileTypeOptions.find(
-              (option) => option.value === formData.file_type
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="md:col-span-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Product Name
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                errors.name ? "border-red-500" : "border-gray-200"
+              }`}
+              placeholder="Enter product name"
+            />
+            {errors.name && (
+              <p className="text-red-500 text-sm mt-1">{errors.name}</p>
             )}
-            onChange={handleSelectChange("file_type")}
-            className={`w-full ${errors.file_type ? "border-red-500" : ""}`}
-            placeholder="Select File Type"
-            aria-invalid={errors.file_type ? "true" : "false"}
-            aria-describedby={errors.file_type ? "file_type-error" : undefined}
-          />
-          {errors.file_type && (
-            <p id="file_type-error" className="text-red-500 text-sm mt-1">
-              {errors.file_type}
-            </p>
-          )}
-        </div>
+          </div>
 
-        {/* Category */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Category
-          </label>
-          <Select
-            options={categoryOptions}
-            value={categoryOptions.find(
-              (option) => option.value === formData.category
+          <div className="md:col-span-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Description
+            </label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none ${
+                errors.description ? "border-red-500" : "border-gray-200"
+              }`}
+              rows="4"
+              placeholder="Describe the product"
+            />
+            {errors.description && (
+              <p className="text-red-500 text-sm mt-1">{errors.description}</p>
             )}
-            onChange={handleSelectChange("category")}
-            className={`w-full ${errors.category ? "border-red-500" : ""}`}
-            placeholder="Select Category"
-            aria-invalid={errors.category ? "true" : "false"}
-            aria-describedby={errors.category ? "category-error" : undefined}
-          />
-          {errors.category && (
-            <p id="category-error" className="text-red-500 text-sm mt-1">
-              {errors.category}
-            </p>
-          )}
-        </div>
+          </div>
 
-        {/* Price */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Price (₦)
-          </label>
-          <input
-            type="number"
-            name="price"
-            value={formData.price}
-            onChange={handleInputChange}
-            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${
-              errors.price ? "border-red-500" : "border-gray-300"
-            }`}
-            placeholder="Price (₦)"
-            min="0"
-            step="0.01"
-            aria-invalid={errors.price ? "true" : "false"}
-            aria-describedby={errors.price ? "price-error" : undefined}
-          />
-          {errors.price && (
-            <p id="price-error" className="text-red-500 text-sm mt-1">
-              {errors.price}
-            </p>
-          )}
-        </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              File Type
+            </label>
+            <Select
+              options={fileTypeOptions}
+              value={fileTypeOptions.find(
+                (option) => option.value === formData.file_type
+              )}
+              onChange={handleSelectChange("file_type")}
+              className={errors.file_type ? "border-red-500" : ""}
+              placeholder="Select file type"
+            />
+            {errors.file_type && (
+              <p className="text-red-500 text-sm mt-1">{errors.file_type}</p>
+            )}
+          </div>
 
-        {/* Main File Upload */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Main File Upload
-          </label>
-          <input
-            type="file"
-            name="file"
-            onChange={handleFileChange}
-            className={`w-full ${errors.file ? "border-red-500" : ""}`}
-            accept="image/jpeg,image/png,image/webp,image/gif,video/mp4"
-            aria-invalid={errors.file ? "true" : "false"}
-            aria-describedby={errors.file ? "file-error" : undefined}
-          />
-          {formData.file && (
-            <div className="text-sm text-gray-600 mt-1">
-              <p>Selected: {formData.file.name}</p>
-              <div className="mt-2">
-                {formData.file.type.startsWith("image/") ? (
-                  <img
-                    src={URL.createObjectURL(formData.file)}
-                    alt="Preview"
-                    className="w-32 h-32 object-cover rounded-md"
-                  />
-                ) : formData.file.type.startsWith("video/") ? (
-                  <video
-                    src={URL.createObjectURL(formData.file)}
-                    controls
-                    className="w-32 h-32 object-cover rounded-md"
-                  >
-                    Your browser does not support the video tag.
-                  </video>
-                ) : null}
-              </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Category
+            </label>
+            <Select
+              options={categoryOptions}
+              value={categoryOptions.find(
+                (option) => option.value === formData.category
+              )}
+              onChange={handleSelectChange("category")}
+              className={errors.category ? "border-red-500" : ""}
+              placeholder="Select category"
+            />
+            {errors.category && (
+              <p className="text-red-500 text-sm mt-1">{errors.category}</p>
+            )}
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Price (₦)
+            </label>
+            <input
+              type="number"
+              name="price"
+              value={formData.price}
+              onChange={handleInputChange}
+              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                errors.price ? "border-red-500" : "border-gray-200"
+              }`}
+              placeholder="0.00"
+              min="0"
+              step="0.01"
+            />
+            {errors.price && (
+              <p className="text-red-500 text-sm mt-1">{errors.price}</p>
+            )}
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Main File Upload
+            </label>
+            <div className="relative">
+              <input
+                type="file"
+                name="file"
+                onChange={handleFileChange}
+                className="hidden"
+                id="file-upload"
+                accept="image/jpeg,image/png,image/webp,image/gif,video/mp4"
+              />
+              <label
+                htmlFor="file-upload"
+                className="flex items-center justify-center gap-3 w-full px-6 py-8 bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl hover:bg-gray-100 hover:border-gray-400 transition-all cursor-pointer"
+              >
+                <DocumentIcon className="w-8 h-8 text-gray-400" />
+                <div className="text-center">
+                  <p className="text-sm font-medium text-gray-700">
+                    {formData.file
+                      ? formData.file.name
+                      : "Click to upload file"}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    PNG, JPG, MP4 up to 10MB
+                  </p>
+                </div>
+              </label>
             </div>
-          )}
-          {errors.file && (
-            <p id="file-error" className="text-red-500 text-sm mt-1">
-              {errors.file}
-            </p>
-          )}
-        </div>
+            {formData.file && formData.file.type.startsWith("image/") && (
+              <div className="mt-4">
+                <img
+                  src={URL.createObjectURL(formData.file)}
+                  alt="Preview"
+                  className="w-32 h-32 object-cover rounded-lg"
+                />
+              </div>
+            )}
+            {errors.file && (
+              <p className="text-red-500 text-sm mt-1">{errors.file}</p>
+            )}
+          </div>
 
-        {/* Thumbnail Upload */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Thumbnail (Image ≤2MB or Video ≤5MB)
-          </label>
-          <input
-            type="file"
-            name="thumbnail"
-            onChange={handleThumbnailChange}
-            className={`w-full ${errors.thumbnail ? "border-red-500" : ""}`}
-            accept="image/jpeg,image/png,image/webp,image/gif,video/mp4"
-            aria-invalid={errors.thumbnail ? "true" : "false"}
-            aria-describedby={errors.thumbnail ? "thumbnail-error" : undefined}
-          />
-          {formData.thumbnail && (
-            <div className="text-sm text-gray-600 mt-1">
-              <p>Selected: {formData.thumbnail.name}</p>
-              <div className="mt-2">
+          <div className="md:col-span-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Thumbnail (Image ≤2MB or Video ≤5MB)
+            </label>
+            <div className="relative">
+              <input
+                type="file"
+                name="thumbnail"
+                onChange={handleThumbnailChange}
+                className="hidden"
+                id="thumbnail-upload"
+                accept="image/jpeg,image/png,image/webp,image/gif,video/mp4"
+              />
+              <label
+                htmlFor="thumbnail-upload"
+                className="flex items-center justify-center gap-3 w-full px-6 py-8 bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl hover:bg-gray-100 hover:border-gray-400 transition-all cursor-pointer"
+              >
+                <PhotoIcon className="w-8 h-8 text-gray-400" />
+                <div className="text-center">
+                  <p className="text-sm font-medium text-gray-700">
+                    {formData.thumbnail
+                      ? formData.thumbnail.name
+                      : "Click to upload thumbnail"}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Image or Video for preview
+                  </p>
+                </div>
+              </label>
+            </div>
+            {formData.thumbnail && (
+              <div className="mt-4">
                 {formData.thumbnail.type.startsWith("image/") ? (
                   <img
                     src={URL.createObjectURL(formData.thumbnail)}
                     alt="Thumbnail Preview"
-                    className="w-32 h-32 object-cover rounded-md"
+                    className="w-32 h-32 object-cover rounded-lg"
                   />
                 ) : formData.thumbnail.type.startsWith("video/") ? (
                   <video
                     src={URL.createObjectURL(formData.thumbnail)}
                     controls
-                    className="w-32 h-32 object-cover rounded-md"
-                  >
-                    Your browser does not support the video tag.
-                  </video>
+                    className="w-32 h-32 object-cover rounded-lg"
+                  />
                 ) : null}
               </div>
+            )}
+            {errors.thumbnail && (
+              <p className="text-red-500 text-sm mt-1">{errors.thumbnail}</p>
+            )}
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Tags
+            </label>
+            <Select
+              isMulti
+              options={tagOptions}
+              value={tagOptions.filter((option) =>
+                formData.tags.includes(option.value)
+              )}
+              onChange={handleTagsChange}
+              className={errors.tags ? "border-red-500" : ""}
+              placeholder="Select tags"
+            />
+            {errors.tags && (
+              <p className="text-red-500 text-sm mt-1">{errors.tags}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="pt-6 border-t border-gray-200">
+          {loading ? (
+            <LoadingIndicator />
+          ) : (
+            <button
+              type="submit"
+              className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+            >
+              <CloudArrowUpIcon className="w-5 h-5" />
+              Upload Product
+            </button>
+          )}
+        </div>
+      </form>
+
+      {/* Create Tag/Category Form */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 animate-fade-in" style={{ animationDelay: "200ms" }}>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-3 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl shadow-lg">
+            <PlusCircleIcon className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Create New Tag or Category
+            </h2>
+            <p className="text-gray-500 text-sm mt-1">
+              Add new tags or categories for products
+            </p>
+          </div>
+        </div>
+
+        {newItemSuccessMessage && (
+          <div className="mb-4 p-4 bg-green-50 border-l-4 border-green-500 rounded-lg">
+            <div className="flex items-start gap-3">
+              <CheckCircleIcon className="w-5 h-5 text-green-500 mt-0.5" />
+              <p className="text-green-800 text-sm">{newItemSuccessMessage}</p>
             </div>
-          )}
-          {errors.thumbnail && (
-            <p id="thumbnail-error" className="text-red-500 text-sm mt-1">
-              {errors.thumbnail}
-            </p>
-          )}
-        </div>
-
-        {/* Tags */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Tags
-          </label>
-          <Select
-            isMulti
-            options={tagOptions}
-            value={tagOptions.filter((option) =>
-              formData.tags.includes(option.value)
-            )}
-            onChange={handleTagsChange}
-            className={`w-full ${errors.tags ? "border-red-500" : ""}`}
-            placeholder="Select Tags"
-            aria-invalid={errors.tags ? "true" : "false"}
-            aria-describedby={errors.tags ? "tags-error" : undefined}
-          />
-          {errors.tags && (
-            <p id="tags-error" className="text-red-500 text-sm mt-1">
-              {errors.tags}
-            </p>
-          )}
-        </div>
-
-        {/* Submit Button */}
-        {loading ? (
-          <LoadingIndicator />
-        ) : (
-          <button
-            type="submit"
-            className="px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition"
-          >
-            Upload
-          </button>
+          </div>
         )}
-      </form>
 
-      {/* New Tag/Category Form */}
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">
-        Create New Tag or Category
-      </h2>
-      {newItemSuccessMessage && (
-        <p className="text-green-500 text-sm mb-4">{newItemSuccessMessage}</p>
-      )}
-      <form
-        onSubmit={handleNewItemSubmit}
-        className="space-y-6 bg-white p-6 rounded-lg shadow-md max-w-xl"
-      >
-        {/* Item Type */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Type
-          </label>
-          <Select
-            options={itemTypeOptions}
-            value={itemTypeOptions.find(
-              (option) => option.value === newItemForm.type
+        <form onSubmit={handleNewItemSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Type
+              </label>
+              <Select
+                options={itemTypeOptions}
+                value={itemTypeOptions.find(
+                  (option) => option.value === newItemForm.type
+                )}
+                onChange={handleNewItemTypeChange}
+                className={newItemErrors.type ? "border-red-500" : ""}
+                placeholder="Select type"
+              />
+              {newItemErrors.type && (
+                <p className="text-red-500 text-sm mt-1">
+                  {newItemErrors.type}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Name
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={newItemForm.name}
+                onChange={handleNewItemInputChange}
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all ${
+                  newItemErrors.name ? "border-red-500" : "border-gray-200"
+                }`}
+                placeholder={`Enter ${newItemForm.type} name`}
+              />
+              {newItemErrors.name && (
+                <p className="text-red-500 text-sm mt-1">
+                  {newItemErrors.name}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="pt-4">
+            {tagLoading ? (
+              <LoadingIndicator />
+            ) : (
+              <button
+                type="submit"
+                className="w-full px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-xl hover:from-emerald-600 hover:to-green-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+              >
+                <PlusCircleIcon className="w-5 h-5" />
+                Create {newItemForm.type === "tag" ? "Tag" : "Category"}
+              </button>
             )}
-            onChange={handleNewItemTypeChange}
-            className={`w-full ${newItemErrors.type ? "border-red-500" : ""}`}
-            placeholder="Select Type"
-            aria-invalid={newItemErrors.type ? "true" : "false"}
-            aria-describedby={newItemErrors.type ? "type-error" : undefined}
-          />
-          {newItemErrors.type && (
-            <p id="type-error" className="text-red-500 text-sm mt-1">
-              {newItemErrors.type}
-            </p>
-          )}
-        </div>
-
-        {/* Item Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Name
-          </label>
-          <input
-            type="text"
-            name="name"
-            value={newItemForm.name}
-            onChange={handleNewItemInputChange}
-            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${
-              newItemErrors.name ? "border-red-500" : "border-gray-300"
-            }`}
-            placeholder={`Enter ${newItemForm.type} name`}
-            aria-invalid={newItemErrors.name ? "true" : "false"}
-            aria-describedby={
-              newItemErrors.name ? "item-name-error" : undefined
-            }
-          />
-          {newItemErrors.name && (
-            <p id="item-name-error" className="text-red-500 text-sm mt-1">
-              {newItemErrors.name}
-            </p>
-          )}
-        </div>
-
-        {/* Submit Button */}
-        {tagLoading ? (
-          <LoadingIndicator />
-        ) : (
-          <button
-            type="submit"
-            className="px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition"
-          >
-            Create
-          </button>
-        )}
-      </form>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

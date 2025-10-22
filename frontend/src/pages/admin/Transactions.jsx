@@ -1,6 +1,34 @@
 import React, { useState, useEffect, useRef } from "react";
 import api from "../../utils/api";
 import LoadingIndicator from "../../components/LoadingIndicator";
+import {
+  MagnifyingGlassIcon,
+  TrashIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  XCircleIcon,
+  ExclamationTriangleIcon,
+} from "@heroicons/react/24/outline";
+
+const getStatusConfig = (status) => {
+  const configs = {
+    completed: {
+      color: "text-emerald-600 bg-emerald-50",
+      icon: <CheckCircleIcon className="w-4 h-4" />,
+    },
+    pending: {
+      color: "text-amber-600 bg-amber-50",
+      icon: <ClockIcon className="w-4 h-4" />,
+    },
+    failed: {
+      color: "text-red-600 bg-red-50",
+      icon: <XCircleIcon className="w-4 h-4" />,
+    },
+  };
+  return (
+    configs[status] || { color: "text-gray-600 bg-gray-50", icon: null }
+  );
+};
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
@@ -9,18 +37,17 @@ const Transactions = () => {
   const [selectedIds, setSelectedIds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [page, setPage] = useState(1); // Changed from offset to page for clarity
+  const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(15);
-  const [totalPages, setTotalPages] = useState(1); // Track total pages
-  const observer = useRef(null); // Ref for Intersection Observer
-  const loadMoreRef = useRef(null); // Ref for the sentinel element
+  const [totalPages, setTotalPages] = useState(1);
+  const observer = useRef(null);
+  const loadMoreRef = useRef(null);
 
   const getTransactions = async (pageNum = 1, append = false) => {
     if (pageNum > totalPages && append) return;
     setLoading(true);
     setError(null);
     try {
-      console.log("Fetching transactions...");
       const res = await api.get(`/transactions?page=${page}&limit=${limit}`);
       const txns = res.data.results || [];
       const newTotalPages = res.data.totalPages || 1;
@@ -59,12 +86,10 @@ const Transactions = () => {
     };
   }, [loading, page, totalPages]);
 
-  // Fetch transactions
   useEffect(() => {
     getTransactions(page, page > 1);
   }, [page]);
 
-  // Handle search filtering
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
@@ -80,7 +105,6 @@ const Transactions = () => {
     }
   };
 
-  // Handle checkbox selection for batch delete
   const handleSelectTransaction = (id) => {
     setSelectedIds((prev) =>
       prev.includes(id)
@@ -89,20 +113,17 @@ const Transactions = () => {
     );
   };
 
-  // Handle single transaction deletion
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this transaction?"))
       return;
     setLoading(true);
     setError(null);
     try {
-      console.log(`Deleting transaction with ID: ${id}`);
       await api.delete(`/transactions/${id}`);
       const updatedTransactions = transactions.filter((txn) => txn.id !== id);
       setTransactions(updatedTransactions);
       setInitialTransactions(updatedTransactions);
       setSelectedIds((prev) => prev.filter((selectedId) => selectedId !== id));
-      console.log(`Successfully deleted transaction with ID: ${id}`);
     } catch (error) {
       console.error(`Error deleting transaction with ID: ${id}`, error);
       setError("Failed to delete transaction. Please try again.");
@@ -111,7 +132,6 @@ const Transactions = () => {
     }
   };
 
-  // Handle batch deletion
   const handleBatchDelete = async () => {
     if (selectedIds.length === 0) {
       setError("Please select at least one transaction to delete.");
@@ -126,9 +146,6 @@ const Transactions = () => {
     setLoading(true);
     setError(null);
     try {
-      console.log(
-        `Batch deleting transactions with IDs: ${selectedIds.join(", ")}`
-      );
       await api.post("/transactions/batch-delete", { ids: selectedIds });
       const updatedTransactions = transactions.filter(
         (txn) => !selectedIds.includes(txn.id)
@@ -136,9 +153,6 @@ const Transactions = () => {
       setTransactions(updatedTransactions);
       setInitialTransactions(updatedTransactions);
       setSelectedIds([]);
-      console.log(
-        `Successfully batch deleted ${selectedIds.length} transactions`
-      );
     } catch (error) {
       console.error(`Error batch deleting transactions:`, error);
       setError("Failed to batch delete transactions. Please try again.");
@@ -148,165 +162,208 @@ const Transactions = () => {
   };
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">Transactions</h2>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="animate-fade-in">
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">
+          All Transactions
+        </h2>
+        <p className="text-gray-500">
+          Monitor and manage all platform transactions
+        </p>
+      </div>
 
       {/* Error Message */}
       {error && (
-        <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
-          {error}
-          <button
-            className="ml-4 text-sm underline"
-            onClick={() => setError(null)}
-            aria-label="Dismiss error"
-          >
-            Dismiss
-          </button>
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg animate-fade-in">
+          <div className="flex items-start">
+            <ExclamationTriangleIcon className="w-5 h-5 text-red-500 mt-0.5 mr-3" />
+            <div className="flex-1">
+              <p className="text-sm text-red-800">{error}</p>
+              <button
+                className="mt-2 text-sm text-red-600 hover:text-red-700 underline"
+                onClick={() => setError(null)}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Search Input and Batch Delete Button */}
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <input
-          type="text"
-          className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black mb-4 sm:mb-0"
-          placeholder="Search by user name or asset ID..."
-          value={searchQuery}
-          onChange={handleSearch}
-          aria-label="Search transactions by user name or asset ID"
-          disabled={loading}
-        />
+      {/* Search and Actions */}
+      <div className="flex flex-col sm:flex-row gap-4 animate-fade-in" style={{ animationDelay: "100ms" }}>
+        <div className="relative flex-1 max-w-md">
+          <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all shadow-sm"
+            placeholder="Search by user name or asset ID..."
+            value={searchQuery}
+            onChange={handleSearch}
+            disabled={loading}
+          />
+        </div>
         <button
-          className={`px-4 py-2 rounded-md text-white ${
+          className={`px-6 py-3 rounded-xl text-white font-medium transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl ${
             selectedIds.length === 0 || loading
               ? "bg-gray-400 cursor-not-allowed"
-              : "bg-red-600 hover:bg-red-700"
+              : "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
           }`}
           onClick={handleBatchDelete}
           disabled={selectedIds.length === 0 || loading}
-          aria-label="Delete selected transactions"
         >
+          <TrashIcon className="w-5 h-5" />
           Delete Selected ({selectedIds.length})
         </button>
       </div>
 
       {/* Transactions Table */}
-      <div className="bg-white rounded-lg shadow overflow-x-auto">
-        {loading ? (
-          <LoadingIndicator />
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden animate-fade-in" style={{ animationDelay: "200ms" }}>
+        {loading && transactions.length === 0 ? (
+          <div className="flex justify-center items-center h-64">
+            <LoadingIndicator />
+          </div>
         ) : (
-          <table className="min-w-full text-sm text-left text-gray-800">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-4 py-3">
-                  <input
-                    type="checkbox"
-                    checked={
-                      selectedIds.length === transactions.length &&
-                      transactions.length > 0
-                    }
-                    onChange={() =>
-                      setSelectedIds(
-                        selectedIds.length === transactions.length
-                          ? []
-                          : transactions.map((txn) => txn.id)
-                      )
-                    }
-                    disabled={loading || transactions.length === 0}
-                    aria-label="Select all transactions"
-                  />
-                </th>
-                <th className="px-4 py-3 font-semibold">ID</th>
-                <th className="px-4 py-3 font-semibold">User Name</th>
-                <th className="px-4 py-3 font-semibold">Custom Asset ID</th>
-                <th className="px-4 py-3 font-semibold">Amount (₦)</th>
-                <th className="px-4 py-3 font-semibold">Payment Status</th>
-                <th className="px-4 py-3 font-semibold">Created At</th>
-                <th className="px-4 py-3 font-semibold">Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {transactions.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="8"
-                    className="px-4 py-3 text-center text-gray-600"
-                  >
-                    No transactions found.
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                  <th className="px-6 py-4">
+                    <input
+                      type="checkbox"
+                      checked={
+                        selectedIds.length === transactions.length &&
+                        transactions.length > 0
+                      }
+                      onChange={() =>
+                        setSelectedIds(
+                          selectedIds.length === transactions.length
+                            ? []
+                            : transactions.map((txn) => txn.id)
+                        )
+                      }
+                      disabled={loading || transactions.length === 0}
+                      className="w-4 h-4 rounded border-gray-300 text-black focus:ring-black"
+                    />
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Transaction ID
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    User
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Asset ID
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
-              ) : (
-                transactions.map((txn) => (
-                  <tr
-                    key={txn.id}
-                    className="border-t hover:bg-gray-50 transition"
-                  >
-                    <td className="px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.includes(txn.id)}
-                        onChange={() => handleSelectTransaction(txn.id)}
-                        disabled={loading}
-                        aria-label={`Select transaction ${txn.id}`}
-                      />
-                    </td>
-                    <td className="px-4 py-3">{txn.id}</td>
-                    <td className="px-4 py-3">{txn?.user?.name || "N/A"}</td>
-                    <td className="px-4 py-3">
-                      {txn?.custom_asset?.id || "N/A"}
-                    </td>
-                    <td className="px-4 py-3">
-                      {txn.amount.toLocaleString("en-NG", {
-                        style: "currency",
-                        currency: "NGN",
-                      })}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`px-2 py-1 text-xs rounded-full ${
-                          txn.payment_status === "completed"
-                            ? "bg-green-100 text-green-700"
-                            : txn.payment_status === "pending"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {txn.payment_status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {new Date(txn.created_at).toLocaleString("en-US", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      })}
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        className={`px-3 py-1 text-sm text-white rounded-md ${
-                          loading
-                            ? "bg-gray-400 cursor-not-allowed"
-                            : "bg-red-600 hover:bg-red-700"
-                        }`}
-                        onClick={() => handleDelete(txn.id)}
-                        disabled={loading}
-                        aria-label={`Delete transaction ${txn.id}`}
-                      >
-                        Delete
-                      </button>
+              </thead>
+
+              <tbody className="divide-y divide-gray-100">
+                {transactions.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan="8"
+                      className="px-6 py-12 text-center text-gray-500"
+                    >
+                      No transactions found
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  transactions.map((txn) => {
+                    const statusConfig = getStatusConfig(txn.payment_status);
+                    return (
+                      <tr
+                        key={txn.id}
+                        className="hover:bg-gray-50 transition-colors duration-200"
+                      >
+                        <td className="px-6 py-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(txn.id)}
+                            onChange={() => handleSelectTransaction(txn.id)}
+                            disabled={loading}
+                            className="w-4 h-4 rounded border-gray-300 text-black focus:ring-black"
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="font-mono text-sm text-gray-600">
+                            {txn.id.slice(0, 8)}...
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm font-medium text-gray-900">
+                            {txn?.user?.name || "N/A"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-gray-600">
+                            {txn?.custom_asset?.id?.slice(0, 8) || "N/A"}...
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm font-semibold text-emerald-600">
+                            {txn.amount.toLocaleString("en-NG", {
+                              style: "currency",
+                              currency: "NGN",
+                            })}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${statusConfig.color}`}
+                          >
+                            {statusConfig.icon}
+                            {txn.payment_status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                          {new Date(txn.created_at).toLocaleString("en-US", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
+                        </td>
+                        <td className="px-6 py-4">
+                          <button
+                            className={`px-4 py-2 rounded-lg text-white text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
+                              loading
+                                ? "bg-gray-400 cursor-not-allowed"
+                                : "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-md hover:shadow-lg"
+                            }`}
+                            onClick={() => handleDelete(txn.id)}
+                            disabled={loading}
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {page < totalPages && (
+          <div ref={loadMoreRef} className="h-16 flex justify-center items-center border-t border-gray-100">
+            {loading && <LoadingIndicator />}
+          </div>
         )}
       </div>
-      {page < totalPages && (
-        <div ref={loadMoreRef} className="h-10">
-          <LoadingIndicator />
-        </div>
-      )}
     </div>
   );
 };

@@ -1,15 +1,16 @@
 import React, { useEffect, useState, useRef } from "react";
 import {
-  FaBoxOpen,
-  FaUsers,
-  FaClipboardList,
-  FaMoneyBillWave,
-  FaTrash,
-  FaEdit,
-} from "react-icons/fa";
+  CubeIcon,
+  PencilSquareIcon,
+  TrashIcon,
+  XMarkIcon,
+  CurrencyDollarIcon,
+  ArrowPathIcon,
+} from "@heroicons/react/24/outline";
 import Select from "react-select";
 import api from "../../utils/api";
 import LoadingIndicator from "../../components/LoadingIndicator";
+import { USER } from "../../utils/constants";
 
 const AssetCard = ({ asset, onDelete, onUpdate }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -20,50 +21,81 @@ const AssetCard = ({ asset, onDelete, onUpdate }) => {
     try {
       await onDelete(asset.id, setIsLoading);
     } catch (error) {
-      setIsLoading(false); // Ensure loading stops on error
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-md flex flex-col gap-4 relative">
+    <div className="group bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] relative">
       {isLoading ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80">
+        <div className="absolute inset-0 flex items-center justify-center bg-white/90 backdrop-blur-sm z-10">
           <LoadingIndicator />
         </div>
       ) : (
         <>
           {asset.file_type === "image" && asset.thumbnail_url && (
-            <img
-              src={asset.thumbnail_url}
-              alt={asset.name}
-              className="w-full h-40 object-cover rounded-md"
-            />
+            <div className="relative h-48 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
+              <img
+                src={asset.thumbnail_url}
+                alt={asset.name}
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            </div>
           )}
-          <div>
-            <h3 className="text-lg font-bold">{asset.name}</h3>
-            <p className="text-sm text-gray-500">{asset.description}</p>
-            <p className="text-sm">Type: {asset.file_type}</p>
-            <p className="text-sm">Category: {asset.category.name}</p>
-            <p className="text-sm">
-              Price: ₦{asset.price.toLocaleString("en-NG")}
+          <div className="p-6 space-y-3">
+            <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+              {asset.name}
+            </h3>
+            <p className="text-sm text-gray-600 line-clamp-2">
+              {asset.description}
             </p>
-            <p className="text-sm">Tags: {tagNames || "None"}</p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={handleDeleteClick}
-              className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-400"
-              disabled={isLoading}
-            >
-              <FaTrash />
-            </button>
-            <button
-              onClick={() => onUpdate(asset)}
-              className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
-              disabled={isLoading}
-            >
-              <FaEdit />
-            </button>
+            
+            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
+              <div>
+                <p className="text-xs text-gray-500">Type</p>
+                <p className="text-sm font-semibold text-gray-900 capitalize">
+                  {asset.file_type}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Category</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {asset.category.name}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Price</p>
+                <p className="text-sm font-semibold text-emerald-600">
+                  ₦{asset.price.toLocaleString("en-NG")}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Tags</p>
+                <p className="text-sm font-semibold text-gray-900 line-clamp-1">
+                  {tagNames || "None"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-3">
+              <button
+                onClick={handleDeleteClick}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-300 text-sm font-medium shadow-md hover:shadow-lg"
+                disabled={isLoading}
+              >
+                <TrashIcon className="w-4 h-4" />
+                Delete
+              </button>
+              <button
+                onClick={() => onUpdate(asset)}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 text-sm font-medium shadow-md hover:shadow-lg"
+                disabled={isLoading}
+              >
+                <PencilSquareIcon className="w-4 h-4" />
+                Edit
+              </button>
+            </div>
           </div>
         </>
       )}
@@ -84,12 +116,12 @@ const UpdateAssetModal = ({
     description: asset.description || "",
     file_url: asset.file_url || "",
     file_type: asset.file_type || "",
-    category: asset.category?.id || "", // Use category ID
+    category: asset.category?.id || "",
     price: asset.price || "",
     file: null,
-    tags: asset.tags.map((tag) => tag.id) || [], // Use tag IDs
-    thumbnail: null, // <-- new: selected thumbnail file
-    thumbnail_url: asset.thumbnail_url || "", // <-- new: existing thumbnail url
+    tags: asset.tags.map((tag) => tag.id) || [],
+    thumbnail: null,
+    thumbnail_url: asset.thumbnail_url || "",
   });
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
@@ -108,7 +140,6 @@ const UpdateAssetModal = ({
     setErrors((prev) => ({ ...prev, file: "" }));
   };
 
-  // New handler for thumbnail input (validation similar to UploadProduct)
   const handleThumbnailChange = (e) => {
     const file = e.target.files[0];
     let error = "";
@@ -174,7 +205,6 @@ const UpdateAssetModal = ({
 
     setIsLoading(true);
     try {
-      // Build form data to send to backend
       const formDataToSend = new FormData();
       formDataToSend.append("name", formData.name);
       formDataToSend.append("description", formData.description);
@@ -182,11 +212,9 @@ const UpdateAssetModal = ({
       formDataToSend.append("category", formData.category);
       formDataToSend.append("price", formData.price);
       formDataToSend.append("tagsId", JSON.stringify(formData.tags));
-      // Only append file if changed
       if (formData.file) {
         formDataToSend.append("file", formData.file);
       }
-      // Only append thumbnail if changed
       if (formData.thumbnail) {
         formDataToSend.append("thumbnail", formData.thumbnail);
       }
@@ -213,265 +241,234 @@ const UpdateAssetModal = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg shadow-md max-w-xl w-full">
-        <h2 className="text-2xl font-bold mb-4">Update Product</h2>
-        {apiError && <p className="text-red-500 text-sm mb-4">{apiError}</p>}
-        {successMessage && (
-          <p className="text-green-500 text-sm mb-4">{successMessage}</p>
-        )}
-        {isLoading && <LoadingIndicator />}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Product Name
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${
-                errors.name ? "border-red-500" : "border-gray-300"
-              }`}
-              placeholder="Product Name"
-              aria-invalid={errors.name ? "true" : "false"}
-              aria-describedby={errors.name ? "name-error" : undefined}
-            />
-            {errors.name && (
-              <p id="name-error" className="text-red-500 text-sm mt-1">
-                {errors.name}
-              </p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${
-                errors.description ? "border-red-500" : "border-gray-300"
-              }`}
-              rows="4"
-              placeholder="Description"
-              aria-invalid={errors.description ? "true" : "false"}
-              aria-describedby={
-                errors.description ? "description-error" : undefined
-              }
-            />
-            {errors.description && (
-              <p id="description-error" className="text-red-500 text-sm mt-1">
-                {errors.description}
-              </p>
-            )}
-          </div>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-4 rounded-t-2xl flex items-center justify-between z-10">
+          <h2 className="text-2xl font-bold">Update Product</h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+          >
+            <XMarkIcon className="w-6 h-6" />
+          </button>
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              File Type
-            </label>
-            <Select
-              options={fileTypeOptions}
-              value={fileTypeOptions.find(
-                (option) => option.value === formData.file_type
+        <div className="p-6">
+          {apiError && (
+            <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
+              <p className="text-red-800 text-sm">{apiError}</p>
+            </div>
+          )}
+          {successMessage && (
+            <div className="mb-4 p-4 bg-green-50 border-l-4 border-green-500 rounded-lg">
+              <p className="text-green-800 text-sm">{successMessage}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Product Name
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                  errors.name ? "border-red-500" : "border-gray-200"
+                }`}
+                placeholder="Enter product name"
+              />
+              {errors.name && (
+                <p className="text-red-500 text-sm mt-1">{errors.name}</p>
               )}
-              onChange={handleSelectChange("file_type")}
-              className={`w-full ${errors.file_type ? "border-red-500" : ""}`}
-              placeholder="Select File Type"
-              aria-invalid={errors.file_type ? "true" : "false"}
-              aria-describedby={
-                errors.file_type ? "file_type-error" : undefined
-              }
-            />
-            {errors.file_type && (
-              <p id="file_type-error" className="text-red-500 text-sm mt-1">
-                {errors.file_type}
-              </p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Category
-            </label>
-            <Select
-              options={categoryOptions}
-              value={categoryOptions.find(
-                (option) => option.value === formData.category
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Description
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none ${
+                  errors.description ? "border-red-500" : "border-gray-200"
+                }`}
+                rows="4"
+                placeholder="Enter product description"
+              />
+              {errors.description && (
+                <p className="text-red-500 text-sm mt-1">{errors.description}</p>
               )}
-              onChange={handleSelectChange("category")}
-              className={`w-full ${errors.category ? "border-red-500" : ""}`}
-              placeholder="Select Category"
-              aria-invalid={errors.category ? "true" : "false"}
-              aria-describedby={errors.category ? "category-error" : undefined}
-            />
-            {errors.category && (
-              <p id="category-error" className="text-red-500 text-sm mt-1">
-                {errors.category}
-              </p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Price (₦)
-            </label>
-            <input
-              type="number"
-              name="price"
-              value={formData.price}
-              onChange={handleInputChange}
-              className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black ${
-                errors.price ? "border-red-500" : "border-gray-300"
-              }`}
-              placeholder="Price (₦)"
-              min="0"
-              step="0.01"
-              aria-invalid={errors.price ? "true" : "false"}
-              aria-describedby={errors.price ? "price-error" : undefined}
-            />
-            {errors.price && (
-              <p id="price-error" className="text-red-500 text-sm mt-1">
-                {errors.price}
-              </p>
-            )}
-          </div>
-          {/* File Upload (main file) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              File Upload
-            </label>
-            <input
-              type="file"
-              name="file"
-              onChange={handleFileChange}
-              className={`w-full ${errors.file ? "border-red-500" : ""}`}
-              accept="image/*,video/*,.svg,.pdf"
-              aria-invalid={errors.file ? "true" : "false"}
-              aria-describedby={errors.file ? "file-error" : undefined}
-            />
-            {formData.file && (
-              <p className="text-sm text-gray-600 mt-1">
-                Selected: {formData.file.name}
-                {formData.file_type === "image" && (
-                  <img
-                    src={URL.createObjectURL(formData.file)}
-                    alt="Preview"
-                    className="mt-2 w-32 h-32 object-cover rounded-md"
-                  />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  File Type
+                </label>
+                <Select
+                  options={fileTypeOptions}
+                  value={fileTypeOptions.find(
+                    (option) => option.value === formData.file_type
+                  )}
+                  onChange={handleSelectChange("file_type")}
+                  className={errors.file_type ? "border-red-500" : ""}
+                  placeholder="Select file type"
+                />
+                {errors.file_type && (
+                  <p className="text-red-500 text-sm mt-1">{errors.file_type}</p>
                 )}
-              </p>
-            )}
-            {errors.file && (
-              <p id="file-error" className="text-red-500 text-sm mt-1">
-                {errors.file}
-              </p>
-            )}
-          </div>
+              </div>
 
-          {/* Thumbnail Upload (new) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Thumbnail (Image ≤2MB or Video ≤5MB)
-            </label>
-            <input
-              type="file"
-              name="thumbnail"
-              onChange={handleThumbnailChange}
-              className={`w-full ${errors.thumbnail ? "border-red-500" : ""}`}
-              accept="image/*,video/*"
-              aria-invalid={errors.thumbnail ? "true" : "false"}
-              aria-describedby={
-                errors.thumbnail ? "thumbnail-error" : undefined
-              }
-            />
-            {formData.thumbnail && (
-              <div className="text-sm text-gray-600 mt-1">
-                <p>Selected: {formData.thumbnail.name}</p>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Category
+                </label>
+                <Select
+                  options={categoryOptions}
+                  value={categoryOptions.find(
+                    (option) => option.value === formData.category
+                  )}
+                  onChange={handleSelectChange("category")}
+                  className={errors.category ? "border-red-500" : ""}
+                  placeholder="Select category"
+                />
+                {errors.category && (
+                  <p className="text-red-500 text-sm mt-1">{errors.category}</p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Price (₦)
+              </label>
+              <input
+                type="number"
+                name="price"
+                value={formData.price}
+                onChange={handleInputChange}
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                  errors.price ? "border-red-500" : "border-gray-200"
+                }`}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+              />
+              {errors.price && (
+                <p className="text-red-500 text-sm mt-1">{errors.price}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                File Upload (Optional)
+              </label>
+              <input
+                type="file"
+                name="file"
+                onChange={handleFileChange}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                accept="image/*,video/*,.svg,.pdf"
+              />
+              {formData.file && (
+                <p className="text-sm text-gray-600 mt-2">
+                  Selected: {formData.file.name}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Thumbnail (Optional)
+              </label>
+              <input
+                type="file"
+                name="thumbnail"
+                onChange={handleThumbnailChange}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                accept="image/*,video/*"
+              />
+              {formData.thumbnail && (
                 <div className="mt-2">
-                  {formData.thumbnail.type.startsWith("image/") ? (
+                  <p className="text-sm text-gray-600 mb-2">
+                    Selected: {formData.thumbnail.name}
+                  </p>
+                  {formData.thumbnail.type.startsWith("image/") && (
                     <img
                       src={URL.createObjectURL(formData.thumbnail)}
                       alt="Thumbnail Preview"
-                      className="w-32 h-32 object-cover rounded-md"
+                      className="w-32 h-32 object-cover rounded-lg"
                     />
-                  ) : formData.thumbnail.type.startsWith("video/") ? (
-                    <video
-                      src={URL.createObjectURL(formData.thumbnail)}
-                      controls
-                      className="w-32 h-32 object-cover rounded-md"
-                    >
-                      Your browser does not support the video tag.
-                    </video>
-                  ) : null}
+                  )}
                 </div>
-              </div>
-            )}
-            {!formData.thumbnail && formData.thumbnail_url && (
-              <div className="text-sm text-gray-600 mt-1">
-                <p>Current thumbnail:</p>
-                {formData.thumbnail_url.endsWith(".mp4") ? (
-                  <video
-                    src={formData.thumbnail_url}
-                    controls
-                    className="w-32 h-32 object-cover rounded-md"
-                  />
-                ) : (
-                  <img
-                    src={formData.thumbnail_url}
-                    alt="Current thumbnail"
-                    className="w-32 h-32 object-cover rounded-md"
-                  />
-                )}
-              </div>
-            )}
-            {errors.thumbnail && (
-              <p id="thumbnail-error" className="text-red-500 text-sm mt-1">
-                {errors.thumbnail}
-              </p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tags
-            </label>
-            <Select
-              isMulti
-              options={tagOptions}
-              value={tagOptions.filter((option) =>
-                formData.tags.includes(option.value)
               )}
-              onChange={handleTagsChange}
-              className={`w-full ${errors.tags ? "border-red-500" : ""}`}
-              placeholder="Select Tags"
-              aria-invalid={errors.tags ? "true" : "false"}
-              aria-describedby={errors.tags ? "tags-error" : undefined}
-            />
-            {errors.tags && (
-              <p id="tags-error" className="text-red-500 text-sm mt-1">
-                {errors.tags}
-              </p>
-            )}
+              {errors.thumbnail && (
+                <p className="text-red-500 text-sm mt-1">{errors.thumbnail}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Tags
+              </label>
+              <Select
+                isMulti
+                options={tagOptions}
+                value={tagOptions.filter((option) =>
+                  formData.tags.includes(option.value)
+                )}
+                onChange={handleTagsChange}
+                className={errors.tags ? "border-red-500" : ""}
+                placeholder="Select tags"
+              />
+              {errors.tags && (
+                <p className="text-red-500 text-sm mt-1">{errors.tags}</p>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <button
+                type="submit"
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl disabled:opacity-50"
+                disabled={isLoading}
+              >
+                {isLoading ? "Updating..." : "Update Product"}
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-300 font-medium"
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const StatCard = ({ title, value, icon, gradient, delay }) => {
+  return (
+    <div
+      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradient} p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 animate-fade-in`}
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl"></div>
+      <div className="relative">
+        <div className="flex items-center justify-between mb-4">
+          <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+            {icon}
           </div>
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              className="px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition disabled:bg-gray-400"
-              disabled={isLoading}
-            >
-              {isLoading ? "Updating..." : "Update"}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition disabled:bg-gray-400"
-              disabled={isLoading}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+        </div>
+        <h3 className="text-sm font-medium text-white/80 mb-1">{title}</h3>
+        <p className="text-3xl font-bold text-white">{value}</p>
       </div>
     </div>
   );
@@ -486,13 +483,13 @@ const CreatorDashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [editingAsset, setEditingAsset] = useState(null);
   const [page, setPage] = useState(1);
-  const [limit] = useState(10); // Default limit, adjust as needed
+  const [limit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
-  const observer = useRef(null); // Ref for Intersection Observer
-  const loadMoreRef = useRef(null); // Ref for the sentinel element
+  const observer = useRef(null);
+  const loadMoreRef = useRef(null);
   const [countLoading, setCountLoading] = useState(false);
   const creator = JSON.parse(localStorage.getItem(USER) || "{}");
-  const CACHE_DURATION = 1 * 60 * 60 * 1000; // 1 hour
+  const CACHE_DURATION = 1 * 60 * 60 * 1000;
 
   const fileTypeOptions = [
     { value: "image", label: "Image" },
@@ -501,7 +498,6 @@ const CreatorDashboard = () => {
     { value: "video", label: "Video" },
   ];
 
-  // Fetch counts for assets, users, custom requests, and sales
   const fetchCounts = async () => {
     try {
       setCountLoading(true);
@@ -518,14 +514,13 @@ const CreatorDashboard = () => {
 
       const [resAset, resTran] = await Promise.all([
         api.get("/assets/s/count/"),
-
         api.get("/downloads/s/count/"),
       ]);
 
       const totalAssests =
         typeof resAset.data.count === "number" ? resAset.data.count : 0;
-
-      const sales = typeof resTran.data === "number" ? resTran.data : 0;
+      const sales =
+        typeof resTran.data.total === "number" ? resTran.data.total : 0;
 
       const newCounts = [totalAssests, sales];
       setCounts(newCounts);
@@ -539,7 +534,6 @@ const CreatorDashboard = () => {
     }
   };
 
-  // Fetch tags and categories
   const fetchTagsAndCategories = async () => {
     try {
       const cachedTags = localStorage.getItem("tags");
@@ -576,9 +570,8 @@ const CreatorDashboard = () => {
     }
   };
 
-  // Fetch assets with pagination
   const fetchAssets = async (pageNum = 1, append = false) => {
-    if (pageNum > totalPages && append) return; // Prevent fetching beyond total pages
+    if (pageNum > totalPages && append) return;
     try {
       if (pageNum === 1 && !append) {
         const cachedAssets = localStorage.getItem("assets");
@@ -594,7 +587,7 @@ const CreatorDashboard = () => {
       }
 
       const resAssets = await api.get(
-        `/assets?userId=${creator.id}page=${pageNum}&limit=${limit}`
+        `/assets?userId=${creator.id}&page=${pageNum}&limit=${limit}`
       );
       const fetchedAssets = resAssets.data.results || [];
       const newTotalPages = resAssets.data.totalPages || 1;
@@ -614,7 +607,6 @@ const CreatorDashboard = () => {
     }
   };
 
-  // Fetch all data on mount
   useEffect(() => {
     const fetchAllData = async () => {
       setIsLoading(true);
@@ -634,14 +626,12 @@ const CreatorDashboard = () => {
     fetchAllData();
   }, []);
 
-  // Fetch assets when page changes
   useEffect(() => {
     if (page > 1) {
       fetchAssets(page, true);
     }
   }, [page]);
 
-  // Set up Intersection Observer for infinite scrolling
   useEffect(() => {
     observer.current = new IntersectionObserver(
       (entries) => {
@@ -697,9 +687,8 @@ const CreatorDashboard = () => {
       setAssets(updatedAssets);
       localStorage.setItem("assets", JSON.stringify(updatedAssets));
 
-      // Update counts
       const updatedCounts = [...counts];
-      updatedCounts[0] = (updatedCounts[0] || 0) - 1; // Decrease totalAssests
+      updatedCounts[0] = (updatedCounts[0] || 0) - 1;
       setCounts(updatedCounts);
       localStorage.setItem("dashboardCounts", JSON.stringify(updatedCounts));
       localStorage.setItem("countsTimestamp", Date.now().toString());
@@ -708,7 +697,7 @@ const CreatorDashboard = () => {
     } catch (error) {
       console.error("Error deleting asset:", error);
       setApiError("Failed to delete asset. Please try again.");
-      throw error; // Re-throw to let AssetCard handle loading state
+      throw error;
     }
   };
 
@@ -723,88 +712,117 @@ const CreatorDashboard = () => {
   };
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Welcome, Admin</h2>
+    <div className="space-y-8">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-8 shadow-2xl animate-fade-in">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-blob"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
 
-      <>
-        {apiError && (
-          <div className="mb-4">
-            <p className="text-red-500 text-sm">{apiError}</p>
-            <button
-              onClick={clearCache}
-              className="mt-2 px-4 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700"
-            >
-              Retry Loading Data
-            </button>
+        <div className="relative z-10 flex items-center justify-between">
+          <div className="flex-1">
+            <h1 className="text-4xl font-bold mb-2">
+              Welcome back, {creator.name}! 👋
+            </h1>
+            <p className="text-gray-300 text-lg">
+              Manage your products and track your sales
+            </p>
           </div>
-        )}
-        <button
-          onClick={clearCache}
-          className="px-4 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 mb-4"
-        >
-          Refresh Dashboard
-        </button>
-        {countLoading ? (
-          <LoadingIndicator />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {[
-              {
-                title: "Total Products",
-                value: counts[0] ?? "0",
-                icon: <FaBoxOpen className="text-2xl" />,
-              },
+          <button
+            onClick={clearCache}
+            className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-xl transition-all duration-300 border border-white/20"
+          >
+            <ArrowPathIcon className="w-5 h-5" />
+            <span className="hidden md:inline">Refresh</span>
+          </button>
+        </div>
+      </div>
 
-              {
-                title: `Today’s Sales (${new Date().toLocaleDateString(
-                  "en-US",
-                  {
-                    timeZone: "Africa/Lagos",
-                  }
-                )})`,
-                value:
-                  counts[3] != null
-                    ? `₦${counts[3].toLocaleString("en-NG")}`
-                    : "₦0",
-                icon: <FaMoneyBillWave className="text-2xl" />,
-              },
-            ].map((item, idx) => (
+      {/* Error Message */}
+      {apiError && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg animate-fade-in">
+          <p className="text-red-800 text-sm">{apiError}</p>
+          <button
+            onClick={clearCache}
+            className="mt-2 text-sm text-red-600 hover:text-red-700 underline"
+          >
+            Retry Loading Data
+          </button>
+        </div>
+      )}
+
+      {/* Stats Grid */}
+      {countLoading ? (
+        <LoadingIndicator />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <StatCard
+            title="Total Products"
+            value={counts[0] ?? "0"}
+            icon={<CubeIcon className="w-6 h-6 text-white" />}
+            gradient="from-blue-500 to-blue-600"
+            delay={0}
+          />
+          <StatCard
+            title={`Today's Sales (${new Date().toLocaleDateString("en-US", {
+              timeZone: "Africa/Lagos",
+            })})`}
+            value={
+              counts[1] != null
+                ? `₦${counts[1].toLocaleString("en-NG")}`
+                : "₦0"
+            }
+            icon={<CurrencyDollarIcon className="w-6 h-6 text-white" />}
+            gradient="from-emerald-500 to-green-600"
+            delay={100}
+          />
+        </div>
+      )}
+
+      {/* Assets Section */}
+      <div className="animate-fade-in" style={{ animationDelay: "200ms" }}>
+        <h3 className="text-2xl font-bold text-gray-900 mb-6">
+          Your Products
+        </h3>
+        {isLoading && assets.length === 0 ? (
+          <div className="flex justify-center items-center h-64">
+            <LoadingIndicator />
+          </div>
+        ) : assets.length === 0 ? (
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center">
+            <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CubeIcon className="w-12 h-12 text-gray-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              No Products Yet
+            </h3>
+            <p className="text-gray-500 max-w-md mx-auto">
+              Start uploading your products to showcase them to customers
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {assets.map((asset, index) => (
               <div
-                key={idx}
-                className="bg-white p-5 rounded-lg shadow-md flex items-center gap-4"
+                key={asset.id}
+                style={{ animationDelay: `${index * 50}ms` }}
               >
-                <div className="p-3 bg-gray-100 rounded-full">{item.icon}</div>
-                <div>
-                  <p className="text-sm text-gray-500">{item.title}</p>
-                  <h3 className="text-xl font-bold">{item.value}</h3>
-                </div>
+                <AssetCard
+                  asset={asset}
+                  onDelete={handleDelete}
+                  onUpdate={() => setEditingAsset(asset)}
+                />
               </div>
             ))}
           </div>
         )}
-        <h3 className="text-xl font-bold mb-4">All Assets</h3>
-        {isLoading && assets.length === 0 ? (
-          <LoadingIndicator />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {assets.map((asset) => (
-              <AssetCard
-                key={asset.id}
-                asset={asset}
-                onDelete={handleDelete}
-                onUpdate={() => setEditingAsset(asset)}
-              />
-            ))}
-          </div>
-        )}
 
-        {/* Sentinel for Infinite Scrolling */}
         {page < totalPages && (
-          <div ref={loadMoreRef} className="h-10 flex justify-center py-4">
+          <div ref={loadMoreRef} className="h-16 flex justify-center items-center mt-8">
             {isLoading && <LoadingIndicator />}
           </div>
         )}
-      </>
+      </div>
+
       {editingAsset && (
         <UpdateAssetModal
           asset={editingAsset}

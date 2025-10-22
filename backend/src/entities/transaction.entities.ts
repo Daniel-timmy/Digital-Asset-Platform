@@ -1,6 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from "typeorm";
 import { User } from "./user.entities";
-import { CustomAsset } from "./customasset.entities";
 
 @Entity("transactions")
 export class Transaction {
@@ -11,9 +10,6 @@ export class Transaction {
   @JoinColumn({ name: "user_id" })
   user!: User;
 
-  // @ManyToOne(() => CustomAsset)
-  // @JoinColumn({ name: "custom_asset" })
-  // custom_asset!: CustomAsset;
 
   @Column({ type: "decimal", precision: 10, scale: 2 })
   amount!: number;

@@ -12,16 +12,13 @@ import AuthPage from "./pages/AuthPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ProtectedRoutes from "./components/ProtectedRoutes";
 import VerifyPaymentPage from "./pages/VerifyPaymentPage";
-import Photography from "./pages/services/Photography";
-import Branding from "./pages/services/Branding";
-import Socialmedia from "./pages/services/Socialmedia";
-import Webdev from "./pages/services/Webdev";
+
 import Layout from "./pages/admin/Layout";
-import CustomRequest from "./pages/admin/CustomRequest";
+// import CustomRequest from "./pages/admin/CustomRequest";
 import Tickets from "./pages/admin/Tickets";
 import Users from "./pages/admin/Users";
 import UploadProduct from "./pages/admin/UploadProduct";
-import Bookings from "./pages/admin/Bookings";
+// import Bookings from "./pages/admin/Bookings";
 import Transactions from "./pages/admin/Transactions";
 import VerifyCode from "./pages/VerifyCode";
 import ProtectedAdminRoutes from "./components/ProtectedAdminRoutes";
@@ -34,6 +31,8 @@ import CreatorUploadProduct from "./pages/creator/CreatorUploadProduct";
 import CreatorProfile from "./pages/creator/CreatorProfile";
 import CreatorTransactions from "./pages/creator/CreatorTransactions";
 import ProtectedCreatorRoutes from "./components/ProtectedCreatorRoutes";
+import CreatorLayout from "./pages/creator/CreatorLayout";
+import Categories from "./pages/Categories";
 
 function Logout() {
   localStorage.clear();
@@ -44,10 +43,6 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/socialmedia" element={<Socialmedia />} />
-        <Route path="/photography" element={<Photography />} />
-        <Route path="/branding" element={<Branding />} />
-        <Route path="/webdev" element={<Webdev />} />
         <Route path="/" element={<Landingpage />} />
         <Route path="/verify" element={<VerifyCode />} />
         <Route
@@ -60,18 +55,18 @@ function App() {
         >
           <Route index element={<AdminDashboard />} />
           <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="customizations" element={<CustomRequest />} />
+          {/* <Route path="customizations" element={<CustomRequest />} /> */}
           <Route path="tickets" element={<Tickets />} />
           <Route path="users" element={<Users />} />
           <Route path="upload" element={<UploadProduct />} />
-          <Route path="bookings/:service" element={<Bookings />} />
+          {/* <Route path="bookings/:service" element={<Bookings />} /> */}
           <Route path="transactions" element={<Transactions />} />
         </Route>
         <Route
-          path="/Creator"
+          path="/creator"
           element={
             <ProtectedCreatorRoutes>
-              <Layout />
+              <CreatorLayout />
             </ProtectedCreatorRoutes>
           }
         >
@@ -97,7 +92,7 @@ function App() {
         >
           <Route index element={<Dashboard />} />
 
-          <Route path="orders" element={<ClientsOrders />} />
+          {/* <Route path="orders" element={<ClientsOrders />} /> */}
           <Route path="downloads" element={<Downloads />} />
           <Route path="transactions" element={<CLientsTransactions />} />
           <Route path="tickets" element={<ClientsTickets />} />
@@ -106,6 +101,7 @@ function App() {
         <Route path="/logout" element={<Logout />} />
         <Route path="/stock" element={<Stock />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/categories" element={<Categories />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>

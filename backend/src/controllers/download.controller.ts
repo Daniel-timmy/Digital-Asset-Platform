@@ -43,11 +43,12 @@ export class DownloadController {
     }
   }
 
-  async count(req: AuthRequest, res: Response, next: NextFunction){
+  async totalSales(req: AuthRequest, res: Response, next: NextFunction){
     try{
-      const creatorId = req.query.creator as string;
-      const count = await this.downloadService.getCount(creatorId);
-      res.status(200).json({count})
+      const creatorId = req.user?.id as string;
+      const totalSales = await this.downloadService.getTotalSales(creatorId);
+      // const totalSales = 5000
+      res.status(200).json(totalSales)
     } catch (error){
       next(error)
     }

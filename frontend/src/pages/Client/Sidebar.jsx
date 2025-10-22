@@ -1,17 +1,17 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { memo, useState } from "react";
 import {
-  FaHome,
-  FaTicketAlt,
-  FaMoneyCheck,
-  FaCartArrowDown,
-  FaSignOutAlt,
-  FaDownload,
-} from "react-icons/fa";
+  HomeIcon,
+  TicketIcon,
+  CreditCardIcon,
+  ArrowDownTrayIcon,
+  ArrowRightOnRectangleIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "@heroicons/react/24/outline";
 
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isBookingsOpen, setIsBookingsOpen] = useState(false);
   const navigate = useNavigate();
 
   const navItems = [
@@ -19,112 +19,115 @@ const Sidebar = () => {
       key: "dashboard",
       label: "Dashboard",
       path: "/dashboard",
-      icon: <FaHome className="mr-2" />,
-    },
-    {
-      key: "orders",
-      label: "Orders",
-      path: "/dashboard/orders",
-      icon: <FaCartArrowDown className="mr-2" />,
+      icon: <HomeIcon className="w-5 h-5" />,
     },
     {
       key: "transactions",
       label: "Transactions",
       path: "/dashboard/transactions",
-      icon: <FaMoneyCheck className="mr-2" />,
+      icon: <CreditCardIcon className="w-5 h-5" />,
     },
     {
       key: "tickets",
-      label: "Tickets",
+      label: "Support Tickets",
       path: "/dashboard/tickets",
-      icon: <FaTicketAlt className="mr-2" />,
+      icon: <TicketIcon className="w-5 h-5" />,
     },
     {
       key: "downloads",
       label: "Downloads",
       path: "/dashboard/downloads",
-      icon: <FaDownload className="mr-2" />,
+      icon: <ArrowDownTrayIcon className="w-5 h-5" />,
     },
   ];
 
   const handleLogout = () => {
-    // Clear auth data if you have (localStorage/session)
     localStorage.removeItem("authToken");
     sessionStorage.clear();
-
-    // Redirect to login
     navigate("/login");
   };
 
   return (
     <aside
       className={`${
-        isCollapsed ? "w-20 p-2" : "w-64 p-6"
-      } bg-white/90 backdrop-blur-md border-r border-gray-200 shadow-md min-h-screen transition-all duration-300`}
+        isCollapsed ? "w-20" : "w-72"
+      } bg-white border-r border-gray-200 min-h-screen transition-all duration-300 ease-in-out flex flex-col shadow-lg`}
     >
-      <div className="flex items-center justify-between mb-6">
-        <h2
-          className={`text-lg font-semibold text-gray-800 ${
-            isCollapsed ? "hidden" : ""
-          }`}
-        >
-          Dashboard
-        </h2>
-        <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="text-gray-800 hover:text-black"
-        >
-          {isCollapsed ? "→" : "←"}
-        </button>
+      {/* Header */}
+      <div className="p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          {!isCollapsed && (
+            <div className="animate-fade-in">
+              <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Client Portal
+              </h2>
+              <p className="text-xs text-gray-500 mt-1">Manage your account</p>
+            </div>
+          )}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200 ml-auto"
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? (
+              <ChevronRightIcon className="w-5 h-5 text-gray-600" />
+            ) : (
+              <ChevronLeftIcon className="w-5 h-5 text-gray-600" />
+            )}
+          </button>
+        </div>
       </div>
 
-      <ul className="space-y-2 text-gray-800 text-sm font-medium">
-        {navItems.map((tab) => (
+      {/* Navigation */}
+      <nav className="flex-1 p-4 space-y-2">
+        {navItems.map((item) => (
           <NavLink
-            to={tab.path}
-            key={tab.key}
-            end={tab.key === "dashboard"}
+            to={item.path}
+            key={item.key}
+            end={item.key === "dashboard"}
             className={({ isActive }) =>
-              `flex items-center rounded-md w-full ${
-                isActive && !tab.subItems
-                  ? "bg-black text-white"
-                  : "hover:bg-gray-200"
+              `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                isActive
+                  ? "bg-gradient-to-r from-black to-gray-800 text-white shadow-lg"
+                  : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
               }`
             }
           >
-            <li>
-              <div
-                className="flex items-center px-4 py-2 rounded-md cursor-pointer transition"
-                onClick={() =>
-                  tab.subItems && setIsBookingsOpen(!isBookingsOpen)
-                }
-              >
-                {tab.icon}
-                <span className={isCollapsed ? "hidden" : ""}>{tab.label}</span>
-              </div>
-            </li>
+            {({ isActive }) => (
+              <>
+                <div
+                  className={`${
+                    isActive
+                      ? "text-white"
+                      : "text-gray-500 group-hover:text-gray-900"
+                  } transition-colors`}
+                >
+                  {item.icon}
+                </div>
+                {!isCollapsed && (
+                  <span className="font-medium text-sm">{item.label}</span>
+                )}
+                {!isCollapsed && isActive && (
+                  <div className="ml-auto w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                )}
+              </>
+            )}
           </NavLink>
         ))}
+      </nav>
 
-        {/* Logout button */}
-        <NavLink
-          to="/logout"
-          className={({ isActive }) =>
-            `flex items-center rounded-md w-full ${
-              isActive
-                ? "bg-red-600 text-white"
-                : "hover:bg-red-100 text-red-600"
-            }`
-          }
+      {/* Logout Button */}
+      <div className="p-4 border-t border-gray-200">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 w-full px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 group"
         >
-          <li>
-            <div className="flex items-center px-4 py-2 rounded-md cursor-pointer transition">
-              <FaSignOutAlt className="mr-2" />
-              <span className={isCollapsed ? "hidden" : ""}>Logout</span>
-            </div>
-          </li>
-        </NavLink>
-      </ul>
+          <ArrowRightOnRectangleIcon className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          {!isCollapsed && (
+            <span className="font-medium text-sm">Logout</span>
+          )}
+        </button>
+      </div>
     </aside>
   );
 };

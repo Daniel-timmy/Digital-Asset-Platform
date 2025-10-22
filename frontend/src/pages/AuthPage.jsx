@@ -21,6 +21,7 @@ const AuthPage = ({ state = true }) => {
     password: "",
     confirmPassword: "",
   });
+  const [role, setRole] = useState("consumer");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -35,7 +36,6 @@ const AuthPage = ({ state = true }) => {
           : "Invalid email address.";
       case "name":
         return value.trim() ? "" : "Name is required.";
-
       case "password":
         return value ? "" : "Password is required";
       case "confirmPassword":
@@ -71,7 +71,6 @@ const AuthPage = ({ state = true }) => {
     e.preventDefault();
     if (!isLogin) {
       if (!validateForm()) {
-        // addToast("Please fix the form errors.", "error");
         return;
       }
     } else {
@@ -95,21 +94,14 @@ const AuthPage = ({ state = true }) => {
           setErrors({ error: res.message });
         }
       } else {
-        res = await api.post("/auth/register", formData);
+        const endpoint =
+          role === "creator" ? "/auth/creator" : "/auth/register";
+        res = await api.post(endpoint, { ...formData, role });
         console.log(res);
         if (res.data.success) {
           navigate("/verify");
         }
       }
-      // if (res.data.success) {
-      //   localStorage.setItem(ACCESS_TOKEN, res.data.access);
-      //   localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
-      //   localStorage.setItem(USER, JSON.stringify(res.data.user));
-      //   navigate("/dashboard");
-      // } else {
-      //   console.log(res);
-      //   setErrors({ error: res.message });
-      // }
     } catch (error) {
       const errorData = error.response.data;
       setErrors({
@@ -121,110 +113,210 @@ const AuthPage = ({ state = true }) => {
   };
 
   return (
-    <div className="relative w-full min-h-screen bg-gray-100 font-sans overflow-hidden">
+    <div className="relative w-full min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 font-sans overflow-hidden">
       <Header />
 
-      <div className="relative w-full min-h-[90vh] flex items-center justify-center px-4 z-10">
-        <div className="w-full max-w-6xl h-[600px] bg-white shadow-2xl rounded-2xl flex overflow-hidden animate-fade-in-up border border-black">
+      {/* Decorative Background Elements */}
+      <div className="absolute top-20 left-10 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+      <div className="absolute top-40 right-10 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+      <div className="absolute -bottom-8 left-1/2 w-96 h-96 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+
+      <div className="relative w-full min-h-[90vh] flex items-center justify-center px-4 z-10 py-20">
+        <div className="w-full max-w-6xl bg-white shadow-2xl rounded-3xl flex overflow-hidden border border-gray-100">
           {/* Left Form Panel */}
-          <div className="w-3/5 p-12 bg-white flex flex-col justify-center">
-            <h2 className="text-4xl font-extrabold text-black text-center mb-8">
-              {isLogin ? "Login" : "Create Account"}
-            </h2>
-            {/* <p className="text-red-500">{errors.error}</p> */}
+          <div className="w-full lg:w-3/5 p-8 lg:p-12 bg-white flex flex-col justify-center">
+            <div className="mb-8">
+              <h2 className="text-4xl lg:text-5xl font-black text-gray-900 mb-3">
+                {isLogin ? "Welcome Back" : "Join Us Today"}
+              </h2>
+              <p className="text-gray-600 text-lg">
+                {isLogin
+                  ? "Sign in to access your account"
+                  : "Create an account to get started"}
+              </p>
+            </div>
 
             <form className="space-y-5" onSubmit={handleSubmit}>
               {!isLogin && (
-                <div>
-                  <input
-                    type="text"
-                    name="name"
-                    placeholder="Full Name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-400 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black"
-                  />
-                  {errors.name && <p className="text-red-500">{errors.name}</p>}
-                </div>
+                <>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      placeholder="Enter your full name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                    />
+                    {errors.name && (
+                      <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Choose Your Role
+                    </label>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        className={`flex-1 px-6 py-3 rounded-xl border-2 font-semibold transition-all duration-300 ${
+                          role === "creator"
+                            ? "bg-black text-white border-black shadow-lg scale-105"
+                            : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                        }`}
+                        onClick={() => setRole("creator")}
+                      >
+                        🎨 Creator
+                      </button>
+                      <button
+                        type="button"
+                        className={`flex-1 px-6 py-3 rounded-xl border-2 font-semibold transition-all duration-300 ${
+                          role === "consumer"
+                            ? "bg-black text-white border-black shadow-lg scale-105"
+                            : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                        }`}
+                        onClick={() => setRole("consumer")}
+                      >
+                        🛍️ Consumer
+                      </button>
+                    </div>
+                  </div>
+                </>
               )}
               <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Email Address
+                </label>
                 <input
                   type="email"
                   name="email"
-                  placeholder="Email"
+                  placeholder="your.email@example.com"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-400 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
                 />
-                {errors.email && <p className="text-red-500">{errors.email}</p>}
+                {errors.email && (
+                  <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                )}
               </div>
               <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Password
+                </label>
                 <input
                   type="password"
                   name="password"
-                  placeholder="Password"
+                  placeholder="Enter your password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-400 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
                 />
                 {errors.password && (
-                  <p className="text-red-500">{errors.password}</p>
+                  <p className="text-red-500 text-sm mt-1">{errors.password}</p>
                 )}
               </div>
               {!isLogin && (
                 <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Confirm Password
+                  </label>
                   <input
                     type="password"
                     name="confirmPassword"
-                    placeholder="Confirm Password"
+                    placeholder="Confirm your password"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-400 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
                   />
                   {errors.confirmPassword && (
-                    <p className="text-red-500">{errors.confirmPassword}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.confirmPassword}
+                    </p>
                   )}
                 </div>
               )}
 
               {loading ? (
-                <LoadingIndicator />
+                <div className="py-4">
+                  <LoadingIndicator />
+                </div>
               ) : (
                 <button
                   type="submit"
-                  className="w-full bg-black text-white font-semibold py-3 rounded-lg shadow-md hover:bg-gray-900 transition-colors duration-300"
+                  className="w-full bg-gradient-to-r from-black to-gray-800 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                 >
-                  {isLogin ? "Login" : "Sign Up"}
+                  {isLogin ? "Sign In" : "Create Account"}
                 </button>
               )}
-              {errors.error && <p className="text-red-500">{errors.error}</p>}
+              {errors.error && (
+                <p className="text-red-500 text-sm text-center bg-red-50 p-3 rounded-lg">
+                  {errors.error}
+                </p>
+              )}
             </form>
 
-            <p className="text-center mt-6 text-sm text-gray-600">
-              {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
-              <button
-                onClick={toggleForm}
-                className="text-black font-semibold hover:underline"
-              >
-                {isLogin ? "Sign Up" : "Login"}
-              </button>
-            </p>
+            <div className="mt-8 text-center">
+              <p className="text-gray-600">
+                {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+                <button
+                  onClick={toggleForm}
+                  className="text-black font-bold hover:underline transition-all"
+                >
+                  {isLogin ? "Sign Up" : "Sign In"}
+                </button>
+              </p>
+            </div>
           </div>
 
           {/* Right Welcome Panel */}
-          <div className="w-2/5 bg-black text-white p-10 flex flex-col items-center justify-center rounded-r-2xl">
-            <img
-              src="/src/assets/OIP.webp"
-              alt="Company Logo"
-              className="w-24 h-24 mb-6 rounded-full border-4 border-black shadow-lg"
-            />
-            <h2 className="text-3xl font-bold mb-2 text-white">
-              Welcome to BDA
-            </h2>
-            <p className="text-lg text-gray-300 text-center max-w-xs">
-              Your trusted Digital Assets Marketplace. Login or sign up to get
-              started.
-            </p>
+          <div className="hidden lg:flex lg:w-2/5 bg-gradient-to-br from-black via-gray-900 to-gray-800 text-white p-12 flex-col items-center justify-center relative overflow-hidden">
+            {/* Decorative Elements */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-32 -mt-32"></div>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 rounded-full -ml-24 -mb-24"></div>
+            
+            <div className="relative z-10 text-center">
+              <img
+                src="/src/assets/OIP.webp"
+                alt="Company Logo"
+                className="w-32 h-32 mb-8 rounded-full border-4 border-white/20 shadow-2xl mx-auto"
+              />
+              <h2 className="text-4xl font-black mb-4">
+                Welcome to BASELINKS
+              </h2>
+              <p className="text-lg text-gray-300 leading-relaxed max-w-sm mx-auto">
+                Your premier Digital Assets Marketplace. Discover, create, and share amazing digital content.
+              </p>
+              
+              <div className="mt-12 space-y-4">
+                <div className="flex items-center gap-3 text-left">
+                  <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <span className="text-sm">Premium quality assets</span>
+                </div>
+                <div className="flex items-center gap-3 text-left">
+                  <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <span className="text-sm">Secure transactions</span>
+                </div>
+                <div className="flex items-center gap-3 text-left">
+                  <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <span className="text-sm">24/7 support</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

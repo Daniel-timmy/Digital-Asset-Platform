@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToOne, ManyToOne, JoinColumn } from "typeorm";
 import { User } from "./user.entities";
 import { CustomAsset } from "./customasset.entities";
-
+import { Transaction } from "./transaction.entities";
 @Entity('ticket')
 export class Ticket{
     @PrimaryGeneratedColumn("uuid")
@@ -17,9 +17,9 @@ export class Ticket{
     @Column({type: "varchar", nullable: true})
     description!: string;
 
-    @OneToOne(() => CustomAsset)
-    @JoinColumn({ name: "custom_asset" })
-    custom_asset?: CustomAsset;
+    @OneToOne(() => Transaction)
+    @JoinColumn({ name: "transaction" })
+    transaction?: Transaction;
 
     @Column({ type: "enum", enum: ["open", "closed"], default: "open"})
     status!: "open" | "closed"

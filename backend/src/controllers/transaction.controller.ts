@@ -307,6 +307,7 @@ export class TransactionController {
 
         if (data.status === "success") {
           transaction.payment_status = "completed";
+          console.log("ASSET DATA", assetData)
           const downloads = await this.downloadService.batchCreate(assetData.assets, transaction, req.user)
           message = "Payment processed successfully";
           status = "success";
