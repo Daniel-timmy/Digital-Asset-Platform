@@ -66,25 +66,26 @@ export default function Card({ product, onAddToCart, handleProductClick }) {
                 ${product.price}
               </span>
             </div>
-
-            <div className="flex items-center gap-2 text-white group-hover:gap-3 transition-all duration-300">
-              <span className="text-sm font-semibold drop-shadow-md">
-                View Details
-              </span>
-              <svg
-                className="w-5 h-5 transform group-hover:translate-x-1 transition-transform duration-300 drop-shadow-md"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.5}
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
-              </svg>
-            </div>
+            <Link to={`/product-details/${product.id}`} key={product.id}>
+              <div className="flex items-center gap-2 text-white group-hover:gap-3 transition-all duration-300">
+                <span className="text-sm font-semibold drop-shadow-md">
+                  View Details
+                </span>
+                <svg
+                  className="w-5 h-5 transform group-hover:translate-x-1 transition-transform duration-300 drop-shadow-md"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
+              </div>
+            </Link>
           </div>
         </div>
       </div>
