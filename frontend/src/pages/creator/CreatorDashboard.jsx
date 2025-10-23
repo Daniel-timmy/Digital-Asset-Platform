@@ -50,7 +50,7 @@ const AssetCard = ({ asset, onDelete, onUpdate }) => {
             <p className="text-sm text-gray-600 line-clamp-2">
               {asset.description}
             </p>
-            
+
             <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
               <div>
                 <p className="text-xs text-gray-500">Type</p>
@@ -192,7 +192,7 @@ const UpdateAssetModal = ({
       newErrors.description = "Description is required";
     if (!formData.file_type) newErrors.file_type = "File Type is required";
     if (!formData.category) newErrors.category = "Category is required";
-    if (!formData.price || formData.price <= 0)
+    if (!formData.price || formData.price < 0)
       newErrors.price = "Price must be a positive number";
     if (formData.tags.length === 0)
       newErrors.tags = "At least one tag is required";
@@ -300,7 +300,9 @@ const UpdateAssetModal = ({
                 placeholder="Enter product description"
               />
               {errors.description && (
-                <p className="text-red-500 text-sm mt-1">{errors.description}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.description}
+                </p>
               )}
             </div>
 
@@ -319,7 +321,9 @@ const UpdateAssetModal = ({
                   placeholder="Select file type"
                 />
                 {errors.file_type && (
-                  <p className="text-red-500 text-sm mt-1">{errors.file_type}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.file_type}
+                  </p>
                 )}
               </div>
 
@@ -767,9 +771,7 @@ const CreatorDashboard = () => {
               timeZone: "Africa/Lagos",
             })})`}
             value={
-              counts[1] != null
-                ? `₦${counts[1].toLocaleString("en-NG")}`
-                : "₦0"
+              counts[1] != null ? `₦${counts[1].toLocaleString("en-NG")}` : "₦0"
             }
             icon={<CurrencyDollarIcon className="w-6 h-6 text-white" />}
             gradient="from-emerald-500 to-green-600"
@@ -780,9 +782,7 @@ const CreatorDashboard = () => {
 
       {/* Assets Section */}
       <div className="animate-fade-in" style={{ animationDelay: "200ms" }}>
-        <h3 className="text-2xl font-bold text-gray-900 mb-6">
-          Your Products
-        </h3>
+        <h3 className="text-2xl font-bold text-gray-900 mb-6">Your Products</h3>
         {isLoading && assets.length === 0 ? (
           <div className="flex justify-center items-center h-64">
             <LoadingIndicator />
@@ -802,10 +802,7 @@ const CreatorDashboard = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {assets.map((asset, index) => (
-              <div
-                key={asset.id}
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
+              <div key={asset.id} style={{ animationDelay: `${index * 50}ms` }}>
                 <AssetCard
                   asset={asset}
                   onDelete={handleDelete}
@@ -817,7 +814,10 @@ const CreatorDashboard = () => {
         )}
 
         {page < totalPages && (
-          <div ref={loadMoreRef} className="h-16 flex justify-center items-center mt-8">
+          <div
+            ref={loadMoreRef}
+            className="h-16 flex justify-center items-center mt-8"
+          >
             {isLoading && <LoadingIndicator />}
           </div>
         )}

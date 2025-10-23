@@ -27,3 +27,4 @@ export const REDIS_URL = process.env.REDIS_URL
 export const RABBITMQ_URL = process.env.RABBITMQ_URL
 export const ASSET_QUEUE = process.env.ASSET_QUEUE
 export const EMAIL_QUEUE = process.env.EMAIL_QUEUE
+export const UPDATE_ASSET_QUEUE = process.env.UPDATE_ASSET_QUEUE

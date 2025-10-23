@@ -1,11 +1,9 @@
 import "reflect-metadata";
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response } from 'express';
 import cookieParser from "cookie-parser";
 import cors from "cors"
 import path from "path";
 import rateLimit from 'express-rate-limit';
-import http from 'http';
-import { Server } from 'socket.io';
 import logger from "./logger/app.logger";
 import { morganMiddleware } from "./logger/http.logger";
 import authRouter from "./routes/auth.routes";
@@ -18,14 +16,11 @@ import tagRouter from "./routes/tag.routes";
 import categoryRouter from "./routes/category.routes";
 import customAssetRouter from "./routes/customassets.routes";
 import ticketRouter from "./routes/ticket.routes";
-
 import { redisClient } from "./database/redis_cache";
 import { FRONTEND_URL } from "./config/env";
 import { initializeDatabase } from "./database/db";
 import { errorMiddleware } from "./middlewares/error.middleware";
 import messageRouter from "./routes/message.routes";
-import sendEmail from "./utils/sendEmail";
-// import rabbitMq from "./queue/rabbitMq";
 import { initializeQueues } from "./queue/rabbitMq";
 
 
@@ -85,16 +80,10 @@ const PORT = parseInt(process.env.PORT) || 3000;
 const startServer = async () => {
   try {
     console.log("PORT from config/env:", PORT);
-
     await initializeDatabase();
-    // await rabbitMq.connect();
-    // await rabbitMq.consume(rabbitMq.getQueueName(), (to: string, subject: string, text: string) => {
-    //   sendEmail(to, subject, text);
-    // });
     initializeQueues()
   
     logger.info('Database connected successfully');
-    
     app.listen(PORT, "0.0.0.0", async () => {
       logger.info(`Server is running on port ${PORT}`);
       

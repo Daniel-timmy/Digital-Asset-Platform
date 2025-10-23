@@ -21,6 +21,11 @@ export class LicenseService {
   async findOne(id: string): Promise<License | null> {
     return await this.licenseRepository.findOne({ where: { id } });
   }
+  async findOneByAsset(id: string): Promise<License | null> {
+  return await this.licenseRepository.findOne({
+    where: { asset: { id } }, 
+  });
+}
 
   async update(id: string, data: Partial<License>): Promise<License | null> {
     await this.licenseRepository.update(id, data);

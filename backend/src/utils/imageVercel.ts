@@ -12,7 +12,7 @@ async function uploadImage(name: string, file: Buffer, folder: string): Promise<
 }
 
 export async function updateImage(bloburl: string, file: Buffer): Promise<string>{
-    const updatedBlob = await put(bloburl, file, { access: 'public' });
+    const updatedBlob = await put(bloburl, file, { access: 'public', allowOverwrite: true });
     if (!updatedBlob) throw new HttpError("Unable to upload image", 500)
     return updatedBlob.url; 
 }
