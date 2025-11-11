@@ -27,17 +27,11 @@ function classNames(...classes) {
 
 export default function Header() {
   const [userOpen, setUserOpen] = useState(false); // user dropdown
-  const [desktopServicesOpen, setDesktopServicesOpen] = useState(false);
-  const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // sidebar/mobile menu
-  const dropdownRef = useRef(null);
-  const servicesRef = useRef(null);
-  const mobileMenuRef = useRef(null);
-
-  const navigate = useNavigate();
-  const location = useLocation();
-
   const [isAuthorized, setIsAuthorized] = useState(null);
+  const dropdownRef = useRef(null);
+  const mobileMenuRef = useRef(null);
+  const location = useLocation();
 
   // Cart from context (this makes the badge update globally)
   const { getCount } = useCart();
@@ -45,17 +39,13 @@ export default function Header() {
 
   // toggle helpers
   const toggleUser = () => setUserOpen((s) => !s);
-  const toggleDesktopServices = () => setDesktopServicesOpen((s) => !s);
-  const toggleMobileServices = () => setMobileServicesOpen((s) => !s);
 
   // Close dropdowns/menus when clicking outside
   const handleClickOutside = (e) => {
     if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
       setUserOpen(false);
     }
-    if (servicesRef.current && !servicesRef.current.contains(e.target)) {
-      setDesktopServicesOpen(false);
-    }
+
     if (
       mobileMenuRef.current &&
       mobileMenuOpen &&
@@ -125,7 +115,7 @@ export default function Header() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="hover:opacity-80 transition-opacity"
               >
-                <img alt="BASELINKS" src={logo} className="h-10 w-auto" />
+                <img alt="Brush Logo" src={logo} className="h-10 w-auto" />
               </Link>
             </div>
 
@@ -232,7 +222,7 @@ export default function Header() {
       >
         <div className="flex justify-between items-center mb-8">
           <Link to="/" onClick={() => setMobileMenuOpen(false)}>
-            <img src={logo} alt="BASELINKS" className="h-10 w-auto" />
+            <img src={logo} alt="Brush logo" className="h-10 w-auto" />
           </Link>
           <button
             onClick={() => setMobileMenuOpen(false)}
