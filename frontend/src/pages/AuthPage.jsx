@@ -6,6 +6,7 @@ import api from "../utils/api";
 import { ACCESS_TOKEN, REFRESH_TOKEN, USER } from "../utils/constants";
 import LoadingIndicator from "../components/LoadingIndicator";
 import "../App.css";
+import logo from "../assets/OIP.png";
 
 const AuthPage = ({ state = true }) => {
   const navigate = useNavigate();
@@ -260,7 +261,9 @@ const AuthPage = ({ state = true }) => {
 
             <div className="mt-8 text-center">
               <p className="text-gray-600">
-                {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+                {isLogin
+                  ? "Don't have an account?"
+                  : "Already have an account?"}{" "}
                 <button
                   onClick={toggleForm}
                   className="text-black font-bold hover:underline transition-all"
@@ -276,41 +279,64 @@ const AuthPage = ({ state = true }) => {
             {/* Decorative Elements */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-32 -mt-32"></div>
             <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 rounded-full -ml-24 -mb-24"></div>
-            
+
             <div className="relative z-10 text-center">
               <img
-                src="/src/assets/OIP.webp"
+                src={logo}
                 alt="Company Logo"
                 className="w-32 h-32 mb-8 rounded-full border-4 border-white/20 shadow-2xl mx-auto"
               />
-              <h2 className="text-4xl font-black mb-4">
-                Welcome to Brush
-              </h2>
+              <h2 className="text-4xl font-black mb-4">Welcome to Brush</h2>
               <p className="text-lg text-gray-300 leading-relaxed max-w-sm mx-auto">
-                Your premier Digital Assets Marketplace. Discover, create, and share amazing digital content.
+                Your premier Digital Assets Marketplace. Discover, create, and
+                share amazing digital content.
               </p>
-              
+
               <div className="mt-12 space-y-4">
                 <div className="flex items-center gap-3 text-left">
                   <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </div>
                   <span className="text-sm">Premium quality assets</span>
                 </div>
                 <div className="flex items-center gap-3 text-left">
                   <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </div>
                   <span className="text-sm">Secure transactions</span>
                 </div>
                 <div className="flex items-center gap-3 text-left">
                   <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </div>
                   <span className="text-sm">24/7 support</span>
