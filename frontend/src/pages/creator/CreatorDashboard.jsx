@@ -233,7 +233,7 @@ const UpdateAssetModal = ({
       console.error("Error updating product:", error);
       setApiError(
         error.response?.data?.message ||
-          "Failed to update product. Please try again."
+        "Failed to update product. Please try again."
       );
     } finally {
       setIsLoading(false);
@@ -275,9 +275,8 @@ const UpdateAssetModal = ({
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                  errors.name ? "border-red-500" : "border-gray-200"
-                }`}
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${errors.name ? "border-red-500" : "border-gray-200"
+                  }`}
                 placeholder="Enter product name"
               />
               {errors.name && (
@@ -293,9 +292,8 @@ const UpdateAssetModal = ({
                 name="description"
                 value={formData.description}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none ${
-                  errors.description ? "border-red-500" : "border-gray-200"
-                }`}
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none ${errors.description ? "border-red-500" : "border-gray-200"
+                  }`}
                 rows="4"
                 placeholder="Enter product description"
               />
@@ -355,9 +353,8 @@ const UpdateAssetModal = ({
                 name="price"
                 value={formData.price}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                  errors.price ? "border-red-500" : "border-gray-200"
-                }`}
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${errors.price ? "border-red-500" : "border-gray-200"
+                  }`}
                 placeholder="0.00"
                 min="0"
                 step="0.01"
@@ -485,13 +482,16 @@ const CreatorDashboard = () => {
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [apiError, setApiError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [countLoading, setCountLoading] = useState(false);
   const [editingAsset, setEditingAsset] = useState(null);
-  const [page, setPage] = useState(1);
-  const [limit] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 100,
+    totalPages: 1,
+  });
+
   const observer = useRef(null);
   const loadMoreRef = useRef(null);
-  const [countLoading, setCountLoading] = useState(false);
   const creator = JSON.parse(localStorage.getItem(USER) || "{}");
   const CACHE_DURATION = 1 * 60 * 60 * 1000;
 
@@ -575,7 +575,7 @@ const CreatorDashboard = () => {
   };
 
   const fetchAssets = async (pageNum = 1, append = false) => {
-    if (pageNum > totalPages && append) return;
+    if (pageNum > pagination.totalPages && append) return;
     try {
       if (pageNum === 1 && !append) {
         const cachedAssets = localStorage.getItem("assets");
@@ -591,7 +591,7 @@ const CreatorDashboard = () => {
       }
 
       const resAssets = await api.get(
-        `/assets?userId=${creator.id}&page=${pageNum}&limit=${limit}`
+        `/assets?userId=${creator.id}&page=${pageNum}&limit=${pagination.limit}`
       );
       const fetchedAssets = resAssets.data.results || [];
       const newTotalPages = resAssets.data.totalPages || 1;
@@ -599,7 +599,10 @@ const CreatorDashboard = () => {
       setAssets((prev) =>
         append ? [...prev, ...fetchedAssets] : fetchedAssets
       );
-      setTotalPages(newTotalPages);
+      setPagination((prev) => ({
+        ...prev,
+        totalPages: newTotalPages,
+      }));
 
       if (pageNum === 1) {
         localStorage.setItem("assets", JSON.stringify(fetchedAssets));
@@ -631,16 +634,20 @@ const CreatorDashboard = () => {
   }, []);
 
   useEffect(() => {
-    if (page > 1) {
-      fetchAssets(page, true);
+    if (pagination.page > 1) {
+      fetchAssets(pagination.page, true);
     }
-  }, [page]);
+  }, [pagination.page]);
 
   useEffect(() => {
     observer.current = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !isLoading && page < totalPages) {
-          setPage((prev) => prev + 1);
+        if (
+          entries[0].isIntersecting &&
+          !isLoading &&
+          pagination.page < pagination.totalPages
+        ) {
+          setPagination((prev) => ({ ...prev, page: prev.page + 1 }));
         }
       },
       { threshold: 1.0 }
@@ -655,7 +662,7 @@ const CreatorDashboard = () => {
         observer.current.unobserve(loadMoreRef.current);
       }
     };
-  }, [isLoading, page, totalPages]);
+  }, [isLoading, pagination.page, pagination.totalPages]);
 
   const clearCache = () => {
     localStorage.removeItem("dashboardCounts");
@@ -664,7 +671,7 @@ const CreatorDashboard = () => {
     localStorage.removeItem("assetsTimestamp");
     localStorage.removeItem("tags");
     localStorage.removeItem("categories");
-    setPage(1);
+    setPagination((prev) => ({ ...prev, page: 1 }));
     setAssets([]);
     const fetchAllData = async () => {
       setIsLoading(true);
@@ -813,7 +820,7 @@ const CreatorDashboard = () => {
           </div>
         )}
 
-        {page < totalPages && (
+        {pagination.page < pagination.totalPages && (
           <div
             ref={loadMoreRef}
             className="h-16 flex justify-center items-center mt-8"

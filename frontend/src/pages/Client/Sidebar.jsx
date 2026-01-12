@@ -9,6 +9,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ArrowLeftIcon,
+  UserCircleIcon,
 } from "@heroicons/react/24/outline";
 
 const Sidebar = () => {
@@ -40,6 +41,12 @@ const Sidebar = () => {
       path: "/dashboard/downloads",
       icon: <ArrowDownTrayIcon className="w-5 h-5" />,
     },
+    {
+      key: "profile",
+      label: "Profile",
+      path: "/dashboard/profile",
+      icon: <UserCircleIcon className="w-5 h-5" />,
+    },
   ];
 
   const handleLogout = () => {
@@ -50,9 +57,8 @@ const Sidebar = () => {
 
   return (
     <aside
-      className={`${
-        isCollapsed ? "w-20" : "w-72"
-      } bg-white border-r border-gray-200 min-h-screen transition-all duration-300 ease-in-out flex flex-col shadow-lg`}
+      className={`${isCollapsed ? "w-20" : "w-72"
+        } bg-white border-r border-gray-200 min-h-screen transition-all duration-300 ease-in-out flex flex-col shadow-lg`}
     >
       {/* Header */}
       <div className="p-6 border-b border-gray-200">
@@ -103,21 +109,19 @@ const Sidebar = () => {
             key={item.key}
             end={item.key === "dashboard"}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
-                isActive
-                  ? "bg-gradient-to-r from-black to-gray-800 text-white shadow-lg"
-                  : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+              `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
+                ? "bg-gradient-to-r from-black to-gray-800 text-white shadow-lg"
+                : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
               }`
             }
           >
             {({ isActive }) => (
               <>
                 <div
-                  className={`${
-                    isActive
-                      ? "text-white"
-                      : "text-gray-500 group-hover:text-gray-900"
-                  } transition-colors`}
+                  className={`${isActive
+                    ? "text-white"
+                    : "text-gray-500 group-hover:text-gray-900"
+                    } transition-colors`}
                 >
                   {item.icon}
                 </div>

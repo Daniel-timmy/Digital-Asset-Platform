@@ -1,6 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  UserCircleIcon,
   PencilSquareIcon,
   XMarkIcon,
   MapPinIcon,
@@ -8,65 +7,78 @@ import {
   EnvelopeIcon,
   CheckCircleIcon,
 } from "@heroicons/react/24/outline";
-
-const creatorProfile = {
-  avatarUrl: "https://via.placeholder.com/120",
-  coverPhoto: "https://via.placeholder.com/600x200",
-  title: "Content Creator",
-  description: "Passionate about creating engaging content for all audiences.",
-  interest: ["Photography", "Travel", "Tech"],
-  instagram: "janedoe_insta",
-  x: "janedoe_x",
-  facebook: "janedoe.fb",
-  address: "123 Main St, City, Country",
-  phone: "+1234567890",
-};
-
-const user = {
-  name: "Jane Doe",
-  email: "jane.doe@email.com",
-  status: "active",
-  role: "creator",
-  created_at: "2024-06-01T10:00:00Z",
-};
-
-const socialLinks = [
-  {
-    label: "Instagram",
-    value: creatorProfile.instagram,
-    url: creatorProfile.instagram
-      ? `https://instagram.com/${creatorProfile.instagram}`
-      : null,
-  },
-  {
-    label: "X",
-    value: creatorProfile.x,
-    url: creatorProfile.x ? `https://x.com/${creatorProfile.x}` : null,
-  },
-  {
-    label: "Facebook",
-    value: creatorProfile.facebook,
-    url: creatorProfile.facebook
-      ? `https://facebook.com/${creatorProfile.facebook}`
-      : null,
-  },
-];
+import api from "../../utils/api";
+import { USER } from "../../utils/constants";
+import LoadingIndicator from "../../components/LoadingIndicator";
 
 const CreatorProfile = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
+  const [creatorProfile, setCreatorProfile] = useState(null);
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem(USER) || "{}"));
 
   const [profileForm, setProfileForm] = useState({
-    ...creatorProfile,
-    avatarFile: null,
-    coverPhotoFile: null,
+    title: "",
+    description: "",
+    interest: [],
+    instagram: "",
+    x: "",
+    facebook: "",
+    address: "",
+    phone: "",
+    profileImage: null,
+    coverImage: null,
   });
 
   const [userForm, setUserForm] = useState({ ...user });
 
+  // Email Change State
+  const [emailStep, setEmailStep] = useState(0);
+  const [emailForm, setEmailForm] = useState({
+    newEmail: "",
+    password: "",
+    code: "",
+  });
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+  console.log(user)
+
+  const fetchProfile = async () => {
+    try {
+      setIsLoading(true);
+      const res = await api.get(`/user-profile/user/${user.id}`);
+      setCreatorProfile(res.data);
+      setProfileForm({
+        title: res.data.title || "",
+        description: res.data.description || "",
+        interest: res.data.interest || [],
+        instagram: res.data.instagram || "",
+        x: res.data.x || "",
+        facebook: res.data.facebook || "",
+        address: res.data.address || "",
+        phone: res.data.phone || "",
+        profileImage: null,
+        coverImage: null,
+      });
+    } catch (err) {
+      console.error("Error fetching profile:", err);
+      // If 404, it might mean profile doesn't create automatically? 
+      // User said it is created with User, so 404 is unexpected but possible if data consistency issue.
+      setError("Failed to load profile.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleProfileChange = (e) => {
     const { name, value, files } = e.target;
-    if (name === "avatarFile" || name === "coverPhotoFile") {
+    if (name === "profileImage" || name === "coverImage") {
       setProfileForm((f) => ({ ...f, [name]: files[0] }));
     } else {
       setProfileForm((f) => ({ ...f, [name]: value }));
@@ -78,25 +90,176 @@ const CreatorProfile = () => {
     setUserForm((f) => ({ ...f, [name]: value }));
   };
 
-  const handleProfileSubmit = (e) => {
+  const handleProfileSubmit = async (e) => {
     e.preventDefault();
-    setShowProfileModal(false);
+    setError("");
+    setSuccessMessage("");
+    setIsLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("title", profileForm.title);
+      formData.append("description", profileForm.description);
+      // Ensure interest is sent correctly (backend schema expects array of strings)
+      // If using FormData, arrays can be appended multiple times or key indices used depending on backend parser (Multer/Express).
+      // Usually append("interest[]", val) or similar. 
+      // But looking at backend controller: `interest: z.array(z.string())`.
+      // Express body parser handles JSON, but Multer handles FormData.
+      // If controller uses `req.body` after Multer, we need to be careful.
+      // Let's assume standard behavior: append each item.
+      profileForm.interest.forEach(item => formData.append("interest", item));
+
+      formData.append("instagram", profileForm.instagram);
+      formData.append("x", profileForm.x);
+      formData.append("facebook", profileForm.facebook);
+      formData.append("address", profileForm.address);
+      formData.append("phone", profileForm.phone);
+
+      if (profileForm.profileImage) {
+        formData.append("profileImage", profileForm.profileImage);
+      }
+      if (profileForm.coverImage) {
+        formData.append("coverImage", profileForm.coverImage);
+      }
+
+      await api.put(`/user-profile/${creatorProfile.id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setSuccessMessage("Profile updated successfully!");
+      fetchProfile(); // Refresh data
+      setShowProfileModal(false);
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      setError(err.response?.data?.message || "Failed to update profile.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleUserSubmit = (e) => {
+  const handleUserSubmit = async (e) => {
     e.preventDefault();
-    setShowUserModal(false);
+    setIsLoading(true);
+    setError("");
+    setSuccessMessage("");
+
+    try {
+      const payload = {
+        name: userForm.name,
+      };
+
+      if (userForm.password && userForm.oldPassword) {
+        payload.password = userForm.password;
+        payload.oldPassword = userForm.oldPassword;
+      }
+
+      const res = await api.patch("/users/me", payload);
+      setUser(res.data);
+      localStorage.setItem(USER, JSON.stringify(res.data));
+      setSuccessMessage("Account updated successfully!");
+      setShowUserModal(false);
+      // Clear password fields
+      setUserForm(prev => ({ ...prev, password: "", oldPassword: "" }));
+      fetchProfile();
+    } catch (err) {
+      console.error("Error updating account:", err);
+      setError(err.response?.data?.message || "Failed to update account.");
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const handleEmailFormChange = (e) => {
+    const { name, value } = e.target;
+    setEmailForm((f) => ({ ...f, [name]: value }));
+  };
+
+  const handleEmailRequest = async () => {
+    setError("");
+    setSuccessMessage("");
+    setIsLoading(true);
+    try {
+      await api.post("/users/change-email", {
+        newEmail: emailForm.newEmail,
+        oldEmail: user.email,
+        password: emailForm.password,
+      });
+      setEmailStep(2);
+      setSuccessMessage(`Verification code sent to ${emailForm.newEmail}`);
+    } catch (err) {
+      console.error("Error requesting email change:", err);
+      setError(err.response?.data?.message || "Failed to request email change.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEmailConfirm = async () => {
+    setError("");
+    setSuccessMessage("");
+    setIsLoading(true);
+    try {
+      await api.post("/users/confirm-email", { code: emailForm.code });
+      setSuccessMessage("Email updated successfully!");
+
+      const updatedUser = { ...user, email: emailForm.newEmail };
+      setUser(updatedUser);
+      localStorage.setItem(USER, JSON.stringify(updatedUser));
+      setUserForm((prev) => ({ ...prev, email: emailForm.newEmail }));
+
+      setEmailStep(0);
+      setEmailForm({ newEmail: "", password: "", code: "" });
+    } catch (err) {
+      console.error("Error confirming email change:", err);
+      setError(err.response?.data?.message || "Failed to verify email change.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading && !creatorProfile) {
+    return <LoadingIndicator />;
+  }
+
+  if (!creatorProfile) {
+    return <div className="p-8 text-center text-red-500">Profile not found.</div>;
+  }
+
+  const socialLinks = [
+    {
+      label: "Instagram",
+      value: creatorProfile.instagram,
+      url: creatorProfile.instagram
+        ? `https://instagram.com/${creatorProfile.instagram}`
+        : null,
+    },
+    {
+      label: "X",
+      value: creatorProfile.x,
+      url: creatorProfile.x ? `https://x.com/${creatorProfile.x}` : null,
+    },
+    {
+      label: "Facebook",
+      value: creatorProfile.facebook,
+      url: creatorProfile.facebook
+        ? `https://facebook.com/${creatorProfile.facebook}`
+        : null,
+    },
+  ];
 
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Cover Photo */}
-      <div className="relative h-64 rounded-3xl overflow-hidden shadow-lg">
-        <img
-          src={creatorProfile.coverPhoto}
-          alt="Cover"
-          className="w-full h-full object-cover"
-        />
+      <div className="relative h-64 rounded-3xl overflow-hidden shadow-lg bg-gray-200">
+        {creatorProfile.coverPhoto ? (
+          <img
+            src={creatorProfile.coverPhoto}
+            alt="Cover"
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-r from-blue-400 to-purple-500"></div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
       </div>
 
@@ -107,7 +270,7 @@ const CreatorProfile = () => {
             {/* Avatar */}
             <div className="relative">
               <img
-                src={creatorProfile.avatarUrl}
+                src={creatorProfile.avatarUrl || "https://via.placeholder.com/150"}
                 alt="Avatar"
                 className="w-32 h-32 rounded-full border-4 border-white shadow-xl object-cover"
               />
@@ -118,22 +281,21 @@ const CreatorProfile = () => {
 
             {/* User Info */}
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900">{user.name}</h1>
+              <h1 className="text-3xl font-bold text-gray-900">{creatorProfile.user?.name || user.name}</h1>
               <p className="text-lg text-gray-600 mt-1">
-                {creatorProfile.title}
+                {creatorProfile.title || "No Title Set"}
               </p>
               <div className="flex items-center gap-4 mt-3">
                 <span
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
-                    user.status === "active"
-                      ? "bg-emerald-50 text-emerald-600"
-                      : "bg-red-50 text-red-600"
-                  }`}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${user.status === "active"
+                    ? "bg-emerald-50 text-emerald-600"
+                    : "bg-red-50 text-red-600"
+                    }`}
                 >
                   {user.status === "active" ? "Active" : "Closed"}
                 </span>
                 <span className="text-sm text-gray-500">
-                  Role: {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                  Role: {user.role ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : ''}
                 </span>
                 <span className="text-sm text-gray-400">
                   Joined: {new Date(user.created_at).toLocaleDateString()}
@@ -150,6 +312,7 @@ const CreatorProfile = () => {
                 <PencilSquareIcon className="w-5 h-5" />
                 Edit Profile
               </button>
+              {/* Disable Account Edit if not admin, or just hide/show info */}
               <button
                 onClick={() => setShowUserModal(true)}
                 className="flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-300 font-medium"
@@ -170,7 +333,7 @@ const CreatorProfile = () => {
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
             <h3 className="text-xl font-bold text-gray-900 mb-4">About</h3>
             <p className="text-gray-600 leading-relaxed">
-              {creatorProfile.description}
+              {creatorProfile.description || "No description provided."}
             </p>
           </div>
 
@@ -181,9 +344,9 @@ const CreatorProfile = () => {
                 Interests
               </h3>
               <div className="flex flex-wrap gap-3">
-                {creatorProfile.interest.map((interest) => (
+                {creatorProfile.interest.map((interest, idx) => (
                   <span
-                    key={interest}
+                    key={idx}
                     className="px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 rounded-full text-sm font-medium border border-blue-100"
                   >
                     {interest}
@@ -218,11 +381,12 @@ const CreatorProfile = () => {
                         <p className="text-sm font-medium text-gray-900">
                           {link.label}
                         </p>
-                        <p className="text-sm text-gray-500">@{link.value}</p>
+                        <p className="text-sm text-gray-500">{link.value}</p>
                       </div>
                     </a>
                   )
               )}
+              {!socialLinks.some(l => l.value) && <p className="text-gray-500">No social links added.</p>}
             </div>
           </div>
         </div>
@@ -241,7 +405,7 @@ const CreatorProfile = () => {
                 <div>
                   <p className="text-xs text-gray-500">Address</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {creatorProfile.address}
+                    {creatorProfile.address || "N/A"}
                   </p>
                 </div>
               </div>
@@ -252,7 +416,7 @@ const CreatorProfile = () => {
                 <div>
                   <p className="text-xs text-gray-500">Phone</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {creatorProfile.phone}
+                    {creatorProfile.phone || "N/A"}
                   </p>
                 </div>
               </div>
@@ -263,7 +427,7 @@ const CreatorProfile = () => {
                 <div>
                   <p className="text-xs text-gray-500">Email</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {user.email}
+                    {creatorProfile.user?.email || user.email}
                   </p>
                 </div>
               </div>
@@ -287,6 +451,9 @@ const CreatorProfile = () => {
             </div>
 
             <form onSubmit={handleProfileSubmit} className="p-6 space-y-6">
+              {error && <div className="text-red-500 text-sm">{error}</div>}
+              {successMessage && <div className="text-green-500 text-sm">{successMessage}</div>}
+
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Title
@@ -390,12 +557,24 @@ const CreatorProfile = () => {
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Profile Image</label>
+                  <input type="file" name="profileImage" onChange={handleProfileChange} accept="image/*" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Cover Image</label>
+                  <input type="file" name="coverImage" onChange={handleProfileChange} accept="image/*" />
+                </div>
+              </div>
+
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl"
+                  disabled={isLoading}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl disabled:opacity-50"
                 >
-                  Save Changes
+                  {isLoading ? "Saving..." : "Save Changes"}
                 </button>
                 <button
                   type="button"
@@ -410,7 +589,7 @@ const CreatorProfile = () => {
         </div>
       )}
 
-      {/* User Modal */}
+      {/* User Modal - View Only */}
       {showUserModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
@@ -438,54 +617,140 @@ const CreatorProfile = () => {
               </div>
 
               <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Email
+                  </label>
+                  {emailStep === 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setEmailStep(1)}
+                      className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      Change Email
+                    </button>
+                  )}
+                </div>
+                {emailStep === 0 ? (
+                  <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 bg-gray-100 cursor-not-allowed">
+                    {userForm.email}
+                  </div>
+                ) : (
+                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 space-y-4 animate-fade-in">
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-semibold text-blue-900">
+                        {emailStep === 1
+                          ? "Request Email Change"
+                          : "Verify New Email"}
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEmailStep(0);
+                          setEmailForm({
+                            newEmail: "",
+                            password: "",
+                            code: "",
+                          });
+                          setError("");
+                          setSuccessMessage("");
+                        }}
+                        className="text-gray-500 hover:text-red-500"
+                      >
+                        <XMarkIcon className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    {emailStep === 1 ? (
+                      <div className="space-y-3">
+                        <input
+                          name="newEmail"
+                          value={emailForm.newEmail}
+                          onChange={handleEmailFormChange}
+                          placeholder="New Email Address"
+                          className="w-full px-4 py-3 bg-white border border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <input
+                          type="password"
+                          name="password"
+                          value={emailForm.password}
+                          onChange={handleEmailFormChange}
+                          placeholder="Current Password"
+                          className="w-full px-4 py-3 bg-white border border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleEmailRequest}
+                          disabled={isLoading}
+                          className="w-full py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
+                        >
+                          {isLoading ? "Sending..." : "Send Verification Code"}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <p className="text-sm text-blue-800">
+                          Please enter the verification code sent to{" "}
+                          {emailForm.newEmail}
+                        </p>
+                        <input
+                          name="code"
+                          value={emailForm.code}
+                          onChange={handleEmailFormChange}
+                          placeholder="Verification Code"
+                          className="w-full px-4 py-3 bg-white border border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleEmailConfirm}
+                          disabled={isLoading}
+                          className="w-full py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-medium disabled:opacity-50"
+                        >
+                          {isLoading ? "Verifying..." : "Verify & Change"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email
+                  Old Password
                 </label>
                 <input
-                  name="email"
-                  value={userForm.email}
+                  type="password"
+                  name="oldPassword"
+                  value={userForm.oldPassword || ""}
                   onChange={handleUserChange}
+                  placeholder="Enter current password"
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Status
+                  New Password
                 </label>
-                <select
-                  name="status"
-                  value={userForm.status}
+                <input
+                  type="password"
+                  name="password"
+                  value={userForm.password || ""}
                   onChange={handleUserChange}
+                  placeholder="Enter new password (optional)"
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="active">Active</option>
-                  <option value="closed">Closed</option>
-                </select>
+                />
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Role
-                </label>
-                <select
-                  name="role"
-                  value={userForm.role}
-                  onChange={handleUserChange}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="creator">Creator</option>
-                  <option value="consumer">Consumer</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
+
 
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl"
+                  disabled={isLoading}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl disabled:opacity-50"
                 >
-                  Save Changes
+                  {isLoading ? "Saving..." : "Save Changes"}
                 </button>
                 <button
                   type="button"

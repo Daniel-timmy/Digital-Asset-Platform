@@ -12,7 +12,7 @@ import {
 
 const CreatorUploadProduct = () => {
   const [loading, setLoading] = useState(false);
-  const [tagLoading, setTagLoading] = useState(false);
+  // const [tagLoading, setTagLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -22,8 +22,7 @@ const CreatorUploadProduct = () => {
     price: "",
     file: null,
     tags: [],
-    thumbnail: null,
-    thumbnail_url: "",
+
     license: "",
   });
   const [errors, setErrors] = useState({});
@@ -32,12 +31,6 @@ const CreatorUploadProduct = () => {
   const [apiError, setApiError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  const [newItemForm, setNewItemForm] = useState({
-    type: "tag",
-    name: "",
-  });
-  const [newItemErrors, setNewItemErrors] = useState({});
-  const [newItemSuccessMessage, setNewItemSuccessMessage] = useState("");
 
   const fileTypeOptions = [
     { value: "image", label: "Image" },
@@ -149,52 +142,6 @@ const CreatorUploadProduct = () => {
     setErrors((prev) => ({ ...prev, tags: "" }));
   };
 
-  const handleNewItemInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewItemForm((prev) => ({ ...prev, [name]: value }));
-    setNewItemErrors((prev) => ({ ...prev, [name]: "" }));
-  };
-
-  const handleNewItemTypeChange = (selected) => {
-    setNewItemForm((prev) => ({
-      ...prev,
-      type: selected ? selected.value : "tag",
-    }));
-    setNewItemErrors((prev) => ({ ...prev, type: "" }));
-  };
-
-  const handleThumbnailChange = (e) => {
-    const file = e.target.files[0];
-    let error = "";
-    if (file) {
-      const isImage = file.type.startsWith("image/");
-      const isVideo = file.type.startsWith("video/");
-      if (!isImage && !isVideo) {
-        error = "Thumbnail must be an image or a video file";
-      } else if (isImage && file.size > 2 * 1024 * 1024) {
-        error = "Image thumbnail must be less than 2MB";
-      } else if (isVideo && file.size > 5 * 1024 * 1024) {
-        error = "Video thumbnail must be less than 5MB";
-      }
-      setFormData((prev) => ({
-        ...prev,
-        thumbnail: error ? null : file,
-      }));
-      setErrors((prev) => ({
-        ...prev,
-        thumbnail: error,
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        thumbnail: null,
-      }));
-      setErrors((prev) => ({
-        ...prev,
-        thumbnail: "",
-      }));
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -210,7 +157,7 @@ const CreatorUploadProduct = () => {
     if (!formData.file) newErrors.file = "File upload is required";
     if (formData.tags.length === 0)
       newErrors.tags = "At least one tag is required";
-    if (!formData.thumbnail) newErrors.thumbnail = "Thumbnail is required";
+
     if (!formData.license) newErrors.license = "License is required";
 
     if (Object.keys(newErrors).length > 0) {
@@ -232,7 +179,7 @@ const CreatorUploadProduct = () => {
       formDataToSend.append("price", formData.price);
       formDataToSend.append("tagsId", JSON.stringify(formData.tags));
       formDataToSend.append("file", formData.file);
-      formDataToSend.append("thumbnail", formData.thumbnail);
+
       formDataToSend.append("license", formData.license);
 
       const res = await api.post("/assets", formDataToSend, {
@@ -252,8 +199,7 @@ const CreatorUploadProduct = () => {
       //   price: "",
       //   file: null,
       //   tags: [],
-      //   thumbnail: null,
-      //   thumbnail_url: "",
+
       //   license: "",
       // });
       setErrors({});
@@ -263,65 +209,13 @@ const CreatorUploadProduct = () => {
       console.error("Error uploading product:", error);
       setApiError(
         error.response?.data?.message ||
-          "Failed to upload product. Please try again."
+        "Failed to upload product. Please try again."
       );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleNewItemSubmit = async (e) => {
-    e.preventDefault();
-    setTagLoading(true);
-    const newErrors = {};
-
-    if (!newItemForm.name.trim()) newErrors.name = "Name is required";
-    if (!newItemForm.type) newErrors.type = "Type is required";
-
-    if (Object.keys(newErrors).length > 0) {
-      setNewItemErrors(newErrors);
-      setApiError("");
-      setTagLoading(false);
-      return;
-    }
-
-    try {
-      const endpoint = newItemForm.type === "tag" ? "/tags" : "/category";
-      const res = await api.post(endpoint, { name: newItemForm.name });
-      const newItem = res.data.data || res.data;
-
-      if (newItemForm.type === "tag") {
-        const newTag = { value: newItem.id, label: newItem.name };
-        const updatedTags = [...tagOptions, newTag];
-        setTagOptions(updatedTags);
-        localStorage.setItem("tags", JSON.stringify(updatedTags));
-      } else {
-        const newCategory = { value: newItem.id, label: newItem.name };
-        const updatedCategories = [...categoryOptions, newCategory];
-        setCategoryOptions(updatedCategories);
-        localStorage.setItem("categories", JSON.stringify(updatedCategories));
-      }
-
-      setNewItemForm({ type: "tag", name: "" });
-      setNewItemErrors({});
-      setApiError("");
-      setNewItemSuccessMessage(
-        `${
-          newItemForm.type === "tag" ? "Tag" : "Category"
-        } created successfully!`
-      );
-      setTimeout(() => setNewItemSuccessMessage(""), 3000);
-    } catch (error) {
-      console.error(`Error creating ${newItemForm.type}:`, error);
-      setApiError(
-        error.response?.data?.message ||
-          `Failed to create ${newItemForm.type}. Please try again.`
-      );
-      setNewItemSuccessMessage("");
-    } finally {
-      setTagLoading(false);
-    }
-  };
 
   return (
     <div className="space-y-8">
@@ -377,9 +271,8 @@ const CreatorUploadProduct = () => {
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                errors.name ? "border-red-500" : "border-gray-200"
-              }`}
+              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${errors.name ? "border-red-500" : "border-gray-200"
+                }`}
               placeholder="Enter product name"
             />
             {errors.name && (
@@ -396,9 +289,8 @@ const CreatorUploadProduct = () => {
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none ${
-                errors.description ? "border-red-500" : "border-gray-200"
-              }`}
+              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none ${errors.description ? "border-red-500" : "border-gray-200"
+                }`}
               rows="4"
               placeholder="Describe your product"
             />
@@ -474,9 +366,8 @@ const CreatorUploadProduct = () => {
               name="price"
               value={formData.price}
               onChange={handleInputChange}
-              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                errors.price ? "border-red-500" : "border-gray-200"
-              }`}
+              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${errors.price ? "border-red-500" : "border-gray-200"
+                }`}
               placeholder="0.00"
               min="0"
               step="0.01"
@@ -532,58 +423,7 @@ const CreatorUploadProduct = () => {
             )}
           </div>
 
-          {/* Thumbnail Upload */}
-          <div className="md:col-span-2">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Thumbnail (Image ≤2MB or Video ≤5MB)
-            </label>
-            <div className="relative">
-              <input
-                type="file"
-                name="thumbnail"
-                onChange={handleThumbnailChange}
-                className="hidden"
-                id="thumbnail-upload"
-                accept="image/jpeg,image/png,image/webp,image/gif,video/mp4"
-              />
-              <label
-                htmlFor="thumbnail-upload"
-                className="flex items-center justify-center gap-3 w-full px-6 py-8 bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl hover:bg-gray-100 hover:border-gray-400 transition-all cursor-pointer"
-              >
-                <PhotoIcon className="w-8 h-8 text-gray-400" />
-                <div className="text-center">
-                  <p className="text-sm font-medium text-gray-700">
-                    {formData.thumbnail
-                      ? formData.thumbnail.name
-                      : "Click to upload thumbnail"}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Image or Video for preview
-                  </p>
-                </div>
-              </label>
-            </div>
-            {formData.thumbnail && (
-              <div className="mt-4">
-                {formData.thumbnail.type.startsWith("image/") ? (
-                  <img
-                    src={URL.createObjectURL(formData.thumbnail)}
-                    alt="Thumbnail Preview"
-                    className="w-32 h-32 object-cover rounded-lg"
-                  />
-                ) : formData.thumbnail.type.startsWith("video/") ? (
-                  <video
-                    src={URL.createObjectURL(formData.thumbnail)}
-                    controls
-                    className="w-32 h-32 object-cover rounded-lg"
-                  />
-                ) : null}
-              </div>
-            )}
-            {errors.thumbnail && (
-              <p className="text-red-500 text-sm mt-1">{errors.thumbnail}</p>
-            )}
-          </div>
+
 
           {/* Tags */}
           <div className="md:col-span-2">

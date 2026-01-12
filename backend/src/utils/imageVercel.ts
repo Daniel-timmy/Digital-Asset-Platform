@@ -3,21 +3,21 @@ import { HttpError } from '../error/HttpError';
 import logger from '../logger/app.logger';
 
 
-async function uploadImage(name: string, file: Buffer, folder: string): Promise<PutBlobResult>{
+async function uploadImage(name: string, file: Buffer, folder: string): Promise<PutBlobResult> {
     logger.info
-    const blob = await put(`${folder}/${name}`, file, { access: 'public' });
+    const blob = await put(`${folder}/${name}`, file, { access: 'public', allowOverwrite: true });
     if (!blob) throw new HttpError("Unable to upload asset", 500)
-    return blob ; 
-   
+    return blob;
+
 }
 
-export async function updateImage(bloburl: string, file: Buffer): Promise<string>{
+export async function updateImage(bloburl: string, file: Buffer): Promise<string> {
     const updatedBlob = await put(bloburl, file, { access: 'public', allowOverwrite: true });
     if (!updatedBlob) throw new HttpError("Unable to upload image", 500)
-    return updatedBlob.url; 
+    return updatedBlob.url;
 }
 
-export async function deleteImage(url: string){
+export async function deleteImage(url: string) {
     await del(url)
 }
 

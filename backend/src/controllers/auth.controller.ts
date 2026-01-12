@@ -8,27 +8,11 @@ import { HttpError } from "../error/HttpError";
 import { redisClient } from "../database/redis_cache";
 import { sendVerificationEmail } from "../utils/sendEmail";
 import logger from "../logger/app.logger";
+import generateVerificationCode from "../utils/generateCode";
 
-
-function generateVerificationCode(): string {
-  try {
-    logger.info(`Generating 6-character verification code`);
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for (let i = 0; i < 6; i++) {
-      const randomIndex = Math.floor(Math.random() * characters.length);
-      code += characters[randomIndex];
-    }
-    logger.info(`Successfully generated verification code: ${code}`);
-    return code;
-  } catch (error) {
-    logger.error(`Error generating verification code: ${error}`);
-    throw new Error("Failed to generate verification code");
-  }
-}
 
 export class AuthController {
-  constructor(private userService: UserService) {}
+  constructor(private userService: UserService) { }
 
   async registerAdmin(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
@@ -36,13 +20,11 @@ export class AuthController {
       const userData: IUserAdmin = req.body;
 
       if (!userData.name || !userData.email || !userData.password || !userData.role) {
-        logger.warn(`Registration failed: Missing required parameters for email ${req.body.email}`);
-        throw new HttpError("Missing required parameter", 400);
+        throw new HttpError("Registration failed: Missing required parameter", 400);
       }
 
       const existingUser = await this.userService.findByEmail(userData.email);
       if (existingUser) {
-        logger.warn(`Registration failed: User with email ${userData.email} already exists`);
         throw new HttpError("User with email already exists", 409);
       }
 
@@ -53,7 +35,7 @@ export class AuthController {
         password: hashedPassword,
       };
       const newUser = await this.userService.create(userDataWithHashedPassword);
-      logger.info(`Successfully created user with ID: ${newUser.id}, email: ${newUser.email}`);
+      logger.info(`Successfully created user with ID: ${newUser.id}`);
 
       const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1d';
       if (!JWT_SECRET) {
@@ -78,7 +60,16 @@ export class AuthController {
         message: 'User created successfully',
         access,
         refresh,
-        user: newUser,
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          name: newUser.name,
+          role: newUser.role,
+          status: newUser.status,
+          created_at: newUser.created_at,
+          updated_at: newUser.updated_at,
+          deleted_at: newUser.deleted_at,
+        },
       });
     } catch (error) {
       logger.error(`Error registering user with email ${req.body.email || 'unknown'}: ${error}`);
@@ -89,8 +80,8 @@ export class AuthController {
   async register(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       logger.info(`Initiating email verification for user with email: ${req.body.email}`);
-      const {name, email, password} = req.body;
-      const userData: IUser = {name, email, password}
+      const { name, email, password } = req.body;
+      const userData: IUser = { name, email, password }
 
       if (!userData.name || !userData.email || !userData.password) {
         logger.warn(`Email verification failed: Missing required parameters for email ${req.body.email}`);
@@ -99,8 +90,7 @@ export class AuthController {
 
       const existingUser = await this.userService.findByEmail(userData.email);
       if (existingUser) {
-        logger.warn(`Email verification failed: User with email ${userData.email} already exists`);
-        throw new HttpError("User with email already exists", 409);
+        throw new HttpError(`Email verification failed: User with email ${userData.email} already exists`, 409);
       }
 
       const code: string = generateVerificationCode()
@@ -112,8 +102,7 @@ export class AuthController {
           NX: true,
         }
       );
-      logger.info(`Stored verification code in Redis for email: ${userData.email}`);
-      
+
       await sendVerificationEmail(userData.email, code);
       logger.info(`Sent verification email to: ${userData.email}`);
 
@@ -126,11 +115,12 @@ export class AuthController {
       return next(error);
     }
   }
+
   async registerCreator(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       logger.info(`Initiating email verification for user with email: ${req.body.email}`);
-      const {name, email, password} = req.body;
-      const userData: IUser = {name, email, password, role: 'creator'}
+      const { name, email, password } = req.body;
+      const userData: IUser = { name, email, password, role: 'creator' }
 
       if (!userData.name || !userData.email || !userData.password) {
         logger.warn(`Email verification failed: Missing required parameters for email ${req.body.email}`);
@@ -153,7 +143,7 @@ export class AuthController {
         }
       );
       logger.info(`Stored verification code in Redis for email: ${userData.email}`);
-      
+
       await sendVerificationEmail(userData.email, code);
       logger.info(`Sent verification email to: ${userData.email}`);
 
@@ -223,7 +213,16 @@ export class AuthController {
         message: 'User created successfully',
         access,
         refresh,
-        user: newUser,
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          name: newUser.name,
+          role: newUser.role,
+          status: newUser.status,
+          created_at: newUser.created_at,
+          updated_at: newUser.updated_at,
+          deleted_at: newUser.deleted_at,
+        },
       });
     } catch (error) {
       logger.error(`Error verifying code ${req.body.code || 'unknown'}: ${error}`);
@@ -265,7 +264,7 @@ export class AuthController {
 
       const user = await this.userService.findOne(payload.userId);
       if (!user) {
-        logger.warn(`Token refresh failed: User not found for ID: ${payload.userId}`);
+        logger.warn(`Token refresh failed: User not found`);
         return res.status(404).json({
           success: false,
           message: 'User not found',
@@ -275,7 +274,8 @@ export class AuthController {
 
       const access = jwt.sign(
         { userId: user.id, email: user.email },
-        JWT_SECRET as jwt.Secret,
+        JWT_REFRESH_SECRET as jwt.Secret,
+
         { expiresIn: '1d' }
       );
       const refreshToken = jwt.sign(
@@ -290,7 +290,16 @@ export class AuthController {
         message: 'Access token refreshed successfully',
         access,
         refresh: refreshToken,
-        user,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          status: user.status,
+          created_at: user.created_at,
+          updated_at: user.updated_at,
+          deleted_at: user.deleted_at,
+        },
       });
     } catch (error) {
       logger.error(`Error refreshing token: ${error}`);
@@ -302,7 +311,7 @@ export class AuthController {
     try {
       const { email, password } = req.body;
       logger.info(`Login attempt for email: ${email}`);
-      
+
       const isValidEmail = /\S+@\S+\.\S+/.test(email);
       if (!email || !isValidEmail) {
         logger.warn(`Login failed: Invalid email format for email ${email}`);
@@ -310,7 +319,7 @@ export class AuthController {
       }
 
       const user = await this.userService.findByEmail(email);
-      if (!user) {
+      if (!user || user.status === "deleted") {
         logger.warn(`Login failed: User not found for email ${email}`);
         return res.status(404).json({
           success: false,
@@ -322,7 +331,6 @@ export class AuthController {
           },
         });
       }
-      console.log(user);
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
         logger.warn(`Login failed: Invalid password for email ${email}`);
@@ -336,7 +344,6 @@ export class AuthController {
           },
         });
       }
-      console.log(`Login attempt for PASSWORD: ${password}`);
 
       const access = jwt.sign(
         { userId: user.id, email: user.email },
@@ -348,15 +355,23 @@ export class AuthController {
         JWT_REFRESH_SECRET as jwt.Secret,
         { expiresIn: '7d' }
       );
-      logger.info(`Successful login for user ID: ${user.id}, email: ${user.email}`);
-      logger.info(`Generated access and refresh tokens for user ID: ${user.id}`);
+      logger.info(`Successful login for user ID: ${user.id}`);
 
       return res.status(200).json({
         success: true,
         message: 'User signed in successfully',
         access,
         refresh,
-        user,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          status: user.status,
+          created_at: user.created_at,
+          updated_at: user.updated_at,
+          deleted_at: user.deleted_at,
+        },
       });
     } catch (error) {
       logger.error(`Error during login for email ${req.body.email || 'unknown'}: ${error}`);

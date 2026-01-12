@@ -35,10 +35,10 @@ export class Asset {
   size!: number;
 
   @Column({ type: "decimal", precision: 10, scale: 2 })
-  price!: number ;
-       
-  @Column({ type: "enum", enum: ["pending", "approved", "rejected"], default: 'pending' })
-  status!: "pending" | "approved" | "rejected";
+  price!: number;
+
+  @Column({ type: "enum", enum: ["pending", "approved", "rejected", "deleted"], default: 'pending' })
+  status!: "pending" | "approved" | "rejected" | "deleted";
 
   @Column({ type: "enum", enum: ["free", "premium"], default: 'premium' })
   license!: "free" | "premium";
@@ -49,9 +49,15 @@ export class Asset {
   @UpdateDateColumn()
   updated_at: Date = new Date();
 
+  @Column({ type: "boolean", default: false })
+  is_deleted!: boolean;
+
+  @Column({ type: "date", nullable: true })
+  deleted_at!: Date;
+
   @ManyToMany(() => Tag)
   @JoinTable({
-    name: "asset_tags", 
+    name: "asset_tags",
     joinColumn: { name: "asset", referencedColumnName: "id" },
     inverseJoinColumn: { name: "tag", referencedColumnName: "id" }
   })

@@ -13,7 +13,19 @@ const AuthPage = ({ state = true }) => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLogin, setIsLogin] = useState(state);
-  const toggleForm = () => setIsLogin(!isLogin);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [resetStep, setResetStep] = useState(false); // false = initiate, true = confirm
+
+  const toggleForm = () => {
+    if (isForgotPassword) {
+      setIsForgotPassword(false);
+      setIsLogin(true);
+      setResetStep(false);
+    } else {
+      setIsLogin(!isLogin);
+    }
+    setErrors({});
+  };
   const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
@@ -30,11 +42,11 @@ const AuthPage = ({ state = true }) => {
   };
 
   const validateField = (name, value) => {
+    // console.log(name, value, /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value));
     switch (name) {
       case "email":
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-          ? ""
-          : "Invalid email address.";
+
       case "name":
         return value.trim() ? "" : "Name is required.";
       case "password":
@@ -48,7 +60,7 @@ const AuthPage = ({ state = true }) => {
 
   const validateForm = useCallback(() => {
     const newErrors = {
-      email: validateField("email", formData.email),
+      email: validateField("email", formData.email) ? "" : "Invalid email address.",
       name: validateField("name", formData.name),
       confirmPassword: validateField(
         "confirmPassword",
@@ -61,9 +73,10 @@ const AuthPage = ({ state = true }) => {
 
   const validateLoginForm = useCallback(() => {
     const newErrors = {
-      email: validateField("email", formData.email),
+      email: validateField("email", formData.email) ? "" : "Invalid email address.",
       password: validateField("password", formData.password),
     };
+    console.log(newErrors)
     setErrors(newErrors);
     return Object.values(newErrors).every((error) => !error);
   }, [formData]);
@@ -113,6 +126,56 @@ const AuthPage = ({ state = true }) => {
     }
   };
 
+  const handleForgotPasswordSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrors({});
+
+    try {
+      if (!resetStep) {
+        console.log(validateField("email", formData.email))
+        if (!validateField("email", formData.email)) {
+          setErrors({ email: "Invalid email address" });
+          setLoading(false);
+          return;
+        }
+
+        const res = await api.post("/users/forgot-password/initiate", { email: formData.email });
+
+        if (res.data.success) {
+          setResetStep(true);
+          setErrors({ success: "Verification code sent to your email." });
+        }
+      } else {
+        if (!formData.code || !formData.newPassword) {
+          setErrors({ error: "All fields are required" });
+          setLoading(false);
+          return;
+        }
+
+        const res = await api.post("/users/forgot-password/confirm", {
+          code: formData.code,
+          password: formData.newPassword
+        });
+
+        if (res.data.success) {
+          setIsForgotPassword(false);
+          setIsLogin(true);
+          setResetStep(false);
+          setErrors({ success: "Password reset successfully. Please login." });
+          setFormData(prev => ({ ...prev, code: "", newPassword: "" }));
+        }
+      }
+    } catch (error) {
+      const errorData = error.response?.data || {};
+      setErrors({
+        error: errorData.message || errorData.error || "An error occurred. Please try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="relative w-full min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 font-sans overflow-hidden">
       <Header />
@@ -128,17 +191,23 @@ const AuthPage = ({ state = true }) => {
           <div className="w-full lg:w-3/5 p-8 lg:p-12 bg-white flex flex-col justify-center">
             <div className="mb-8">
               <h2 className="text-4xl lg:text-5xl font-black text-gray-900 mb-3">
-                {isLogin ? "Welcome Back" : "Join Us Today"}
+                {isForgotPassword
+                  ? "Reset Password"
+                  : isLogin
+                    ? "Welcome Back"
+                    : "Join Us Today"}
               </h2>
               <p className="text-gray-600 text-lg">
-                {isLogin
-                  ? "Sign in to access your account"
-                  : "Create an account to get started"}
+                {isForgotPassword
+                  ? "Enter your email to receive a verification code"
+                  : isLogin
+                    ? "Sign in to access your account"
+                    : "Create an account to get started"}
               </p>
             </div>
 
-            <form className="space-y-5" onSubmit={handleSubmit}>
-              {!isLogin && (
+            <form className="space-y-5" onSubmit={isForgotPassword ? handleForgotPasswordSubmit : handleSubmit}>
+              {!isForgotPassword && !isLogin && (
                 <>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -163,22 +232,20 @@ const AuthPage = ({ state = true }) => {
                     <div className="flex gap-3">
                       <button
                         type="button"
-                        className={`flex-1 px-6 py-3 rounded-xl border-2 font-semibold transition-all duration-300 ${
-                          role === "creator"
-                            ? "bg-black text-white border-black shadow-lg scale-105"
-                            : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                        }`}
+                        className={`flex-1 px-6 py-3 rounded-xl border-2 font-semibold transition-all duration-300 ${role === "creator"
+                          ? "bg-black text-white border-black shadow-lg scale-105"
+                          : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                          }`}
                         onClick={() => setRole("creator")}
                       >
                         🎨 Creator
                       </button>
                       <button
                         type="button"
-                        className={`flex-1 px-6 py-3 rounded-xl border-2 font-semibold transition-all duration-300 ${
-                          role === "consumer"
-                            ? "bg-black text-white border-black shadow-lg scale-105"
-                            : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                        }`}
+                        className={`flex-1 px-6 py-3 rounded-xl border-2 font-semibold transition-all duration-300 ${role === "consumer"
+                          ? "bg-black text-white border-black shadow-lg scale-105"
+                          : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                          }`}
                         onClick={() => setRole("consumer")}
                       >
                         🛍️ Consumer
@@ -187,39 +254,103 @@ const AuthPage = ({ state = true }) => {
                   </div>
                 </>
               )}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="your.email@example.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
-                />
-                {errors.email && (
-                  <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  placeholder="Enter your password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
-                />
-                {errors.password && (
-                  <p className="text-red-500 text-sm mt-1">{errors.password}</p>
-                )}
-              </div>
-              {!isLogin && (
+
+              {!isForgotPassword && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="your.email@example.com"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                  />
+                  {errors.email && (
+                    <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                  )}
+                </div>
+              )}
+
+              {isForgotPassword && !resetStep && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="your.email@example.com"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                  />
+                  {errors.email && (
+                    <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                  )}
+                </div>
+              )}
+
+              {isForgotPassword && resetStep && (
+                <>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Verification Code
+                    </label>
+                    <input
+                      type="text"
+                      name="code"
+                      placeholder="Enter verification code"
+                      value={formData.code || ""}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                    />
+                    {errors.code && (
+                      <p className="text-red-500 text-sm mt-1">{errors.code}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      name="newPassword"
+                      placeholder="Enter new password"
+                      value={formData.newPassword || ""}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                    />
+                    {errors.newPassword && (
+                      <p className="text-red-500 text-sm mt-1">{errors.newPassword}</p>
+                    )}
+                  </div>
+                </>
+              )}
+
+
+              {!isForgotPassword && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    placeholder="Enter your password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                  />
+                  {errors.password && (
+                    <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+                  )}
+                </div>
+              )}
+
+              {!isLogin && !isForgotPassword && (
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Confirm Password
@@ -240,6 +371,18 @@ const AuthPage = ({ state = true }) => {
                 </div>
               )}
 
+              {isLogin && !isForgotPassword && (
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsForgotPassword(true)}
+                    className="text-sm font-semibold text-gray-600 hover:text-black hover:underline"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              )}
+
               {loading ? (
                 <div className="py-4">
                   <LoadingIndicator />
@@ -249,7 +392,9 @@ const AuthPage = ({ state = true }) => {
                   type="submit"
                   className="w-full bg-gradient-to-r from-black to-gray-800 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                 >
-                  {isLogin ? "Sign In" : "Create Account"}
+                  {isForgotPassword
+                    ? (resetStep ? "Reset Password" : "Send Verification Code")
+                    : (isLogin ? "Sign In" : "Create Account")}
                 </button>
               )}
               {errors.error && (
@@ -257,18 +402,26 @@ const AuthPage = ({ state = true }) => {
                   {errors.error}
                 </p>
               )}
+              {errors.success && (
+                <p className="text-green-500 text-sm text-center bg-green-50 p-3 rounded-lg">
+                  {errors.success}
+                </p>
+              )}
             </form>
 
             <div className="mt-8 text-center">
               <p className="text-gray-600">
-                {isLogin
-                  ? "Don't have an account?"
-                  : "Already have an account?"}{" "}
+                {isForgotPassword
+                  ? "Remember your password?"
+                  : (isLogin ? "Don't have an account?" : "Already have an account?")
+                }{" "}
                 <button
                   onClick={toggleForm}
                   className="text-black font-bold hover:underline transition-all"
                 >
-                  {isLogin ? "Sign Up" : "Sign In"}
+                  {isForgotPassword
+                    ? "Back to Login"
+                    : (isLogin ? "Sign Up" : "Sign In")}
                 </button>
               </p>
             </div>

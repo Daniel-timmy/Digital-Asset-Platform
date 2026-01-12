@@ -21,6 +21,7 @@ import { FRONTEND_URL } from "./config/env";
 import { initializeDatabase } from "./database/db";
 import { errorMiddleware } from "./middlewares/error.middleware";
 import messageRouter from "./routes/message.routes";
+import userProfileRouter from "./routes/userProfile.routes";
 import { initializeQueues } from "./queue/rabbitMq";
 
 
@@ -36,18 +37,18 @@ app.use(
       "http://localhost:3000", // Vite dev server
       `${FRONTEND_URL}`, // Production frontend
     ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"], 
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   })
 );
 
 
 const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    message: 'Too many requests from this IP, please try again after 15 minutes',
-    statusCode: 429, 
-    standardHeaders: true, 
-    legacyHeaders: false, 
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: 'Too many requests from this IP, please try again after 15 minutes',
+  statusCode: 429,
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 app.use(apiLimiter);
@@ -55,8 +56,8 @@ app.set('trust proxy', 1);
 
 
 app.get('/health', (req: Request, res: Response) => {
-    logger.debug('Health check endpoint accessed');
-    res.status(200).json({ status: 'OK' });
+  logger.debug('Health check endpoint accessed');
+  res.status(200).json({ status: 'OK' });
 });
 app.use("/api/assets", assetRouter);
 app.use("/api/auth", authRouter);
@@ -69,6 +70,7 @@ app.use("/api/tags", tagRouter);
 app.use("/api/ticket", ticketRouter)
 app.use("/api/transactions", transactionRouter);
 app.use("/api/users", userRouter);
+app.use("/api/user-profile", userProfileRouter);
 app.use(errorMiddleware)
 
 if (process.env.PORT === undefined) {
@@ -82,16 +84,16 @@ const startServer = async () => {
     console.log("PORT from config/env:", PORT);
     await initializeDatabase();
     initializeQueues()
-  
+
     logger.info('Database connected successfully');
     app.listen(PORT, "0.0.0.0", async () => {
       logger.info(`Server is running on port ${PORT}`);
-      
+
     });
-  } catch(error) {
-    
-  console.error("Error during Data Source initialization:", error);
-  process.exit(1); 
+  } catch (error) {
+
+    console.error("Error during Data Source initialization:", error);
+    process.exit(1);
   }
 }
 

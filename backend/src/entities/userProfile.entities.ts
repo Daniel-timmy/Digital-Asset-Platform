@@ -12,7 +12,7 @@ export class UserProfile {
   @Column({ type: "varchar", length: 255, nullable: true })
   address?: string;
 
-  @Column({ type: "varchar", length: 100, nullable: true })
+  @Column({ type: "varchar", length: 255, nullable: true })
   avatarUrl?: string;
 
   @Column({ type: "varchar", length: 255, nullable: true })

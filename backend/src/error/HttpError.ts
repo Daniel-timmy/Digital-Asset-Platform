@@ -1,3 +1,5 @@
+import logger from "../logger/app.logger";
+
 export class HttpError extends Error {
   statusCode: number;
 
@@ -6,5 +8,6 @@ export class HttpError extends Error {
     this.statusCode = statusCode;
     this.name = 'HttpError';
     Object.setPrototypeOf(this, HttpError.prototype);
+    logger.error(message);
   }
 }

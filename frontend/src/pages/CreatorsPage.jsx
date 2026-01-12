@@ -1,486 +1,338 @@
-import React, { useState, useEffect, useParams } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useParams } from "react-router-dom";
+import {
+  MapPinIcon,
+  PhoneIcon,
+  EnvelopeIcon,
+  CheckCircleIcon,
+  CubeIcon,
+} from "@heroicons/react/24/outline";
+import api from "../utils/api";
+import LoadingIndicator from "../components/LoadingIndicator";
 import Card from "../components/Card";
+import MasonryGrid from "../components/MasonryGrid";
 import { useCart } from "../context/CartContext";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 
-// Mock UserProfile data (from user_profiles table)
-const creatorProfile = {
-  avatarUrl: "https://via.placeholder.com/120",
-  coverPhoto: "https://via.placeholder.com/600x200",
-  title: "Content Creator",
-  description: "Passionate about creating engaging content for all audiences.",
-  interest: ["Photography", "Travel", "Tech"],
-  instagram: "janedoe_insta",
-  x: "janedoe_x",
-  facebook: "janedoe.fb",
-  address: "123 Main St, City, Country",
-  phone: "+1234567890",
-};
-
-// Mock User data (from users table)
-const user = {
-  name: "Jane Doe",
-  email: "jane.doe@email.com",
-  status: "active",
-  role: "creator",
-  created_at: "2024-06-01T10:00:00Z",
-};
-
-const socialLinks = [
-  {
-    label: "Instagram",
-    value: creatorProfile.instagram,
-    url: creatorProfile.instagram
-      ? `https://instagram.com/${creatorProfile.instagram}`
-      : null,
-  },
-  {
-    label: "X",
-    value: creatorProfile.x,
-    url: creatorProfile.x ? `https://x.com/${creatorProfile.x}` : null,
-  },
-  {
-    label: "Facebook",
-    value: creatorProfile.facebook,
-    url: creatorProfile.facebook
-      ? `https://facebook.com/${creatorProfile.facebook}`
-      : null,
-  },
-];
-
-const CreatorProfile = () => {
-  // Modal state
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  const [showUserModal, setShowUserModal] = useState(false);
-  const [totalPages, setTotalPages] = useState(1);
+const CreatorsPage = () => {
+  const { id } = useParams();
+  const [creatorProfile, setCreatorProfile] = useState(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [assets, setAssets] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isLoadingAssets, setIsLoadingAssets] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [assetsError, setAssetsError] = useState("");
+
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 12,
+    totalPages: 1,
+  });
 
   const { addToCart } = useCart();
+  const observer = useRef(null);
+  const loadMoreRef = useRef(null);
 
-  const { id } = useParams();
+  useEffect(() => {
+    fetchProfile();
+    fetchAssets(1, false);
+  }, [id]);
 
-  // Form state for UserProfile
-  const [profileForm, setProfileForm] = useState({
-    ...creatorProfile,
-    avatarFile: null,
-    coverPhotoFile: null,
-  });
-  const handleAddToCart = (asset) => {
-    addToCart(asset);
-  };
-  const handleProductClick = (product) => {
-    if (!selectedProduct) setSelectedProduct(product);
+  useEffect(() => {
+    if (pagination.page > 1) {
+      fetchAssets(pagination.page, true);
+    }
+  }, [pagination.page]);
+
+  useEffect(() => {
+    observer.current = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          !isLoadingAssets &&
+          pagination.page < pagination.totalPages
+        ) {
+          setPagination((prev) => ({ ...prev, page: prev.page + 1 }));
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.current.observe(loadMoreRef.current);
+    }
+
+    return () => {
+      if (loadMoreRef.current && observer.current) {
+        observer.current.unobserve(loadMoreRef.current);
+      }
+    };
+  }, [isLoadingAssets, pagination.page, pagination.totalPages]);
+
+
+  const fetchProfile = async () => {
+    try {
+      setIsLoadingProfile(true);
+      const res = await api.get(`/user-profile/user/${id}`);
+      setCreatorProfile(res.data);
+    } catch (err) {
+      console.warn("Profile not found, attempting to fetch user details...", err);
+      try {
+        const userRes = await api.get(`/users/${id}`);
+        setCreatorProfile({
+          user: userRes.data,
+          title: "Content Creator",
+          description: "No bio available.",
+          interest: [],
+          instagram: "",
+          x: "",
+          facebook: "",
+          address: "",
+          phone: "",
+          avatarUrl: null,
+          coverPhoto: null
+        });
+        setProfileError("");
+      } catch (userErr) {
+        console.error("Error fetching user:", userErr);
+        setProfileError("Creator not found.");
+      }
+    } finally {
+      setIsLoadingProfile(false);
+    }
   };
 
   const fetchAssets = async (pageNum = 1, append = false) => {
-    if (pageNum > totalPages && append) return; // Prevent fetching beyond total pages
+    if (pageNum > pagination.totalPages && append) return;
+
     try {
-      const resAssets = await api.get(
-        `/assets?userId=${id}page=${pageNum}&limit=${limit}`
+      setIsLoadingAssets(true);
+      // Assuming GET /assets accepts userId filter
+      const res = await api.get(
+        `/assets?userId=${id}&page=${pageNum}&limit=${pagination.limit}`
       );
-      const fetchedAssets = resAssets.data.results || [];
-      const newTotalPages = resAssets.data.totalPages || 1;
+
+      const fetchedAssets = res.data.results || [];
+      const newTotalPages = res.data.totalPages || 1;
 
       setAssets((prev) =>
         append ? [...prev, ...fetchedAssets] : fetchedAssets
       );
-      setTotalPages(newTotalPages);
+      setPagination((prev) => ({
+        ...prev,
+        totalPages: newTotalPages,
+      }));
     } catch (error) {
       console.error("Error fetching assets:", error);
-      setApiError("Failed to load assets. Please try again.");
-    }
-  };
-  // Form state for User
-  const [userForm, setUserForm] = useState({ ...user });
-
-  // Handlers for UserProfile modal
-  const handleProfileChange = (e) => {
-    const { name, value, files } = e.target;
-    if (name === "avatarFile" || name === "coverPhotoFile") {
-      setProfileForm((f) => ({ ...f, [name]: files[0] }));
-    } else {
-      setProfileForm((f) => ({ ...f, [name]: value }));
+      setAssetsError("Failed to load products.");
+    } finally {
+      setIsLoadingAssets(false);
     }
   };
 
-  // Handlers for User modal
-  const handleUserChange = (e) => {
-    const { name, value } = e.target;
-    setUserForm((f) => ({ ...f, [name]: value }));
+  const handleAddToCart = (asset) => {
+    addToCart(asset);
   };
 
-  // Dummy submit handlers
-  const handleProfileSubmit = (e) => {
-    e.preventDefault();
-    // TODO: send profileForm to API
-    setShowProfileModal(false);
-  };
+  if (isLoadingProfile) {
+    return <LoadingIndicator />;
+  }
 
-  const handleUserSubmit = (e) => {
-    e.preventDefault();
-    // TODO: send userForm to API
-    setShowUserModal(false);
-  };
+  if (profileError || !creatorProfile) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center p-8 bg-red-50 rounded-2xl">
+            <p className="text-red-500 font-medium">{profileError || "Profile not found"}</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
-  useEffect(() => {
-    fetchAssets();
-    // eslint-disable-next-line
-  }, []);
+  const socialLinks = [
+    {
+      label: "Instagram",
+      value: creatorProfile.instagram,
+      url: creatorProfile.instagram
+        ? `https://instagram.com/${creatorProfile.instagram}`
+        : null,
+    },
+    {
+      label: "X",
+      value: creatorProfile.x,
+      url: creatorProfile.x ? `https://x.com/${creatorProfile.x}` : null,
+    },
+    {
+      label: "Facebook",
+      value: creatorProfile.facebook,
+      url: creatorProfile.facebook
+        ? `https://facebook.com/${creatorProfile.facebook}`
+        : null,
+    },
+  ];
 
   return (
-    <div style={{ maxWidth: 700, margin: "0 auto", fontFamily: "sans-serif" }}>
-      {/* Cover Photo */}
-      {creatorProfile.coverPhoto && (
-        <img
-          src={creatorProfile.coverPhoto}
-          alt="Cover"
-          style={{
-            width: "100%",
-            height: 200,
-            objectFit: "cover",
-            borderRadius: 8,
-          }}
-        />
-      )}
+    <div className="min-h-screen bg-gray-50 font-sans">
+      <Header />
 
-      <div style={{ display: "flex", alignItems: "center", marginTop: -60 }}>
-        {/* Avatar */}
-        <img
-          src={creatorProfile.avatarUrl}
-          alt="Avatar"
-          style={{
-            width: 120,
-            height: 120,
-            borderRadius: "50%",
-            border: "4px solid white",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-            background: "#fff",
-          }}
-        />
-        <div style={{ marginLeft: 24 }}>
-          <h2 style={{ margin: 0 }}>{user.name}</h2>
-          <div style={{ color: "#888", fontSize: 18 }}>
-            {creatorProfile.title}
-          </div>
-          <div
-            style={{
-              color: user.status === "active" ? "green" : "red",
-              fontWeight: 500,
-            }}
-          >
-            {user.status === "active" ? "Active" : "Closed"}
-          </div>
-          <div style={{ color: "#555", fontSize: 16, marginTop: 4 }}>
-            Role: {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-          </div>
-          <div style={{ color: "#aaa", fontSize: 14, marginTop: 2 }}>
-            Joined: {new Date(user.created_at).toLocaleDateString()}
-          </div>
-        </div>
-      </div>
-
-      {/* Description */}
-      <div style={{ marginTop: 24 }}>
-        <h3>Description</h3>
-        <p>{creatorProfile.description}</p>
-      </div>
-
-      {/* Interests */}
-      {creatorProfile.interest && creatorProfile.interest.length > 0 && (
-        <div style={{ marginTop: 16 }}>
-          <h3>Interests</h3>
-          <ul
-            style={{ display: "flex", gap: 12, listStyle: "none", padding: 0 }}
-          >
-            {creatorProfile.interest.map((interest) => (
-              <li
-                key={interest}
-                style={{
-                  background: "#eee",
-                  borderRadius: 16,
-                  padding: "4px 12px",
-                }}
-              >
-                {interest}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Social Links */}
-      <div style={{ marginTop: 16 }}>
-        <h3>Social Links</h3>
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {socialLinks.map(
-            (link) =>
-              link.value && (
-                <li key={link.label}>
-                  <a href={link.url} target="_blank" rel="noopener noreferrer">
-                    {link.label}: @{link.value}
-                  </a>
-                </li>
-              )
-          )}
-        </ul>
-      </div>
-
-      {/* Contact Info */}
-      <div style={{ marginTop: 16 }}>
-        <h3>Contact Information</h3>
-        <div>Address: {creatorProfile.address}</div>
-        <div>Phone: {creatorProfile.phone}</div>
-        <div>Email: {user.email}</div>
-      </div>
-
-      {/* Edit buttons */}
-      <div style={{ display: "flex", gap: 12, margin: "16px 0" }}>
-        <button onClick={() => setShowProfileModal(true)}>Edit Profile</button>
-        <button onClick={() => setShowUserModal(true)}>Edit Account</button>
-      </div>
-
-      {/* UserProfile Modal */}
-      {showProfileModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            background: "rgba(0,0,0,0.3)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-        >
-          <form
-            style={{
-              background: "#fff",
-              padding: 24,
-              borderRadius: 8,
-              minWidth: 350,
-              boxShadow: "0 2px 16px rgba(0,0,0,0.15)",
-            }}
-            onSubmit={handleProfileSubmit}
-          >
-            <h2>Edit Profile</h2>
-            <label>
-              Title:
-              <input
-                name="title"
-                value={profileForm.title}
-                onChange={handleProfileChange}
-              />
-            </label>
-            <br />
-            <label>
-              Description:
-              <textarea
-                name="description"
-                value={profileForm.description}
-                onChange={handleProfileChange}
-              />
-            </label>
-            <br />
-            <label>
-              Interests (comma separated):
-              <input
-                name="interest"
-                value={profileForm.interest.join(", ")}
-                onChange={(e) =>
-                  setProfileForm((f) => ({
-                    ...f,
-                    interest: e.target.value.split(",").map((s) => s.trim()),
-                  }))
-                }
-              />
-            </label>
-            <br />
-            <label>
-              Instagram:
-              <input
-                name="instagram"
-                value={profileForm.instagram}
-                onChange={handleProfileChange}
-              />
-            </label>
-            <br />
-            <label>
-              X:
-              <input
-                name="x"
-                value={profileForm.x}
-                onChange={handleProfileChange}
-              />
-            </label>
-            <br />
-            <label>
-              Facebook:
-              <input
-                name="facebook"
-                value={profileForm.facebook}
-                onChange={handleProfileChange}
-              />
-            </label>
-            <br />
-            <label>
-              Address:
-              <input
-                name="address"
-                value={profileForm.address}
-                onChange={handleProfileChange}
-              />
-            </label>
-            <br />
-            <label>
-              Phone:
-              <input
-                name="phone"
-                value={profileForm.phone}
-                onChange={handleProfileChange}
-              />
-            </label>
-            <br />
-            <label>
-              Avatar:
-              <input
-                type="file"
-                name="avatarFile"
-                accept="image/*"
-                onChange={handleProfileChange}
-              />
-            </label>
-            <br />
-            <label>
-              Cover Photo:
-              <input
-                type="file"
-                name="coverPhotoFile"
-                accept="image/*"
-                onChange={handleProfileChange}
-              />
-            </label>
-            <br />
-            <div style={{ marginTop: 16 }}>
-              <button type="submit">Save</button>
-              <button
-                type="button"
-                onClick={() => setShowProfileModal(false)}
-                style={{ marginLeft: 8 }}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* User Modal */}
-      {showUserModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            background: "rgba(0,0,0,0.3)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-        >
-          <form
-            style={{
-              background: "#fff",
-              padding: 24,
-              borderRadius: 8,
-              minWidth: 350,
-              boxShadow: "0 2px 16px rgba(0,0,0,0.15)",
-            }}
-            onSubmit={handleUserSubmit}
-          >
-            <h2>Edit Account</h2>
-            <label>
-              Name:
-              <input
-                name="name"
-                value={userForm.name}
-                onChange={handleUserChange}
-              />
-            </label>
-            <br />
-            <label>
-              Email:
-              <input
-                name="email"
-                value={userForm.email}
-                onChange={handleUserChange}
-              />
-            </label>
-            <br />
-            <label>
-              Status:
-              <select
-                name="status"
-                value={userForm.status}
-                onChange={handleUserChange}
-              >
-                <option value="active">Active</option>
-                <option value="closed">Closed</option>
-              </select>
-            </label>
-            <br />
-            <label>
-              Role:
-              <select
-                name="role"
-                value={userForm.role}
-                onChange={handleUserChange}
-              >
-                <option value="creator">Creator</option>
-                <option value="consumer">Consumer</option>
-                <option value="admin">Admin</option>
-              </select>
-            </label>
-            <br />
-            <div style={{ marginTop: 16 }}>
-              <button type="submit">Save</button>
-              <button
-                type="button"
-                onClick={() => setShowUserModal(false)}
-                style={{ marginLeft: 8 }}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Assets Section */}
-      <div style={{ marginTop: 32 }}>
-        <h3>Assets</h3>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
-          {assets.length === 0 ? (
-            <div>No assets found.</div>
+      <div className="max-w-7xl mx-auto px-4 py-8 space-y-8 animate-fade-in">
+        {/* Cover Photo */}
+        <div className="relative h-64 md:h-80 rounded-3xl overflow-hidden shadow-lg bg-gray-200">
+          {creatorProfile.coverPhoto ? (
+            <img
+              src={creatorProfile.coverPhoto}
+              alt="Cover"
+              className="w-full h-full object-cover"
+            />
           ) : (
-            assets.map((asset) => (
-              <Card
-                key={asset.id}
-                product={asset}
-                onAddToCart={handleAddToCart}
-                handleProductClick={handleProductClick}
-              />
-            ))
+            <div className="w-full h-full bg-gradient-to-r from-blue-400 to-purple-500"></div>
           )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        </div>
+
+        {/* Profile Header */}
+        <div className="relative -mt-32 md:-mt-40 px-4 md:px-8">
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 md:p-8">
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+              {/* Avatar */}
+              <div className="relative flex-shrink-0">
+                <img
+                  src={creatorProfile.avatarUrl || "https://via.placeholder.com/150"}
+                  alt="Avatar"
+                  className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white shadow-xl object-cover"
+                />
+                <div className="absolute bottom-2 right-2 w-8 h-8 bg-blue-500 rounded-full border-4 border-white flex items-center justify-center">
+                  <CheckCircleIcon className="w-5 h-5 text-white" />
+                </div>
+              </div>
+
+              {/* User Info */}
+              <div className="flex-1 mt-4 md:mt-0">
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+                  {creatorProfile.user?.name}
+                </h1>
+                <p className="text-lg text-blue-600 font-medium mt-1">
+                  {creatorProfile.title || "Content Creator"}
+                </p>
+
+                <div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-gray-500">
+                  <div className="flex items-center gap-1">
+                    <MapPinIcon className="w-4 h-4" />
+                    <span>{creatorProfile.address || "Location Hidden"}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <EnvelopeIcon className="w-4 h-4" />
+                    <span>{creatorProfile.user?.email}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 px-4 md:px-8">
+          {/* Left Sidebar - About & Info */}
+          <div className="space-y-6">
+            {/* About */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">About</h3>
+              <p className="text-gray-600 leading-relaxed">
+                {creatorProfile.description || "No description provided."}
+              </p>
+            </div>
+
+            {/* Socials */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Connect</h3>
+              <div className="space-y-3">
+                {socialLinks.map((link) =>
+                  link.value && (
+                    <a
+                      key={link.label}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group"
+                    >
+                      <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                        <span className="font-bold">{link.label[0]}</span>
+                      </div>
+                      <span className="font-medium text-gray-700">{link.label}</span>
+                    </a>
+                  )
+                )}
+                {!socialLinks.some(l => l.value) && <p className="text-gray-400 italic">No social links.</p>}
+              </div>
+            </div>
+
+            {/* Interests */}
+            {creatorProfile.interest && creatorProfile.interest.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Interests</h3>
+                <div className="flex flex-wrap gap-2">
+                  {creatorProfile.interest.map((item, idx) => (
+                    <span key={idx} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right Content - Products */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <CubeIcon className="w-7 h-7 text-blue-600" />
+                Products
+              </h2>
+              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-bold">
+                {assets.length}+ Items
+              </span>
+            </div>
+
+            {assets.length === 0 && !isLoadingAssets ? (
+              <div className="bg-white rounded-2xl p-12 text-center border border-gray-100">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CubeIcon className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">No products yet</h3>
+                <p className="text-gray-500">This creator hasn't uploaded any products.</p>
+              </div>
+            ) : (
+              <div className="min-h-[200px]">
+                <MasonryGrid>
+                  {assets.map((asset) => (
+                    <Card
+                      key={asset.id}
+                      product={asset}
+                      onAddToCart={handleAddToCart}
+                    />
+                  ))}
+                </MasonryGrid>
+
+                {/* Loading More Indicator */}
+                {isLoadingAssets && (
+                  <div className="py-8 flex justify-center">
+                    <LoadingIndicator />
+                  </div>
+                )}
+
+                {/* Infinite Scroll Trigger */}
+                <div ref={loadMoreRef} className="h-4" />
+              </div>
+            )}
+          </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };
 
-export default CreatorProfile;
+export default CreatorsPage;

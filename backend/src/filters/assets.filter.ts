@@ -1,19 +1,19 @@
 import { IFitltered } from "../interfaces/asset.interface";
 // First, update the AssetFilter interface to include pagination parameters
 interface AssetFilter {
-  userId?: string;
-  name?: string;
-  fileType?: string;
-  categoryId?: number;
-  priceMin?: number;
-  priceMax?: number;
-  status?: string;
-  tagIds?: number[];
-  createdAfter?: Date;
-  createdBefore?: Date;
-  search?: string;
-  page?: number; // Add page number for pagination
-  limit?: number; // Add items per page limit
+    userId?: string;
+    name?: string;
+    fileType?: string;
+    categoryId?: number;
+    priceMin?: number;
+    priceMax?: number;
+    status?: string;
+    tagIds?: number[];
+    createdAfter?: Date;
+    createdBefore?: Date;
+    search?: string;
+    page?: number; // Add page number for pagination
+    limit?: number; // Add items per page limit
 }
 
 export async function applyAssetFilters(query: any, filter: AssetFilter): Promise<IFitltered> {
@@ -61,7 +61,7 @@ export async function applyAssetFilters(query: any, filter: AssetFilter): Promis
     if (filter.createdBefore) {
         query = query.andWhere("asset.created_at <= :createdBefore", { createdBefore: filter.createdBefore });
     }
-    
+
 
     if (filter.search) {
         query = query.andWhere(
@@ -70,8 +70,8 @@ export async function applyAssetFilters(query: any, filter: AssetFilter): Promis
         );
     }
 
-    const page = filter.page ?? 1; 
-    const limit = filter.limit ?? 10; 
+    const page = filter.page ?? 1;
+    const limit = filter.limit ?? 100;
     const skip = (page - 1) * limit;
 
     query = query.skip(skip).take(limit);

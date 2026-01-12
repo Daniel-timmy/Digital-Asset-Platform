@@ -32,7 +32,6 @@ export class DownloadService {
 
     const { asset_id } = req.body
 
-    // const asset = asset_id ? await this.assetRepository.findOne({ where: { id: asset_id } }) : null;
     const result = await this.assetRepository.createQueryBuilder('asset')
       .leftJoinAndSelect('licenses', 'asset_license', 'license.asset_id = asset.id')
       .where('asset.id = :asset_id', { asset_id })
@@ -59,16 +58,12 @@ export class DownloadService {
       }
     
       // Find all assets in one query
-      // const assets = await this.assetRepository.find({
-      //   where: { id: In(asset_ids) },
-      // });
       const assets = await this.assetRepository
        .createQueryBuilder('asset')
        .select(['asset', 'user.id'])
        .leftJoin('asset.user', 'user')
        .where('asset.id IN (:...asset_ids)', { asset_ids })
        .getMany();
-       console.log("Assets retrieved for download creation:", assets);
        // Verify all requested assets were found
        if (assets.length !== asset_ids.length) {
          throw new Error("One or more assets not found");
@@ -76,17 +71,10 @@ export class DownloadService {
         const licenses = await this.licenseRepository.find({
           where: { asset: In(asset_ids) }, relations: ["asset"]
         });
-        console.log("Assets found:", assets);
-        console.log("Licenses found:", licenses);
       const licenseMap: Record<string, License> = {};
-      console.log("Creating download for asset:", assets)
       licenses.forEach(license => {
         licenseMap[license.asset.id] = license;
       });
-      // Attach licenses to assets
-      // assets.forEach(asset => {
-      //   asset.asset_license = licenseMap[asset.id];
-      // });
       
       // Create download entities
       const downloads = assets.map(asset =>

@@ -8,17 +8,20 @@ export class User {
   @Column({ type: "varchar", length: 100, unique: true })
   email!: string;
 
-  @Column({ type: "varchar", length: 255})
+  @Column({ type: "varchar", length: 255 })
   password!: string;
 
   @Column({ type: "varchar", length: 100 })
   name!: string;
 
-  @Column({ type: "enum", enum: ["active", "closed"], default: "active"})
-  status!: "active" | "closed"
+  @Column({ type: "enum", enum: ["active", "closed", "deleted"], default: "active" })
+  status!: "active" | "closed" | "deleted"
 
   @Column({ type: "enum", enum: ["creator", "consumer", "admin"], default: "consumer" })
   role!: "creator" | "consumer" | "admin";
+
+  @Column({ type: "date", nullable: true })
+  deleted_at!: Date;
 
   @CreateDateColumn()
   created_at: Date = new Date();

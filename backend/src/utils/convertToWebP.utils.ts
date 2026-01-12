@@ -9,11 +9,16 @@ interface FileObject {
     buffer: Buffer;
     size: number;
 }
+interface ReturnObject {
+    buffer: Buffer;
+    size: number;
+    mimetype: string;
+}
 
 
 async function convertToWebP(file: FileObject): Promise<FileObject> {
     let webpBuffer: Buffer<ArrayBufferLike>;
-    try{
+    try {
         webpBuffer = await sharp(file.buffer).webp({ quality: 50 }).toBuffer();
         if (!webpBuffer || !Buffer.isBuffer(webpBuffer)) {
             throw new Error("Invalid thumbnail format");
@@ -24,11 +29,29 @@ async function convertToWebP(file: FileObject): Promise<FileObject> {
             size: webpBuffer.length,
             mimetype: 'image/webp',
         };
-    } catch(error) {
+    } catch (error) {
         logger.error('Error processing image:', error)
         throw error
     }
- 
+
+}
+export async function generateThumbnail(file: Buffer): Promise<ReturnObject> {
+    let webpBuffer: Buffer<ArrayBufferLike>;
+    try {
+        webpBuffer = await sharp(file).webp({ quality: 50 }).toBuffer();
+        if (!webpBuffer || !Buffer.isBuffer(webpBuffer)) {
+            throw new Error("Invalid thumbnail format");
+        }
+        return {
+            buffer: webpBuffer,
+            size: webpBuffer.length,
+            mimetype: 'image/webp',
+        };
+    } catch (error) {
+        logger.error('Error processing image:', error)
+        throw error
+    }
+
 }
 
 export default convertToWebP;

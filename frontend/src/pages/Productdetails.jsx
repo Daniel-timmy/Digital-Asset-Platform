@@ -153,17 +153,19 @@ function Productdetails() {
                   </div>
 
                   {/* Creator Info */}
-                  <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                    <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                      {product.user?.name?.charAt(0) || "U"}
+                  <Link to={`/creator-profile/${product.user?.id}`} className="block">
+                    <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
+                      <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                        {product.user?.name?.charAt(0) || "U"}
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Created by</p>
+                        <p className="font-bold text-gray-900">
+                          {product.user?.name || "Unknown"}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Created by</p>
-                      <p className="font-bold text-gray-900">
-                        {product.user?.name || "Unknown"}
-                      </p>
-                    </div>
-                  </div>
+                  </Link>
                 </div>
 
                 {/* Product Info */}
@@ -329,7 +331,7 @@ function Productdetails() {
                   key={asset.id}
                   product={asset}
                   onAddToCart={handleAddToCart}
-                  // handleProductClick={handleProductClick}
+                // handleProductClick={handleProductClick}
                 />
               ))}
             </MasonryGrid>

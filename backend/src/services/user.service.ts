@@ -3,17 +3,22 @@ import { Repository } from "typeorm";
 import { User } from "../entities/user.entities";
 import logger from "../logger/app.logger";
 import { HttpError } from "../error/HttpError";
+import { UserProfileService } from "./userProfile.service";
 
 export class UserService {
   private userRepository: Repository<User>;
+  private userProfileService: UserProfileService;
 
   constructor() {
     this.userRepository = AppDataSource.getRepository(User);
+    this.userProfileService = new UserProfileService()
   }
 
   async create(data: Partial<User>) {
     const user = this.userRepository.create(data);
-    return await this.userRepository.save(user);
+    const savedUser = await this.userRepository.save(user);
+    this.userProfileService.create(savedUser);
+    return savedUser;
   }
 
   async findAll(): Promise<User[]> {
@@ -21,11 +26,11 @@ export class UserService {
   }
 
   async findOne(id: string): Promise<User | null> {
-    return await this.userRepository.findOne({ where: { id } });
+    return await this.userRepository.findOne({ where: { id, status: "active" } });
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return await this.userRepository.findOne({ where: { email } });
+    return await this.userRepository.findOne({ where: { email, status: "active" } });
   }
 
   async update(id: string, data: Partial<User>): Promise<User | null> {
@@ -34,9 +39,15 @@ export class UserService {
   }
 
   async remove(id: string): Promise<void> {
-    await this.userRepository.delete(id);
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new HttpError("User not found", 404);
+    }
+    user.status = "deleted";
+    user.deleted_at = new Date();
+    await this.userRepository.save(user);
   }
-  
+
   async countActiveUsers(): Promise<number> {
     try {
       logger.info(`Fetching count of active users`);

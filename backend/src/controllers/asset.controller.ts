@@ -7,7 +7,7 @@ import { applyAssetFilters } from "../filters/assets.filter";
 import logger from "../logger/app.logger";
 
 export class AssetController {
-  constructor(private assetService: AssetService) {}
+  constructor(private assetService: AssetService) { }
 
   async create(req: AuthRequest, res: Response, next: NextFunction) {
     try {
@@ -21,11 +21,11 @@ export class AssetController {
     }
   }
 
-  async count(req: AuthRequest, res: Response, next: NextFunction){
-    try{
+  async count(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
       const count = await this.assetService.getCounts(req)
-      res.status(200).json({count})
-    } catch (error){
+      res.status(200).json({ count })
+    } catch (error) {
       next(error)
     }
   }
@@ -34,6 +34,26 @@ export class AssetController {
     try {
       logger.info(`Fetching assets with filters: ${JSON.stringify(req.query)}`);
       const filters = req.query;
+
+      const query = AppDataSource.getRepository(Asset)
+        .createQueryBuilder("asset")
+        .leftJoinAndSelect("asset.category", "category")
+        .leftJoinAndSelect("asset.tags", "tags");
+      filters.status = "approved";
+
+      const assets = await applyAssetFilters(query, filters);
+      logger.info(`Successfully retrieved ${assets.results.length} assets`);
+      res.json(assets);
+    } catch (error) {
+      logger.error(`Error fetching assets: ${error}`);
+      next(error);
+    }
+  }
+  async findAllByCreator(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      logger.info(`Fetching assets with filters: ${JSON.stringify(req.query)}`);
+      const filters = req.query;
+      filters.userId = req.user?.id;
 
       const query = AppDataSource.getRepository(Asset)
         .createQueryBuilder("asset")

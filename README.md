@@ -90,7 +90,7 @@ Digital Asset Platform is a full-stack web application for managing, distributin
 - Access the frontend at `http://localhost:3000` (default)
 - Backend API runs at `http://localhost:3000/api` (default)
 - Admin dashboard: `/admin`
-- Service request pages: `/branding`, `/webdev`, `/photography`, `/socialmedia`
+
 
 ---
 
@@ -104,8 +104,6 @@ Digital Asset Platform is a full-stack web application for managing, distributin
 - `/api/downloads` - Asset downloads
 - `/api/licenses` - License management
 - `/api/messages` - Messaging
-- `/api/photography` - Photography requests
-- `/api/social-media` - Social media requests
 - `/api/tags` - Asset tags
 - `/api/ticket` - Support tickets
 - `/api/transactions` - Payments
@@ -151,3 +149,7 @@ MIT License. See `frontend/LICENSE` for details.
 
 - Built with React, Vite, Node.js, Express, TypeORM, Socket.io, RabbitMQ, Redis, Tailwind CSS, and more.
 - Inspired by modern digital asset management and customization needs.
+
+docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:management
+docker start rabbitmq
+npm run dev

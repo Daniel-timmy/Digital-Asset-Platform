@@ -1,50 +1,71 @@
-import { Request, Response } from "express";
+import { NextFunction, Response } from "express";
 import { UserProfileService } from "../services/userProfile.service";
 import { AuthRequest } from "../interfaces/auth.interface";
+import { HttpError } from "../error/HttpError";
+import { z } from "zod";
+
+const profileSchema = z.object({
+  phone: z.string()
+    .regex(/^\+?[\d\s-()]{10,20}$/, "Invalid phone number format")
+    .optional()
+    .or(z.literal("")),
+  address: z.string().min(5, "Address must be at least 5 characters").optional().or(z.literal("")),
+  description: z.string().min(10, "Description must be at least 10 characters").optional().or(z.literal("")),
+  instagram: z.string()
+    .regex(/^(https?:\/\/(www\.)?instagram\.com\/[a-zA-Z0-9_.]+\/?|[a-zA-Z0-9_.]+)$/, "Invalid Instagram URL or handle")
+    .optional()
+    .or(z.literal("")),
+  x: z.string()
+    .regex(/^(https?:\/\/(www\.)?(twitter|x)\.com\/[a-zA-Z0-9_]+\/?|[a-zA-Z0-9_]+)$/, "Invalid X (Twitter) URL or handle")
+    .optional()
+    .or(z.literal("")),
+  facebook: z.string()
+    .regex(/^(https?:\/\/(www\.)?facebook\.com\/[a-zA-Z0-9.]+\/?|[a-zA-Z0-9.]+)$/, "Invalid Facebook URL or handle")
+    .optional()
+    .or(z.literal("")),
+  title: z.string().min(2, "Title must be at least 2 characters").optional().or(z.literal("")),
+  interest: z.array(z.string()).optional(),
+});
 
 function validateProfileData(data: any) {
-  const errors: string[] = [];
-  if (data.phone && typeof data.phone !== "string") errors.push("phone must be a string");
-  if (data.address && typeof data.address !== "string") errors.push("address must be a string");
-  if (data.avatarUrl && typeof data.avatarUrl !== "string") errors.push("avatarUrl must be a string");
-  if (data.description && typeof data.description !== "string") errors.push("description must be a string");
-  if (data.instagram && typeof data.instagram !== "string") errors.push("instagram must be a string");
-  if (data.x && typeof data.x !== "string") errors.push("x must be a string");
-  if (data.facebook && typeof data.facebook !== "string") errors.push("facebook must be a string");
-  if (data.coverPhoto && typeof data.coverPhoto !== "string") errors.push("coverPhoto must be a string");
-  if (data.title && typeof data.title !== "string") errors.push("title must be a string");
-  if (data.interest && !Array.isArray(data.interest)) errors.push("interest must be an array of strings");
-  return errors;
+  const result = profileSchema.safeParse(data);
+  if (!result.success) {
+    const flattened = result.error.flatten();
+    const errors: string[] = [];
+    Object.entries(flattened.fieldErrors).forEach(([key, messages]) => {
+      if (messages) {
+        messages.forEach((msg: string) => errors.push(`${key}: ${msg}`));
+      }
+    });
+    return errors;
+  }
+  return [];
 }
 
 export class UserProfileController {
-  constructor(private service: UserProfileService) {}
+  constructor(private service: UserProfileService) { }
 
-  async create(req: AuthRequest, res: Response) {
-    const errors = validateProfileData(req.body);
-    if (errors.length) {
-      return res.status(400).json({ errors });
-    }
-    const profile = await this.service.create(req.body);
-    res.json(profile);
-  }
-
-  async getById(req: AuthRequest, res: Response) {
+  async getById(req: AuthRequest, res: Response, next: NextFunction) {
     const profile = await this.service.getById(req.params.id);
     res.json(profile);
   }
 
-  async update(req: AuthRequest, res: Response) {
+  async getByUser(req: AuthRequest, res: Response, next: NextFunction) {
+    if (!req.user) {
+      throw new HttpError("You are not authorized to get this profile", 403);
+    }
+    const profile = await this.service.getByUser(req.user.id);
+    res.json(profile);
+  }
+
+  async update(req: AuthRequest, res: Response, next: NextFunction) {
     const errors = validateProfileData(req.body);
     if (errors.length) {
       return res.status(400).json({ errors });
     }
-    const profile = await this.service.update(req.params.id, req.body);
+    const profile = await this.service.update(req.params.id, req);
     res.json(profile);
   }
 
-  async delete(req: AuthRequest, res: Response) {
-    await this.service.delete(req.params.id);
-    res.sendStatus(204);
-  }
+
 }

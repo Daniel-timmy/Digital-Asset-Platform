@@ -3,8 +3,11 @@ import { Channel, ChannelModel } from 'amqplib';
 import sendEmail from '../utils/sendEmail';
 import { LicenseService } from '../services/license.service';
 import { AssetService } from '../services/asset.service';
-import uploadImage, {updateImage} from '../utils/imageVercel';
-import { ASSET_QUEUE, EMAIL_QUEUE, UPDATE_ASSET_QUEUE } from '../config/env';
+import uploadImage, { updateImage } from '../utils/imageVercel';
+import { ASSET_QUEUE, EMAIL_QUEUE, UPDATE_ASSET_QUEUE, USER_PROFILE_QUEUE } from '../config/env';
+import { UserProfileService } from '../services/userProfile.service';
+import { generateThumbnail } from "../utils/convertToWebP.utils";
+import logger from '../logger/app.logger';
 
 
 interface RabbitMQConfig {
@@ -22,16 +25,16 @@ class RabbitMQService {
   }
 
   async connect(): Promise<void> {
-  console.log(this.url)
+    console.log(this.url)
 
     try {
-      
+
       this.connection = await amqp.connect(this.url);
 
       if (!this.connection) {
         throw new Error('Failed to create RabbitMQ connection');
       }
-      
+
       this.channel = await this.connection.createChannel();
       if (!ASSET_QUEUE) throw new Error("Asset queue environment variable not set")
       if (!EMAIL_QUEUE) throw new Error("Email queue environment variable not set")
@@ -40,164 +43,188 @@ class RabbitMQService {
       await this.channel.assertQueue(ASSET_QUEUE, { durable: true });
       await this.channel.assertQueue(EMAIL_QUEUE, { durable: true });
       await this.channel.assertQueue(UPDATE_ASSET_QUEUE, { durable: true })
-      
+      if (!USER_PROFILE_QUEUE) throw new Error("User profile queue env var is not set")
+      await this.channel.assertQueue(USER_PROFILE_QUEUE, { durable: true })
+
     } catch (error) {
       console.error('RabbitMQ connection error:', error);
       throw error;
     }
   }
 
-  private async setupQueues(): Promise<void> {
-    if (!this.channel) throw new Error('Channel not ready');
-    
-    // Example queue setup
-    const queue = 'test_queue';
-    const q = await this.channel.assertQueue(queue, {
-      durable: true
-    });
-    console.log(`Queue ${queue} is ready. Max messages: ${q.messageCount}`);
-  }
-
-  async publish(queue: string, content: Buffer, ): Promise<boolean> {
+  async publish(queue: string, content: Buffer,): Promise<boolean> {
     if (!this.channel) {
       throw new Error('RabbitMQ channel not initialized. Call connect() first.');
     }
-    if (!content || !Buffer.isBuffer(content)){
+    if (!content || !Buffer.isBuffer(content)) {
       throw new Error('Invalid content format')
     }
     // const content = Buffer.from(JSON.stringify(message));
-    
+
     return this.channel.sendToQueue(queue, content, {
       persistent: true
     });
   }
 
-  async publishImages(queue: string, content: Buffer ): Promise<boolean> {
+  async publishImages(queue: string, content: Buffer): Promise<boolean> {
     if (!this.channel) {
       throw new Error('RabbitMQ channel not initialized. Call connect() first.');
     }
-    if (!content || !Buffer.isBuffer(content)){
+    if (!content || !Buffer.isBuffer(content)) {
       throw new Error('Invalid content format')
     }
-    
+
     return this.channel.sendToQueue(queue, content, {
       persistent: true,
-     
+
     });
   }
   async publishUpdates(queue: string, content: Buffer, headers: any): Promise<boolean> {
     if (!this.channel) {
       throw new Error('RabbitMQ channel not initialized. Call connect() first.');
     }
-    if (!content || !Buffer.isBuffer(content)){
+    if (!content || !Buffer.isBuffer(content)) {
       throw new Error('Invalid content format')
     }
-    
+
     return this.channel.sendToQueue(queue, content, {
       persistent: true,
       headers
     });
   }
 
+  async consumerCreateAsset(queue: string, assetObj: AssetService, licenseObj: LicenseService): Promise<void> {
+    if (!this.channel) throw new Error('RabbitMQ channel not initialized');
 
-  getQueueName(): string {
-    return 'email_queue';
+    await this.channel.consume(
+      queue,
+      async (msg) => {
+        if (!msg) return;
+        const nullIndex = msg.content.indexOf(0);
+        const headerStr = msg.content.slice(0, nullIndex).toString();
+        const data = msg.content.slice(nullIndex + 1);
+
+        const { files, assetId } = JSON.parse(headerStr);
+        const original = data.slice(0, files[0].size);
+        const thumbnail = await generateThumbnail(original);
+
+        try {
+          // 1. Upload
+          const blob = await uploadImage(files[0].filename, original, 'asset');
+          const tblob = await uploadImage(files[1].filename, thumbnail.buffer, 'asset');
+
+          const savedAsset = await assetObj.findOne(assetId);
+          if (!savedAsset) throw new Error('Invalid asset ID');
+
+          savedAsset.thumbnail_url = tblob.url;
+          if (savedAsset.license === 'free') {
+            savedAsset.file_url = blob.downloadUrl;
+
+          } else {
+            await licenseObj.create({
+              asset: savedAsset,
+              downloadUrl: blob.downloadUrl,
+            });
+          }
+
+          savedAsset.status = "approved";
+          await assetObj.save(savedAsset);
+          this.channel!.ack(msg);
+        } catch (err) {
+          console.error('Processing failed:', err);
+          this.channel!.nack(msg, false, false); // don't requeue forever
+        }
+      },
+      { noAck: false }
+    );
+  }
+  async consumerUpdateAsset(queue: string): Promise<void> {
+    if (!this.channel) throw new Error('RabbitMQ channel not initialized');
+
+    await this.channel.consume(
+      queue,
+      async (msg) => {
+        if (!msg) return;
+
+        const buffer = msg.content;
+        const headers = msg.properties.headers;
+        const {
+          type,          // 'image' | 'video'
+          assetId,
+          filename,
+          thumbnailUrl,
+        } = headers as {
+          type: 'image' | 'video';
+          assetId: string;
+          filename: string;
+          thumbnailUrl: string;
+        };
+        const thumbnail = await generateThumbnail(buffer);
+
+
+        try {
+          const tblob = await updateImage(thumbnailUrl, thumbnail.buffer);
+          const blob = await updateImage(filename, buffer);
+          this.channel!.ack(msg);
+        } catch (err) {
+          console.error('Processing failed:', err);
+          this.channel!.nack(msg, false, false); // don't requeue forever
+        }
+      },
+      { noAck: false }
+    );
   }
 
-async consumerLicenseCreator(queue: string, assetObj: AssetService, licenseObj: LicenseService): Promise<void> {
-  if (!this.channel) throw new Error('RabbitMQ channel not initialized');
+  async consumerUserProfile(queue: string, userProfileService: UserProfileService): Promise<void> {
+    if (!this.channel) throw new Error('RabbitMQ channel not initialized');
 
-  await this.channel.consume(
-    queue,
-    async (msg) => {
-      if (!msg) return;
-      const nullIndex = msg.content.indexOf(0);
-      const headerStr = msg.content.slice(0, nullIndex).toString();
-      const data = msg.content.slice(nullIndex + 1);
+    await this.channel.consume(
+      queue,
+      async (msg) => {
+        if (!msg) return;
 
-      const { files, assetId } = JSON.parse(headerStr);
-      let offset = 0;
-      const original = data.slice(offset, offset + files[0].size);
-      offset += files[0].size;
-      const thumbnail = data.slice(offset, offset + files[1].size);
+        const buffer = msg.content;
+        const headers = msg.properties.headers;
+        const {
+          type, // 'avatar' | 'cover'
+          userProfileId,
+          filename,
+        } = headers as {
+          type: 'avatar' | 'cover';
+          userProfileId: string;
+          filename: string;
+        };
 
-      try {
-        // 1. Upload
-        const blob = await uploadImage(files[0].filename, original, 'asset');
-        const tblob = await uploadImage(files[1].filename, thumbnail, 'asset');
+        try {
+          logger.info("Blob upload", type);
+          const compressedBuffer = await generateThumbnail(buffer);
+          const blob = await uploadImage(filename, compressedBuffer.buffer, 'user-profile');
+          const profile = await userProfileService.getById(userProfileId);
+          if (!profile) throw new Error('User profile not found');
+          logger.info("profile found", type);
 
-        const savedAsset = await assetObj.findOne(assetId);
-        if (!savedAsset) throw new Error('Invalid asset ID');
 
-        savedAsset.thumbnail_url = tblob.url;
-        if (savedAsset.license === 'free') {
-          savedAsset.file_url = blob.downloadUrl;
-        } else {
-          await licenseObj.create({
-            asset: savedAsset,
-            downloadUrl: blob.downloadUrl,
-          });
+          if (type === 'avatar') {
+            logger.info("Blob uploaded successfully", type);
+            profile.avatarUrl = blob.url;
+          } else if (type === 'cover') {
+            logger.info("Blob uploaded successfully", type);
+
+            profile.coverPhoto = blob.url;
+          }
+          await userProfileService.save(profile);
+
+          this.channel!.ack(msg);
+        } catch (err) {
+          console.error('Processing user profile failed:', err);
+          this.channel!.nack(msg, false, false);
         }
+      },
+      { noAck: false }
+    );
+  }
 
-        await assetObj.save(savedAsset);
-        this.channel!.ack(msg);
-      } catch (err) {
-        console.error('Processing failed:', err);
-        this.channel!.nack(msg, false, false); // don't requeue forever
-      }
-    },
-    { noAck: false }
-  );
-}
-async consumerUpdateAsset(queue: string): Promise<void> {
-  if (!this.channel) throw new Error('RabbitMQ channel not initialized');
 
-  await this.channel.consume(
-    queue,
-    async (msg) => {
-      if (!msg) return;
-
-      const buffer = msg.content;
-      const headers = msg.properties.headers;
-      const {
-        type,          // 'file' | 'thumbnail'
-        assetId,
-        filename,
-      } = headers as {
-        type: 'file' | 'thumbnail';
-        assetId: string;
-        filename: string;
-      };
-
-      try {
-        const blob = await updateImage(filename, buffer);
-
-        // const savedAsset = await assetObj.findOne(assetId);
-        // if (!savedAsset) throw new Error('Invalid asset ID');
-
-        // if (type === "thumbnail"){
-        //   savedAsset.thumbnail_url = blob.url;
-        // } else{
-        //   if (savedAsset.license === 'free') {
-        //     savedAsset.file_url = blob.downloadUrl;
-        //   } else {
-        //     await licenseObj.create({
-        //       asset: savedAsset,
-        //       downloadUrl: blob.downloadUrl,
-        //     });
-        //   }
-        // }
-
-        // await assetObj.save(savedAsset);
-        this.channel!.ack(msg);
-      } catch (err) {
-        console.error('Processing failed:', err);
-        this.channel!.nack(msg, false, false); // don't requeue forever
-      }
-    },
-    { noAck: false }
-  );
-}
   async consume(queue: string, sendEmail: Function): Promise<void> {
     if (!this.channel) {
       throw new Error('RabbitMQ channel not initialized');
@@ -218,7 +245,6 @@ async consumerUpdateAsset(queue: string): Promise<void> {
       }
     });
 
-    console.log(`Consumer started for queue: ${queue}`);
   }
 
   async close(): Promise<void> {
@@ -243,10 +269,10 @@ const rabbitMq = new RabbitMQService({
 export const initializeQueues = async () => {
   await rabbitMq.connect()
 
-  if (EMAIL_QUEUE){
+  if (EMAIL_QUEUE) {
     await rabbitMq.consume(EMAIL_QUEUE, (to: string, subject: string, text: string) => {
-         sendEmail(to, subject, text);
-       });
+      sendEmail(to, subject, text);
+    });
   } else {
     throw new Error("Email queue environment variable is not set")
   }
@@ -254,18 +280,23 @@ export const initializeQueues = async () => {
   if (ASSET_QUEUE) {
     const assetObj = new AssetService();
     const licenseObj = new LicenseService();
-    await rabbitMq.consumerLicenseCreator(ASSET_QUEUE, assetObj, licenseObj)
+    await rabbitMq.consumerCreateAsset(ASSET_QUEUE, assetObj, licenseObj)
   } else {
     throw new Error("Asset queue environment variable is not set")
 
   }
   if (UPDATE_ASSET_QUEUE) {
-    console.log(UPDATE_ASSET_QUEUE)
 
     await rabbitMq.consumerUpdateAsset(UPDATE_ASSET_QUEUE)
   } else {
     throw new Error("Asset queue environment variable is not set")
 
+  }
+  if (USER_PROFILE_QUEUE) {
+    const userProfileService = new UserProfileService();
+    await rabbitMq.consumerUserProfile(USER_PROFILE_QUEUE, userProfileService);
+  } else {
+    throw new Error("User profile queue environment variable is not set");
   }
 }
 
