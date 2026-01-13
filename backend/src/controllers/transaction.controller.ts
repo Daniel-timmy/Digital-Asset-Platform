@@ -4,11 +4,11 @@ import axios from 'axios';
 import { Repository, In } from "typeorm";
 import { TransactionService } from "../services/transaction.service";
 import { AuthRequest } from "../interfaces/auth.interface";
-import { Transaction } from "../entities/transaction.entities";
+import { Transaction } from "../models/transaction.entities";
 import { FRONTEND_URL, PAYSTACK_SECRET_KEY } from "../config/env";
-import { User } from "../entities/user.entities";
-import { Asset } from "../entities/asset.entities";
-import { Download } from "../entities/download.entities";
+import { User } from "../models/user.entities";
+import { Asset } from "../models/asset.entities";
+import { Download } from "../models/download.entities";
 import { AppDataSource } from "../database/db";
 import { verifyPayment } from "../utils/payment";
 import logger from "../logger/app.logger";
@@ -55,25 +55,25 @@ export class TransactionController {
   async findAll(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       if (!req.user) {
-          logger.warn('Unauthorized access attempt to fetch all custom assets');
-          throw new HttpError('Unauthorized', 401);
+        logger.warn('Unauthorized access attempt to fetch all custom assets');
+        throw new HttpError('Unauthorized', 401);
       }
       logger.info(`Fetching all transactions`);
 
       const filters = req.query;
       let query = AppDataSource.getRepository(Transaction)
-          .createQueryBuilder("transaction")
-          .leftJoinAndSelect("transaction.user", "user")
-            
+        .createQueryBuilder("transaction")
+        .leftJoinAndSelect("transaction.user", "user")
+
       if (req.user && req.user.role !== 'admin') {
-          filters.userId = { userId: req.user.id };
-          query = query.andWhere("transaction.user_id = :userId", { userId: req.user.id });
-          logger.debug(`Applying user filter for non-admin user: ${req.user.id}`);
+        filters.userId = { userId: req.user.id };
+        query = query.andWhere("transaction.user_id = :userId", { userId: req.user.id });
+        logger.debug(`Applying user filter for non-admin user: ${req.user.id}`);
       }
       const transactions = await applyTransactionsFilters(query, filters)
       // const transactions = await this.transactionService.findAll()
 
-      
+
       logger.info(`Successfully retrieved ${transactions.limit} transactions`);
       res.status(200).json(transactions);
     } catch (error) {
@@ -116,7 +116,7 @@ export class TransactionController {
     }
   }
 
-  async totalSales(req: Request, res: Response, next: NextFunction){
+  async totalSales(req: Request, res: Response, next: NextFunction) {
     const sales = await this.transactionService.getTotalSales()
     res.json(sales)
   }
@@ -139,7 +139,7 @@ export class TransactionController {
     }
   }
 
- async initialize(req: AuthRequest, res: Response, next: NextFunction) {
+  async initialize(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       // take in all the assets to be bought and cache them with redis
       logger.info(`Initializing payment for user: ${req.user?.id || 'unknown'}`);
@@ -168,7 +168,7 @@ export class TransactionController {
         user,
         amount: totalAmount,
       };
-      
+
       const transaction = this.transactionRepository.create(transactionData);
       const savedTransaction = await this.transactionRepository.save(transaction);
       // improve on this
@@ -199,11 +199,11 @@ export class TransactionController {
       );
       logger.info(`Initialized Paystack payment for transaction ID: ${savedTransaction.id}, user: ${user.id}`);
 
-      if (response.status){
+      if (response.status) {
         savedTransaction.payment_status = "processing"
         await this.transactionRepository.save(savedTransaction)
       }
-        res.status(200).json({
+      res.status(200).json({
         authorization_url: response.data.data.authorization_url,
         access_code: response.data.data.access_code,
         reference: response.data.data.reference,
@@ -238,11 +238,11 @@ export class TransactionController {
             .then(async (paymentData) => {
               if (paymentData.status === 'success') {
                 await this.transactionService.update(reference, { payment_status: "completed" });
-                  // if (customasset.type === 'download'){
-                  //   const cdownload = this.downloadRepository.create({user: req.user, asset: customasset.asset})
-                  //   const download = await this.downloadRepository.save(cdownload)
-                  //   console.log(`DOWNLOADDDDDDDDDDDDDDDD ${download.id}`)
-                  // }
+                // if (customasset.type === 'download'){
+                //   const cdownload = this.downloadRepository.create({user: req.user, asset: customasset.asset})
+                //   const download = await this.downloadRepository.save(cdownload)
+                //   console.log(`DOWNLOADDDDDDDDDDDDDDDD ${download.id}`)
+                // }
                 logger.info(`Payment successful for reference: ${reference}, amount: ${amount}`);
               } else {
                 logger.warn(`Payment verification failed for reference: ${reference}, status: ${paymentData.status}`);
@@ -284,14 +284,14 @@ export class TransactionController {
         });
       }
 
-      let assetData: any 
+      let assetData: any
       const cachedData = await (await redisClient).get(transaction.id);
       if (!cachedData || typeof cachedData !== 'string') {
         logger.warn(` Invalid or expired key: ${transaction.id}`);
         throw new HttpError("Invalid or expired verification code", 400);
       }
       assetData = JSON.parse(cachedData)
-      
+
       const response = await axios.get(`https://api.paystack.co/transaction/verify/${ref}`, {
         headers: {
           Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,

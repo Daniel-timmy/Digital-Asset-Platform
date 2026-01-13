@@ -15,10 +15,10 @@ export const AppDataSource = new DataSource({
   // },
   synchronize: true, // Set to false in production
   logging: false,
-   entities: [
+  entities: [
     process.env.NODE_ENV === "production"
-      ? "dist/entities/**/*.js"
-      : "src/entities/**/*.ts",
+      ? "dist/models/**/*.js"
+      : "src/models/**/*.ts",
   ],
   migrations: [
     process.env.NODE_ENV === "production"
@@ -33,15 +33,15 @@ export const AppDataSource = new DataSource({
 });
 
 export const initializeDatabase = async () => {
-    try {
-        await AppDataSource.initialize();
-        logger.info("Database connection established successfully");
-    } catch (error) {
-        logger.error("Error during database connection:", error);
-        throw error;
-    }
+  try {
+    await AppDataSource.initialize();
+    logger.info("Database connection established successfully");
+  } catch (error) {
+    logger.error("Error during database connection:", error);
+    throw error;
+  }
 };
-  // logging: ["query", "error"],
+// logging: ["query", "error"],
 // import { DataSource } from "typeorm";
 // import { DB_HOST, DB_NAME, DB_PASSWORD, DB_USERNAME, DB_TYPE, NODE_ENV } from "../config/env";
 
@@ -54,7 +54,7 @@ export const initializeDatabase = async () => {
 //   password: DB_PASSWORD,
 //   database: DB_NAME,
 //    ssl: {
-//     rejectUnauthorized:   false, 
+//     rejectUnauthorized:   false,
 //   },
 //   synchronize: true, // Set to false in production
 //   logging: true,

@@ -1,6 +1,6 @@
 import { AppDataSource } from "../database/db";
 import { Repository } from "typeorm";
-import { User } from "../entities/user.entities";
+import { User } from "../models/user.entities";
 import logger from "../logger/app.logger";
 import { HttpError } from "../error/HttpError";
 import { UserProfileService } from "./userProfile.service";

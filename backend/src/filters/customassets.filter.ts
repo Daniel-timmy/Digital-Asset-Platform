@@ -1,15 +1,15 @@
-import { CustomAsset } from "../entities/customasset.entities";
+import { CustomAsset } from "../models/customasset.entities";
 import { IFitltered } from "../interfaces/asset.interface";
 
 interface ICustomAsset {
-  name?: string;
+    name?: string;
     description?: string;
     user?: any;
     asset?: any;
     page?: number;
-    limit?: number; 
-    orderBy?: string; 
-    orderDirection?: 'ASC' | 'DESC'; 
+    limit?: number;
+    orderBy?: string;
+    orderDirection?: 'ASC' | 'DESC';
     type?: string;
 }
 
@@ -33,8 +33,8 @@ export async function applyCustomAssetFilters(query: any, filter: ICustomAsset):
         query = query.andWhere("customAsset.asset_id = :assetId", { assetId: filter.asset.id });
     }
 
-    if (filter.type){
-        query = query.andWhere("customAsset.type = :type", { type: filter.type})
+    if (filter.type) {
+        query = query.andWhere("customAsset.type = :type", { type: filter.type })
     }
 
     // Order by
@@ -46,10 +46,10 @@ export async function applyCustomAssetFilters(query: any, filter: ICustomAsset):
     }
 
     // Pagination
-        const page = filter.page ?? 1; 
-        const limit = filter.limit ?? 10;
-        query = query.skip((page - 1) * limit).take(limit);
-    
+    const page = filter.page ?? 1;
+    const limit = filter.limit ?? 10;
+    query = query.skip((page - 1) * limit).take(limit);
+
     const [results, total] = await query.getManyAndCount();
     return {
         results,

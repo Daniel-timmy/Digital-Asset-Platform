@@ -1,6 +1,6 @@
 import { AppDataSource } from "../database/db";
 import { Repository } from "typeorm";
-import { Tag } from "../entities/tag.entities";
+import { Tag } from "../models/tag.entities";
 
 export class TagService {
   private tagRepository: Repository<Tag>;

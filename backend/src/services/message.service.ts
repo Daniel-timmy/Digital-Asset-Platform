@@ -1,8 +1,8 @@
 import { AppDataSource } from "../database/db";
 import { Repository } from "typeorm";
-import { Message } from "../entities/message.entities";
-import { User } from "../entities/user.entities";
-import { Ticket } from "../entities/ticket.entities";
+import { Message } from "../models/message.entities";
+import { User } from "../models/user.entities";
+import { Ticket } from "../models/ticket.entities";
 import { AuthRequest } from "../interfaces/auth.interface";
 import { HttpError } from "../error/HttpError";
 
@@ -18,7 +18,7 @@ export class MessageService {
   }
 
   async createMessage(authRequest: AuthRequest, ticketId: string, messageContent: string): Promise<Message> {
-    if(!authRequest.user) throw new Error("User not authenticated")
+    if (!authRequest.user) throw new Error("User not authenticated")
 
     const user = await this.userRepository.findOne({ where: { id: authRequest.user.id } });
     if (!user) {
@@ -41,7 +41,7 @@ export class MessageService {
 
     return await this.messageRepository.save(message);
   }
-  
+
   async newMessage(user: any, ticketId: string, messageContent: string): Promise<Message> {
 
     const ticket = await this.ticketRepository.findOne({ where: { id: ticketId } });
@@ -81,7 +81,7 @@ export class MessageService {
     }
     if (req.user && req.user.role === 'admin') {
       return await this.messageRepository.find({
-        where: { ticket: { id: ticketId }},
+        where: { ticket: { id: ticketId } },
         relations: ["user", "ticket"],
         order: { created_at: "ASC" },
       });
@@ -89,12 +89,12 @@ export class MessageService {
 
     if (!req.user) throw new Error("Unauthorized access");
 
-    if (req.user.id !== ticket.opened_by.id)throw new Error("Unauthorized access");
+    if (req.user.id !== ticket.opened_by.id) throw new Error("Unauthorized access");
     return await this.messageRepository.find({
-        where: { ticket: { id: ticketId }},
-        relations: ["user", "ticket"],
-        order: { created_at: "ASC" },
-      });
+      where: { ticket: { id: ticketId } },
+      relations: ["user", "ticket"],
+      order: { created_at: "ASC" },
+    });
   }
 
   // Get all messages for a user

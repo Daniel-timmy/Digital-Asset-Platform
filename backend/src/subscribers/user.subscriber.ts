@@ -1,5 +1,5 @@
 import { EntitySubscriberInterface, EventSubscriber, InsertEvent, UpdateEvent } from "typeorm";
-import { User } from "../entities/user.entities";
+import { User } from "../models/user.entities";
 import logger from "../logger/app.logger";
 import rabbitMq from "../queue/rabbitMq";
 import { EMAIL_QUEUE } from "../config/env";

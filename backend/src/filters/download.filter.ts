@@ -1,5 +1,5 @@
 import { IFitltered } from "../interfaces/asset.interface";
-import { User } from "../entities/user.entities";
+import { User } from "../models/user.entities";
 
 interface IDownload {
     user?: User;

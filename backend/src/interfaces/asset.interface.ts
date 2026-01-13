@@ -1,8 +1,8 @@
-import { CustomAsset } from "../entities/customasset.entities";
+import { CustomAsset } from "../models/customasset.entities";
 
 export interface IAsset {
-    title? : string;
-    description? : string;
+    title?: string;
+    description?: string;
     file_url?: string;
     thumbnail_url?: string;
     file_type?: string;

@@ -1,6 +1,6 @@
 import { AppDataSource } from "../database/db";
 import { Repository } from "typeorm";
-import { Category } from "../entities/category.entities";
+import { Category } from "../models/category.entities";
 
 export class CategoryService {
   private categoryRepository: Repository<Category>;
@@ -9,7 +9,7 @@ export class CategoryService {
     this.categoryRepository = AppDataSource.getRepository(Category);
   }
 
-  async create(data: Partial<Category>) : Promise<Category> {
+  async create(data: Partial<Category>): Promise<Category> {
     const category = this.categoryRepository.create(data);
     return await this.categoryRepository.save(category);
   }

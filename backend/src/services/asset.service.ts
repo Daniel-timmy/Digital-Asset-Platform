@@ -1,9 +1,9 @@
 import { Repository, In } from "typeorm";
 import { v4 as uuidv4 } from 'uuid'
 import { AppDataSource } from "../database/db";
-import { Asset } from "../entities/asset.entities";
-import { Category } from "../entities/category.entities";
-import { Tag } from "../entities/tag.entities";
+import { Asset } from "../models/asset.entities";
+import { Category } from "../models/category.entities";
+import { Tag } from "../models/tag.entities";
 import { AuthRequest } from "../interfaces/auth.interface";
 import { deleteImage } from "../utils/imageVercel";
 import { HttpError } from "../error/HttpError";

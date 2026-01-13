@@ -11,12 +11,10 @@ const morganStream: morgan.StreamOptions = {
   },
 };
 
-// Morgan middleware with custom format
 export const morganMiddleware = morgan(
-  ':method :url :status :response-time ms - :res[content-length] :body',
+  ':method :url :status :response-time ms - :res[content-length]',
   {
     stream: morganStream,
-    // Skip logging in development for specific routes if needed
     skip: (req) => process.env.NODE_ENV !== 'production' && req.url === '/health',
   }
 );

@@ -32,6 +32,7 @@ import CreatorLayout from "./pages/creator/CreatorLayout";
 import Categories from "./pages/Categories";
 import CreatorsPage from "./pages/CreatorsPage";
 import ClientProfile from "./pages/Client/ClientProfile";
+import CreatorAnalytics from "./pages/creator/CreatorAnalytics";
 
 function Logout() {
   localStorage.clear();
@@ -73,6 +74,7 @@ function App() {
           <Route path="upload" element={<CreatorUploadProduct />} />
           <Route path="transactions" element={<CreatorTransactions />} />
           <Route path="profile" element={<CreatorProfile />} />
+          <Route path="analytics" element={<CreatorAnalytics />} />
         </Route>
 
         <Route path="/login" element={<AuthPage />} />

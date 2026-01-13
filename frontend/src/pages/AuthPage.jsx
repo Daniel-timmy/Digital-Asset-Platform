@@ -102,7 +102,7 @@ const AuthPage = ({ state = true }) => {
           localStorage.setItem(ACCESS_TOKEN, res.data.access);
           localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
           localStorage.setItem(USER, JSON.stringify(res.data.user));
-          navigate("/dashboard");
+          navigate("/stock");
         } else {
           console.log(res);
           setErrors({ error: res.message });

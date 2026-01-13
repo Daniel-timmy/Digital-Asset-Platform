@@ -233,7 +233,7 @@ export class AuthController {
   async refresh(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { refresh } = req.body;
-      logger.info(`Refreshing token for provided refresh token`);
+      logger.info(`Refreshing accesstoken for provided refresh token`);
 
       if (!refresh) {
         logger.warn('Token refresh failed: No refresh token provided');

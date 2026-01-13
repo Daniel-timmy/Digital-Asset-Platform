@@ -2,10 +2,10 @@ import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { MessageService } from '../services/message.service';
 import { AppDataSource } from '../database/db';
-import { Ticket } from '../entities/ticket.entities';
+import { Ticket } from '../models/ticket.entities';
 import logger from '../logger/app.logger';
 import { UserService } from '../services/user.service';
-import { User } from 'entities/user.entities';
+import { User } from 'models/user.entities';
 
 interface MessagePayload {
   ticketId: string;
@@ -76,8 +76,8 @@ export class MessageSocketController {
           return;
         }
 
-        const hasAccess = ticket.opened_by.id === socket.data.user.id || 
-                         socket.data.user.role === 'admin';
+        const hasAccess = ticket.opened_by.id === socket.data.user.id ||
+          socket.data.user.role === 'admin';
 
         if (!hasAccess) {
           logger.warn(`Unauthorized ticket access attempt: ${socket.data.user.name} to ticket ${ticketId}`);
@@ -95,15 +95,15 @@ export class MessageSocketController {
 
         await socket.join(ticketId);
         logger.info(`User ${socket.data.user.name} joined ticket room: ${ticketId}`);
-        
+
         // Notify user of successful join
-        socket.emit('joinedTicket', { 
+        socket.emit('joinedTicket', {
           ticketId,
           message: 'Successfully joined ticket conversation'
         });
       } catch (error) {
         logger.error(`Error joining ticket: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        socket.emit('error', { 
+        socket.emit('error', {
           message: 'Failed to join ticket',
           details: error instanceof Error ? error.message : 'Unknown error'
         });
@@ -137,8 +137,8 @@ export class MessageSocketController {
         logger.info(`Message sent in ticket ${ticketId} by user ${socket.data.user.username}`);
       } catch (error) {
         logger.error(`Error sending message: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        socket.emit('error', { 
-          message: 'Failed to send message', 
+        socket.emit('error', {
+          message: 'Failed to send message',
           details: error instanceof Error ? error.message : 'Unknown error'
         });
       }

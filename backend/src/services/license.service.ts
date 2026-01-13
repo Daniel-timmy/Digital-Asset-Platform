@@ -1,6 +1,6 @@
 import { AppDataSource } from "../database/db";
 import { Repository } from "typeorm";
-import { License } from "../entities/license.entities";
+import { License } from "../models/license.entities";
 
 export class LicenseService {
   private licenseRepository: Repository<License>;
@@ -22,10 +22,10 @@ export class LicenseService {
     return await this.licenseRepository.findOne({ where: { id } });
   }
   async findOneByAsset(id: string): Promise<License | null> {
-  return await this.licenseRepository.findOne({
-    where: { asset: { id } }, 
-  });
-}
+    return await this.licenseRepository.findOne({
+      where: { asset: { id } },
+    });
+  }
 
   async update(id: string, data: Partial<License>): Promise<License | null> {
     await this.licenseRepository.update(id, data);

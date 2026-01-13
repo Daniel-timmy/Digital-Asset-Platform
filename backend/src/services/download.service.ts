@@ -1,13 +1,13 @@
 import { AppDataSource } from "../database/db";
 import { Repository, In } from "typeorm";
-import { Download } from "../entities/download.entities";
-import { Asset } from "../entities/asset.entities";
+import { Download } from "../models/download.entities";
+import { Asset } from "../models/asset.entities";
 import { AuthRequest } from "../interfaces/auth.interface";
-import { User } from "../entities/user.entities";
+import { User } from "../models/user.entities";
 import { applyDownloadFilters } from "../filters/download.filter";
 import { IFitltered } from "../interfaces/asset.interface";
-import { Transaction } from "../entities/transaction.entities";
-import { License } from "../entities/license.entities";
+import { Transaction } from "../models/transaction.entities";
+import { License } from "../models/license.entities";
 
 
 interface AssetWithLicense extends Asset {
@@ -36,8 +36,8 @@ export class DownloadService {
       .leftJoinAndSelect('licenses', 'asset_license', 'license.asset_id = asset.id')
       .where('asset.id = :asset_id', { asset_id })
       .getOne();
-      if (!result) throw new Error("Asset not found");
-      const asset: AssetWithLicense = result as AssetWithLicense;
+    if (!result) throw new Error("Asset not found");
+    const asset: AssetWithLicense = result as AssetWithLicense;
 
     const download = this.downloadRepository.create({
       user,
@@ -50,47 +50,47 @@ export class DownloadService {
     return await this.downloadRepository.save(download);
   }
 
-  async batchCreate(asset_ids: Array<string>, transaction: Transaction, user?: User ) {
-    
-      console.log(asset_ids)
-      if (!Array.isArray(asset_ids) || asset_ids.length === 0) {
-        throw new Error("Asset IDs must be a non-empty array");
-      }
-    
-      // Find all assets in one query
-      const assets = await this.assetRepository
-       .createQueryBuilder('asset')
-       .select(['asset', 'user.id'])
-       .leftJoin('asset.user', 'user')
-       .where('asset.id IN (:...asset_ids)', { asset_ids })
-       .getMany();
-       // Verify all requested assets were found
-       if (assets.length !== asset_ids.length) {
-         throw new Error("One or more assets not found");
-        }
-        const licenses = await this.licenseRepository.find({
-          where: { asset: In(asset_ids) }, relations: ["asset"]
-        });
-      const licenseMap: Record<string, License> = {};
-      licenses.forEach(license => {
-        licenseMap[license.asset.id] = license;
-      });
-      
-      // Create download entities
-      const downloads = assets.map(asset =>
-      (  console.log("Creating download for asset inside map:", asset),
-        this.downloadRepository.create({
-          user,
-          asset,
-          transaction,
-          license: licenseMap ? licenseMap[asset.id] : undefined,
-          creator: asset.user,
-          price: asset.price
-        }))
-      );
-    
-      // Save all downloads in one transaction
-      return await this.downloadRepository.save(downloads);
+  async batchCreate(asset_ids: Array<string>, transaction: Transaction, user?: User) {
+
+    console.log(asset_ids)
+    if (!Array.isArray(asset_ids) || asset_ids.length === 0) {
+      throw new Error("Asset IDs must be a non-empty array");
+    }
+
+    // Find all assets in one query
+    const assets = await this.assetRepository
+      .createQueryBuilder('asset')
+      .select(['asset', 'user.id'])
+      .leftJoin('asset.user', 'user')
+      .where('asset.id IN (:...asset_ids)', { asset_ids })
+      .getMany();
+    // Verify all requested assets were found
+    if (assets.length !== asset_ids.length) {
+      throw new Error("One or more assets not found");
+    }
+    const licenses = await this.licenseRepository.find({
+      where: { asset: In(asset_ids) }, relations: ["asset"]
+    });
+    const licenseMap: Record<string, License> = {};
+    licenses.forEach(license => {
+      licenseMap[license.asset.id] = license;
+    });
+
+    // Create download entities
+    const downloads = assets.map(asset =>
+    (console.log("Creating download for asset inside map:", asset),
+      this.downloadRepository.create({
+        user,
+        asset,
+        transaction,
+        license: licenseMap ? licenseMap[asset.id] : undefined,
+        creator: asset.user,
+        price: asset.price
+      }))
+    );
+
+    // Save all downloads in one transaction
+    return await this.downloadRepository.save(downloads);
   }
 
   async findAll(req: AuthRequest): Promise<IFitltered> {
@@ -143,20 +143,20 @@ export class DownloadService {
     await this.downloadRepository.delete(id);
   }
 
-async getTotalSales(creatorId: string): Promise<{ total: number}> {
- const res = await this.downloadRepository.find({
+  async getTotalSales(creatorId: string): Promise<{ total: number }> {
+    const res = await this.downloadRepository.find({
       where: {
         creator: { id: creatorId }
       }
     });
- const result = await this.downloadRepository
-    .createQueryBuilder('download')
-    .select('SUM(download.price)', 'total')  // ✅ Single string with alias
-    .where('download.creator = :creatorId', { creatorId })
-    .getRawOne();
-  
-  return {
-    total: parseFloat(result.total) || 0,
-  };
-}
+    const result = await this.downloadRepository
+      .createQueryBuilder('download')
+      .select('SUM(download.price)', 'total')  // ✅ Single string with alias
+      .where('download.creator = :creatorId', { creatorId })
+      .getRawOne();
+
+    return {
+      total: parseFloat(result.total) || 0,
+    };
+  }
 }

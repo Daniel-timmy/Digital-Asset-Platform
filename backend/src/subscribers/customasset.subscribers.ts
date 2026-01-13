@@ -1,5 +1,5 @@
 import { EntitySubscriberInterface, EventSubscriber, InsertEvent, UpdateEvent } from "typeorm";
-import { CustomAsset } from "../entities/customasset.entities";
+import { CustomAsset } from "../models/customasset.entities";
 import logger from "../logger/app.logger";
 import rabbitMq from "../queue/rabbitMq";
 import { EMAIL_QUEUE } from "../config/env";

@@ -1,6 +1,6 @@
 import { AppDataSource } from "../database/db";
 import { Repository } from "typeorm";
-import { Transaction } from "../entities/transaction.entities";
+import { Transaction } from "../models/transaction.entities";
 import logger from "../logger/app.logger";
 import { HttpError } from "../error/HttpError";
 
@@ -10,7 +10,7 @@ export class TransactionService {
 
   constructor() {
     this.transactionRepository = AppDataSource.getRepository(Transaction);
-   
+
   }
 
   async create(data: any) {
@@ -22,7 +22,7 @@ export class TransactionService {
 
     const transaction = this.transactionRepository.create({
       ...data,
-    
+
     });
     return await this.transactionRepository.save(transaction);
   }

@@ -5,6 +5,7 @@ import { refreshToken } from "./ProtectedRoutes";
 import { ACCESS_TOKEN } from "../../src/utils/constants";
 import { jwtDecode } from "jwt-decode";
 import logo from "../assets/OIP.png";
+import { USER } from "../utils/constants";
 import {
   Bars3Icon,
   BellIcon,
@@ -26,21 +27,18 @@ function classNames(...classes) {
 }
 
 export default function Header() {
-  const [userOpen, setUserOpen] = useState(false); // user dropdown
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // sidebar/mobile menu
+  const [userOpen, setUserOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(null);
   const dropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
   const location = useLocation();
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem(USER) || "{}"));
 
-  // Cart from context (this makes the badge update globally)
   const { getCount } = useCart();
   const cartCount = getCount();
 
-  // toggle helpers
   const toggleUser = () => setUserOpen((s) => !s);
-
-  // Close dropdowns/menus when clicking outside
   const handleClickOutside = (e) => {
     if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
       setUserOpen(false);
@@ -60,7 +58,6 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [mobileMenuOpen]);
 
-  // ✅ Close mobile menu when resizing to desktop
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 640) {
@@ -71,7 +68,6 @@ export default function Header() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Auth check
   const auth = async () => {
     const token = localStorage.getItem(ACCESS_TOKEN);
     if (!token) return setIsAuthorized(false);
@@ -96,7 +92,6 @@ export default function Header() {
     <nav className="bg-white/95 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-100 overflow-visible">
       <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8 overflow-visible">
         <div className="relative flex h-20 items-center justify-between overflow-visible">
-          {/* Mobile menu button (left) */}
           <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
             <button
               onClick={() => setMobileMenuOpen(true)}
@@ -107,7 +102,7 @@ export default function Header() {
             </button>
           </div>
 
-          {/* Logo + Desktop nav */}
+          {/* Logo +    Desktop nav */}
           <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
             <div className="flex shrink-0 items-center">
               <Link
@@ -197,6 +192,15 @@ export default function Header() {
                       >
                         Dashboard
                       </Link>
+                      {user.role === "creator" && (
+                        <Link
+                          to="/creator"
+                          className="block px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg mx-2 transition-colors"
+                          onClick={() => setUserOpen(false)}
+                        >
+                          Creator profile
+                        </Link>
+                      )}
                       <Link
                         to="/logout"
                         className="block px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg mx-2 transition-colors"
@@ -216,9 +220,8 @@ export default function Header() {
       {/* Mobile sidebar */}
       <div
         ref={mobileMenuRef}
-        className={`fixed inset-y-0 left-0 w-72 h-screen bg-white shadow-2xl z-50 p-6 overflow-y-auto transform transition-transform duration-300 ease-in-out sm:hidden ${
-          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 w-72 h-screen bg-white shadow-2xl z-50 p-6 overflow-y-auto transform transition-transform duration-300 ease-in-out sm:hidden ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         <div className="flex justify-between items-center mb-8">
           <Link to="/" onClick={() => setMobileMenuOpen(false)}>
@@ -272,6 +275,15 @@ export default function Header() {
                 >
                   Dashboard
                 </Link>
+                {user.role === "creator" && (
+                  <Link
+                    to="/creator"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block w-full text-left px-4 py-3 text-gray-700 hover:text-black hover:bg-gray-50 rounded-xl font-medium transition-colors mb-2"
+                  >
+                    Creator profile
+                  </Link>
+                )}
                 <Link
                   to="/logout"
                   onClick={() => setMobileMenuOpen(false)}

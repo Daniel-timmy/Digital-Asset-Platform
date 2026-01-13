@@ -1,4 +1,4 @@
-import { UserProfile } from "../entities/userProfile.entities";
+import { UserProfile } from "../models/userProfile.entities";
 import { AppDataSource } from "../database/db";
 import { Repository } from "typeorm";
 import { HttpError } from "../error/HttpError";
@@ -6,7 +6,7 @@ import logger from "../logger/app.logger";
 import rabbitMq from "../queue/rabbitMq";
 import { AuthRequest } from "../interfaces/auth.interface";
 import { USER_PROFILE_QUEUE } from "../config/env";
-import { User } from "../entities/user.entities";
+import { User } from "../models/user.entities";
 
 
 export class UserProfileService {

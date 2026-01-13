@@ -1,10 +1,10 @@
 import { EntitySubscriberInterface, EventSubscriber, InsertEvent } from "typeorm";
-import { Download } from "../entities/download.entities";
+import { Download } from "../models/download.entities";
 import { sendEmailGeneric } from "../utils/sendEmail";
 import logger from "../logger/app.logger";
 
 @EventSubscriber()
-export class DownloadSubscriber implements EntitySubscriberInterface<Download>{
+export class DownloadSubscriber implements EntitySubscriberInterface<Download> {
     listenTo(): Function | string {
         return Download
     }
@@ -14,5 +14,5 @@ export class DownloadSubscriber implements EntitySubscriberInterface<Download>{
             .then(() => logger.info("Download link email sent successfully"))
             .catch(error => logger.error("Error sending download link email:", error));
     }
-        // console.log(`${event.entity.user.email} ${event.entity.asset.id}`)
+    // console.log(`${event.entity.user.email} ${event.entity.asset.id}`)
 }

@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { AuthRequest } from "interfaces/auth.interface";
 import { AssetService } from "../services/asset.service";
 import { AppDataSource } from "../database/db";
-import { Asset } from "../entities/asset.entities";
+import { Asset } from "../models/asset.entities";
 import { applyAssetFilters } from "../filters/assets.filter";
 import logger from "../logger/app.logger";
 

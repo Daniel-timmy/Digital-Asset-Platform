@@ -22,6 +22,7 @@ import { initializeDatabase } from "./database/db";
 import { errorMiddleware } from "./middlewares/error.middleware";
 import messageRouter from "./routes/message.routes";
 import userProfileRouter from "./routes/userProfile.routes";
+import analyticsRouter from "./routes/analytics.routes";
 import { initializeQueues } from "./queue/rabbitMq";
 
 
@@ -71,6 +72,7 @@ app.use("/api/ticket", ticketRouter)
 app.use("/api/transactions", transactionRouter);
 app.use("/api/users", userRouter);
 app.use("/api/user-profile", userProfileRouter);
+app.use("/api/analytics", analyticsRouter);
 app.use(errorMiddleware)
 
 if (process.env.PORT === undefined) {
