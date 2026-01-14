@@ -85,7 +85,7 @@ const startServer = async () => {
   try {
     console.log("PORT from config/env:", PORT);
     await initializeDatabase();
-    initializeQueues()
+    await initializeQueues();
 
     logger.info('Database connected successfully');
     app.listen(PORT, "0.0.0.0", async () => {

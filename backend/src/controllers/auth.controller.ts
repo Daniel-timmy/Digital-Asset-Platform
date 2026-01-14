@@ -19,7 +19,7 @@ export class AuthController {
       logger.info(`Registering new user with email: ${req.body.email}`);
       const userData: IUserAdmin = req.body;
 
-      if (!userData.name || !userData.email || !userData.password || !userData.role) {
+      if (!userData.name || !userData.email || !userData.password) {
         throw new HttpError("Registration failed: Missing required parameter", 400);
       }
 
@@ -33,6 +33,7 @@ export class AuthController {
       const userDataWithHashedPassword: IUserAdmin = {
         ...userData,
         password: hashedPassword,
+        role: "admin",
       };
       const newUser = await this.userService.create(userDataWithHashedPassword);
       logger.info(`Successfully created user with ID: ${newUser.id}`);

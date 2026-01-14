@@ -36,11 +36,11 @@ export const authentication = async (req: AuthRequest, res: Response, next: Next
             return;
         }
 
-        req.user = user
         if (user.status === "deleted") {
             res.status(401).json({ message: 'Unauthorized' });
             return;
         }
+        req.user = user
 
         next();
     } catch (error: any) {

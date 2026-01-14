@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { LicenseService } from "../services/license.service";
 
 export class LicenseController {
-  constructor(private licenseService: LicenseService) {}
+  constructor(private licenseService: LicenseService) { }
 
   async create(req: Request, res: Response, next: NextFunction) {
     try {

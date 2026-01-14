@@ -2,16 +2,16 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, Jo
 
 @Entity("categories")
 export class Category {
-  @PrimaryGeneratedColumn("uuid")
-  id!: string;
-  
-  @Column({ type: "varchar", length: 100, unique: true })
-  name!: string;
+    @PrimaryGeneratedColumn("uuid")
+    id!: string;
 
-  @ManyToOne(() => Category, { nullable: true })
-  @JoinColumn({ name: "parent_id" })
-  parent!: Category | null;
+    @Column({ type: "varchar", length: 100, unique: true })
+    name!: string;
 
-  @CreateDateColumn()
-  created_at: Date = new Date();
+    @ManyToOne(() => Category, { nullable: true })
+    @JoinColumn({ name: "parent_id" })
+    parent!: Category | null;
+
+    @CreateDateColumn()
+    created_at: Date = new Date();
 }

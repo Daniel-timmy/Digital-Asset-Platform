@@ -48,49 +48,81 @@ Digital Asset Platform is a full-stack web application for managing, distributin
 ## Setup Instructions
 
 ### Prerequisites
-- Node.js (v18+ recommended)
-- PostgreSQL
-- Redis
-- RabbitMQ
+- Node.js (v22+ recommended)
+- Docker Desktop
+- PostgreSQL (for manual setup)
 
-### Backend
+---
+
+### Option 1: Manual Development Setup
+
+This approach runs the services on your host machine.
+
+#### 1. Start RabbitMQ
+Use the following commands to start a RabbitMQ container:
+```bash
+docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:management
+docker start rabbitmq
+```
+
+#### 2. Redis Configuration
+Running manually requires an external Redis server (e.g., provided on a platform like **Render**). Ensure your `.env` file reflects this connection.
+
+#### 3. Backend Setup
 1. Install dependencies:
-   ```powershell
+   ```bash
    cd backend
    npm install
    ```
-2. Configure environment variables:
-   - Copy `.env.example` to `.env.development.local` and set values for DB, JWT, Paystack, Redis, etc.
-3. Run migrations:
-   ```powershell
-   npm run migrate
-   ```
-4. Start development server:
-   ```powershell
+2. Configure environment:
+   - Copy `.env.example` to `.env.development.local` and set your variables.
+3. Start:
+   ```bash
    npm run dev
    ```
 
-### Frontend
+#### 4. Frontend Setup
 1. Install dependencies:
-   ```powershell
+   ```bash
    cd frontend
    npm install
    ```
-2. Configure environment variables:
-   - Set `VITE_API_URL` and other variables in `.env`
-3. Start development server:
-   ```powershell
+2. Start:
+   ```bash
    npm run dev
    ```
 
 ---
 
+### Option 2: Dockerized Development Setup (Recommended)
+
+This approach runs all services (API, Postgres, Redis, RabbitMQ) in an isolated container environment.
+
+1. **Navigate to Backend**:
+   ```bash
+   cd backend
+   ```
+2. **Start Environment**:
+   ```bash
+   docker-compose -f docker-compose.dev.yml up --build
+   ```
+
+> [!IMPORTANT]
+> **Connectivity Note**: When the app is running in Docker, you **must use `http://127.0.0.1:3000`** instead of `localhost:3000` to access the backend from your host machine. This avoids potential IPv6 resolution conflicts on Windows.
+
+---
+
+## Production Deployment
+
+*(Reserved for production deployment instructions)*
+
+---
+
 ## Usage
 
-- Access the frontend at `http://localhost:3000` (default)
-- Backend API runs at `http://localhost:3000/api` (default)
+- Access the frontend at `http://localhost:5173` (Vite default)
+- Backend API runs at `http://127.0.0.1:3000/api`
 - Admin dashboard: `/admin`
-
 
 ---
 
@@ -98,9 +130,7 @@ Digital Asset Platform is a full-stack web application for managing, distributin
 
 - `/api/assets` - Asset CRUD
 - `/api/auth` - Authentication
-- `/api/branding` - Branding requests
 - `/api/category` - Asset categories
-- `/api/custom` - Custom asset requests
 - `/api/downloads` - Asset downloads
 - `/api/licenses` - License management
 - `/api/messages` - Messaging
@@ -108,7 +138,6 @@ Digital Asset Platform is a full-stack web application for managing, distributin
 - `/api/ticket` - Support tickets
 - `/api/transactions` - Payments
 - `/api/users` - User management
-- `/api/website` - Website development requests
 
 ---
 
@@ -143,13 +172,10 @@ MIT License. See `frontend/LICENSE` for details.
 
 - Email: ajayitimmy45@gmail.com
 - Phone: +234 8125754326
+
 ---
 
 ## Acknowledgements
 
 - Built with React, Vite, Node.js, Express, TypeORM, Socket.io, RabbitMQ, Redis, Tailwind CSS, and more.
 - Inspired by modern digital asset management and customization needs.
-
-docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:management
-docker start rabbitmq
-npm run dev
